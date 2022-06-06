@@ -1,0 +1,3 @@
+[submodule "spacetimedb"]
+	path = spacetimedb
+	url = ssh://git@github.com/clockworklabs/spacetimedb
