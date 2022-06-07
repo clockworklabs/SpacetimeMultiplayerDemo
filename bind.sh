@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")"
 
-sudo mount --bind ../spacetimedb ./Server/spacetimedb
+sudo mount --bind ../spacetimedb ./Server/crates/spacetimedb
