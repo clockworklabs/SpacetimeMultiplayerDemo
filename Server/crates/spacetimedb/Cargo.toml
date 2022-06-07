@@ -1,8 +1,0 @@
-[workspace]
-members = ["crates/*"]
-exclude = ["crates/rust-wasm-goal", "crates/rust-wasm-output", "crates/rust-wasm-example"]
-default-members = ["crates/stdb"]
-
-[profile.release]
-opt-level = 's'
-lto = true
