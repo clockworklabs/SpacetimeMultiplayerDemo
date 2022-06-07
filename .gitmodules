@@ -1,3 +1,3 @@
 [submodule "spacetimedb"]
-	path = Server/spacetimedb
+	path = Server/crates/spacetimedb
 	url = ssh://git@github.com/clockworklabs/spacetimedb

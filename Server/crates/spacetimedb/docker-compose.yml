@@ -1,0 +1,32 @@
+version: "3.6"
+
+services:
+  server:
+    working_dir: /usr/src/app
+    build:
+      context: ./
+      dockerfile: ./crates/spacetimedb/Dockerfile
+    volumes:
+      - ./crates/spacetimedb:/usr/src/app
+      - ./crates/rust-wasm-test:/usr/src/rust-wasm-test
+      - /stdb
+    ports:
+      - "3000:3000"
+    entrypoint: bash -c "RUST_BACKTRACE=1 cargo watch --why -x 'run'"
+    environment:
+      ENV: dev
+
+  postgres:
+    build:
+      context: ./packages/postgres
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      PGPASSFILE: /etc/pg/.pgpass
+
+  prometheus:
+    build:
+      context: ./packages/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./packages/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
