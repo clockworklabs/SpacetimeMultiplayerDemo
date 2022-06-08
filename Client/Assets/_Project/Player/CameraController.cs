@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SpacetimeDBConnection
+public class CameraController : MonoBehaviour
 {
-    // public void 
+    
 }
