@@ -2,11 +2,17 @@
 
 set -euo pipefail
 
-# cargo build --target wasm32-unknown-unknown --release
-cargo build --target wasm32-unknown-unknown
-wasm2wat ./target/wasm32-unknown-unknown/release/rust_wasm_test.wasm > crates/rust-wasm-test/wat
+cd "$(dirname "$0")"
+
+cargo build --target wasm32-unknown-unknown --release
+# cargo build --target wasm32-unknown-unknown
+wasm2wat ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm > ./bitcraft-mini-module-wat
 
 # Export the protobuf
+mkdir -p ./cs-src
 for file in ./protobuf/* ; do
 	protoc --proto_path=./protobuf/ --csharp_out=./cs-src $file
 done
+
+# Copy everything that was generated into the the client repo
+rsync -a --delete ./cs-src/ ../Client/Assets/_Project/autogen
