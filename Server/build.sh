@@ -15,4 +15,5 @@ for file in ./protobuf/* ; do
 done
 
 # Copy everything that was generated into the the client repo
-rsync -a --delete ./cs-src/ ../Client/Assets/_Project/autogen
+rm ../Client/Assets/_Project/autogen/*.cs
+rsync -a ./cs-src/ ../Client/Assets/_Project/autogen
