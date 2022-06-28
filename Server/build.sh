@@ -4,7 +4,14 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-cargo build --target wasm32-unknown-unknown --release
+# Clear protobuf and language files
+rm -f protobuf/*.proto
+rm -rf cs-src/*
+
+# Copy stdb proto files
+cp ../../spacetimedb/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
+
+STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release
 # cargo build --target wasm32-unknown-unknown
 wasm2wat ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm > ./bitcraft-mini-module-wat
 
