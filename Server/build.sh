@@ -11,6 +11,7 @@ rm -rf cs-src/*
 # Copy stdb proto files
 cp ../../spacetimedb/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
 
+cargo clean -p bitcraft-mini
 STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release
 # cargo build --target wasm32-unknown-unknown
 wasm2wat ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm > ./bitcraft-mini-module-wat
