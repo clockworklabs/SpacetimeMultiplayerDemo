@@ -34,6 +34,10 @@ public class PlayerInputReceiver : MonoBehaviour
     
     private void Update()
     {
+        if (!CameraController.HasInstance())
+        {
+            return;
+        }
         mouseDelta = pointerPosition - lastPointerPosition;
         lastPointerPosition = pointerPosition;
         CameraController.instance.SetMouseDelta(cameraMouseButtonDown ? mouseDelta : Vector2.zero);
