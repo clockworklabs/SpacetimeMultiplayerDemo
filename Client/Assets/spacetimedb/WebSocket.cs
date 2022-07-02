@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
@@ -122,9 +123,9 @@ namespace WebSocketDispatch
         // Connection parameters
         private readonly ConnectOptions _options;
         private readonly byte[] _receiveBuffer = new byte[MAXMessageSize];
-        private readonly List<MainThreadDispatch> dispatchQueue = new List<MainThreadDispatch>();
+        private readonly ConcurrentQueue<MainThreadDispatch> dispatchQueue = new ConcurrentQueue<MainThreadDispatch>();
         
-        protected ClientWebSocket? Ws;
+        protected ClientWebSocket Ws;
 
         public WebSocket(ConnectOptions options)
         {
@@ -151,7 +152,7 @@ namespace WebSocketDispatch
             try
             {
                 await Ws.ConnectAsync(url, source.Token);
-                dispatchQueue.Add(new OnConnectMessage(OnConnect));
+                dispatchQueue.Enqueue(new OnConnectMessage(OnConnect));
             }
             catch (WebSocketException ex)
             {
@@ -161,13 +162,13 @@ namespace WebSocketDispatch
                     return;
                 }
 
-                dispatchQueue.Add(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
+                dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
                 Debug.LogError("Error connecting: " + ex);
                 return;
             }
             catch (Exception e)
             {
-                dispatchQueue.Add(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
+                dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
                 Debug.LogError("Other error: " + e);
                 return;
             }
@@ -185,7 +186,7 @@ namespace WebSocketDispatch
                         if (receiveResult.CloseStatus != WebSocketCloseStatus.NormalClosure)
                         {
                             Debug.LogError("Server closed connection abnormally.");
-                            dispatchQueue.Add(new OnDisconnectMessage(OnClose, receiveResult.CloseStatus));
+                            dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, receiveResult.CloseStatus));
                         }
                     }
                     else
@@ -210,7 +211,7 @@ namespace WebSocketDispatch
                         var buffCopy = new byte[count];
                         for (var x = 0; x < count; x++)
                             buffCopy[x] = _receiveBuffer[x];
-                        dispatchQueue.Add(new OnMessage(OnMessage, buffCopy));
+                        dispatchQueue.Enqueue(new OnMessage(OnMessage, buffCopy));
                     }
                 }
                 catch (WebSocketException ex)
@@ -218,7 +219,7 @@ namespace WebSocketDispatch
                     if (ex.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
                     {
                         Debug.LogError("Server closed connection prematurely.");
-                        dispatchQueue.Add(new OnDisconnectMessage(OnClose, null));
+                        dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, null));
                         break;
                     }
 
@@ -248,12 +249,10 @@ namespace WebSocketDispatch
 
         public void Update()
         {
-            foreach (var dispatch in dispatchQueue)
+            while (dispatchQueue.TryDequeue(out var result))
             {
-                dispatch.Execute();
+                result.Execute();
             }
-            
-            dispatchQueue.Clear();
         }
     }
 }

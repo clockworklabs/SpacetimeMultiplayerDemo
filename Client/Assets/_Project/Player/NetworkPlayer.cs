@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using SpacetimeDB;
 using UnityEngine;
 
 public class NetworkPlayer : MonoBehaviour
@@ -9,7 +11,7 @@ public class NetworkPlayer : MonoBehaviour
     
     public void Spawn(uint playerId, bool isLocal)
     {
-        this._playerId = playerId;
+        _playerId = playerId;
         if (isLocal)
         {
             _localPlayerId = playerId;
@@ -17,4 +19,13 @@ public class NetworkPlayer : MonoBehaviour
     }
 
     public bool IsLocal() => _localPlayerId.HasValue && _localPlayerId.Value == _playerId;
+
+    private void Update()
+    {
+        if (IsLocal())
+        {
+            var ourPos = transform.position;
+            Reducer.MovePlayer(_playerId, ourPos.x, ourPos.y, ourPos.z);
+        }
+    }
 }

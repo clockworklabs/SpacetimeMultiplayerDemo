@@ -5,8 +5,11 @@ namespace SpacetimeDB
 {
 	public partial class Position
 	{
-		[Newtonsoft.Json.JsonProperty("pos_x")]		public float posX;
-		[Newtonsoft.Json.JsonProperty("pos_y")]		public float posY;
-		[Newtonsoft.Json.JsonProperty("pos_z")]		public float posZ;
+		[Newtonsoft.Json.JsonProperty("pos_x")]
+		public float posX;
+		[Newtonsoft.Json.JsonProperty("pos_y")]
+		public float posY;
+		[Newtonsoft.Json.JsonProperty("pos_z")]
+		public float posZ;
 	}
 }

@@ -10,11 +10,18 @@ using Websocket;
 
 public class StdbNetworkManager : Singleton<StdbNetworkManager>
 {
+    [SerializeField] private float clientTicksPerSecond = 30.0f;
+    
     public event Action onConnect;
     public event Action onDisconnect;
-    public event Action<TableRowOperation> onRowUpdate;
+    public event Action<uint, TableRowOperation> onRowUpdate;
+    
+    public event Action clientTick;
     
     private WebSocketDispatch.WebSocket webSocket;
+
+    private float? lastClientTick;
+    public static float clientTickInterval;
 
     protected override void Awake()
     {
@@ -32,6 +39,8 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
             OnDisconnect();
         };
         webSocket.OnConnect += OnConnect;
+
+        clientTickInterval = 1 / clientTicksPerSecond;
     }
 
     public void Connect()
@@ -71,7 +80,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
             var tableId = tableUpdate.TableId;
             foreach (var row in tableUpdate.TableRowOperations)
             {
-                // send rows to record manager
+                onRowUpdate?.Invoke(tableId, row);
             }
         }
     }
@@ -94,5 +103,18 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     private void Update()
     {
         webSocket.Update();
+
+        if (!lastClientTick.HasValue)
+        {
+            lastClientTick = Time.time;
+        }
+        else
+        {
+            if (Time.time - lastClientTick > clientTickInterval)
+            {
+                lastClientTick = Time.time;
+                clientTick?.Invoke();
+            }
+        }
     }
 }
