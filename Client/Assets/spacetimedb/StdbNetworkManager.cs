@@ -30,7 +30,10 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         {
             Url =
                 "ws://localhost:3000/database/c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470/bitcraftmini/subscribe",
-            Protocol = "v1.text.spacetimedb",
+            
+            //v1.bin.spacetimedb
+            //v1.text.spacetimedb
+            Protocol = "v1.bin.spacetimedb",
         };
         webSocket = new WebSocketDispatch.WebSocket(options);
         webSocket.OnMessage += OnMessageReceived;
@@ -71,17 +74,14 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     /// </summary>
     protected virtual void OnMessageReceived(byte[] bytes)
     {
-        var chars = Encoding.Default.GetString(bytes);
-        Debug.Log(chars);
+        var message = Websocket.Message.Parser.ParseFrom(bytes);
 
-        var subscriptionUpdate = Newtonsoft.Json.JsonConvert.DeserializeObject<SubscriptionUpdate>(chars);
-        foreach(var tableUpdate in subscriptionUpdate.TableUpdates)
+        switch (message.TypeCase)
         {
-            var tableId = tableUpdate.TableId;
-            foreach (var row in tableUpdate.TableRowOperations)
-            {
-                onRowUpdate?.Invoke(tableId, row);
-            }
+            case Websocket.Message.TypeOneofCase.SubscriptionUpdate:
+                var update = message.SubscriptionUpdate;
+                Debug.Log($"count: {update.TableUpdates.Count}");
+                break;
         }
     }
 
