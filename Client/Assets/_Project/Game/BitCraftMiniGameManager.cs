@@ -12,6 +12,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     [SerializeField] private StdbNetworkManager networkManager;
     [SerializeField] private GameObject spawnPosition;
 
+    readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
+
     protected void Start()
     {
         networkManager.onConnect += () =>
@@ -20,6 +22,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
             {
                 Debug.Log("Sending request for new player.");
                 var ourId = (uint)(Random.value * uint.MaxValue);
+                NetworkPlayer._localPlayerId = ourId;
                 Reducer.CreateNewPlayer(ourId, spawnPosition.transform.position.ToStdb());
             }
             catch (Exception e)
@@ -33,12 +36,29 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
         };
         
-        networkManager.onRowUpdate += (_, row) =>
+        networkManager.onRowUpdate += (tableId, row) =>
         {
             switch (row.Op)
             {
                 case TableRowOperation.Types.OperationType.Insert:
-                    // var json_obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Player>(row.Row.ToString());
+                    if (tableId == 1)
+                    {
+                        // Player deserialized from row update
+                        Player player = new Player();
+                        
+                        // check to see if this player already exists
+                        if (players.TryGetValue(player.playerId, out var networkPlayer))
+                        {
+                            networkPlayer.transform.position = player.position.ToVector3();
+                        }
+                        else
+                        {
+                            // Create a new player
+                            var newNetworkPlayer = Instantiate(playerPrefab);
+                            newNetworkPlayer.Spawn(player.playerId);
+                        }
+                    }
+                    
                     break;
             }
         };

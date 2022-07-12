@@ -9,10 +9,10 @@ public class NetworkPlayer : MonoBehaviour
     private uint _playerId;
     public static uint? _localPlayerId;
     
-    public void Spawn(uint playerId, bool isLocal)
+    public void Spawn(uint playerId)
     {
         _playerId = playerId;
-        if (isLocal)
+        if (IsLocal())
         {
             _localPlayerId = playerId;
         }

@@ -12,4 +12,14 @@
                 posZ = position.z,
             };
         }
+        
+        public static Vector3 ToVector3(this SpacetimeDB.Position position)
+        {
+            return new Vector3
+            {
+                x = position.posX,
+                y = position.posY,
+                z = position.posZ,
+            };
+        }
     }

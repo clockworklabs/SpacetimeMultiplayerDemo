@@ -79,8 +79,14 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         switch (message.TypeCase)
         {
             case Websocket.Message.TypeOneofCase.SubscriptionUpdate:
-                var update = message.SubscriptionUpdate;
-                Debug.Log($"count: {update.TableUpdates.Count}");
+                foreach (var tableUpdate in message.SubscriptionUpdate.TableUpdates)
+                {
+                    var tableId = tableUpdate.TableId;
+                    foreach (var row in tableUpdate.TableRowOperations)
+                    {
+                        onRowUpdate?.Invoke(tableId, row);
+                    }
+                }
                 break;
         }
     }
