@@ -11,5 +11,14 @@ namespace SpacetimeDB
 		public float posY;
 		[Newtonsoft.Json.JsonProperty("pos_z")]
 		public float posZ;
+		public static TypeDef GetTypeDef()
+		{
+			return TypeDef.Tuple(new ElementDef[]
+			{
+				new SpacetimeDB.ElementDef(0, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.F32)),
+				new SpacetimeDB.ElementDef(1, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.F32)),
+				new SpacetimeDB.ElementDef(2, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.F32)),
+			});
+		}
 	}
 }

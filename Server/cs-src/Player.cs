@@ -9,5 +9,13 @@ namespace SpacetimeDB
 		public uint playerId;
 		[Newtonsoft.Json.JsonProperty("position")]
 		public Position position;
+		public static TypeDef GetTypeDef()
+		{
+			return TypeDef.Tuple(new ElementDef[]
+			{
+				new SpacetimeDB.ElementDef(0, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.U32)),
+				new SpacetimeDB.ElementDef(1, SpacetimeDB.Position.GetTypeDef()),
+			});
+		}
 	}
 }
