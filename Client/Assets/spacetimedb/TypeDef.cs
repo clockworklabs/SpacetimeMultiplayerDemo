@@ -76,53 +76,6 @@ namespace SpacetimeDB
                 tupleElements = elements,
             };
         }
-
-        /// <summary>
-        /// Update: I'm going to leave this just in case but likely I think we will never use this. I'm committing
-        /// this and then deleting it.
-        /// 
-        /// Decodes a byte array into a typedef and amount of bytes read.
-        /// </summary>
-        /// <param name="arr">The array to read from</param>
-        /// <param name="offset">The offset to start reading from</param>
-        /// <param name="length">The total length of the buffer</param>
-        /// <returns>A TypeDef and bytes read value on success, null and 0 on failure</returns>
-        public static (TypeDef?, int) Decode(byte[] arr, int offset, int length)
-        {
-            if (length == 0 || offset >= length - 1)
-            {
-                Debug.LogError("Array for TypeDef should be greater than 0.");
-                return (null, 0);
-            }
-            
-            var bytesRead = 1;
-            var enumByte = arr[offset];
-            if (!Enum.IsDefined(typeof(Def), enumByte))
-            {
-                Debug.LogError("Error decoding TypeDef from byte stream (wrong version maybe?).");
-                return (null, 0);
-            }
-
-            var result = new TypeDef
-            {
-                type = (Def)enumByte
-            };
-
-            switch (result.type)
-            {
-                case Def.Vec:
-                    Debug.LogError("Don't use vecs yet!");
-                    return (null, 0);
-                case Def.Enum:
-                    Debug.LogError("Don't use enums yet!");
-                    return (null, 0);
-                case Def.Tuple:
-                    
-                    break;
-            }
-
-            return (result, bytesRead);
-        }
     }
 
     public struct ElementDef
@@ -134,22 +87,6 @@ namespace SpacetimeDB
         {
             this.tag = tag;
             this.element = element;
-        }
-        
-        public static (ElementDef?, int) Decode(byte[] arr, int offset, int length)
-        {
-            var tag = arr[offset];
-            var (typeDef, read) = TypeDef.Decode(arr, offset + 1, length);
-            if (!typeDef.HasValue)
-            {
-                return (null, 0);
-            }
-
-            return (new ElementDef
-            {
-                tag = tag,
-                element = typeDef.Value,
-            }, 1 + read);
         }
     }
 
