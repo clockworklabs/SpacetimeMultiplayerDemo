@@ -5,12 +5,12 @@ namespace SpacetimeDB
 {
 	public static partial class Reducer 
 	{
-		public static void MovePlayer(uint playerId, float x, float y, float z)
+		public static void MovePlayer(uint playerId, Position position, Rotation rotation, bool moving)
 		{
 			StdbNetworkManager.instance.InternalCallReducer(new StdbNetworkManager.Message
 			{
 				fn = "move_player",
-				args = new object[] { playerId, x, y, z },
+				args = new object[] { playerId, position, rotation, moving },
 			});
 		}
 	}

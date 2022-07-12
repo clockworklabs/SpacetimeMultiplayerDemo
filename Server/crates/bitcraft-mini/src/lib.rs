@@ -8,22 +8,32 @@ pub struct Position {
     pub pos_z: f32,
 }
 
+#[spacetimedb(tuple)]
+pub struct Rotation {
+    pub rot_x: f32,
+    pub rot_y: f32,
+    pub rot_z: f32,
+    pub rot_w: f32,
+}
+
 #[spacetimedb(table(1))]
 pub struct Player {
     #[primary_key]
     pub player_id: u32,
     // pub sender: Hash,
     pub position: Position,
+    pub rotation: Rotation,
+    pub moving: bool,
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(_sender: Hash, _timestamp: u64, player_id: u32, x: f32, y: f32, z: f32) {
+pub fn move_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Position, rotation: Rotation, moving: bool) {
     let player = Player::filter_player_id_eq(player_id);
     match player {
         Some(mut player) => {
-            player.position.pos_x = x;
-            player.position.pos_y = y;
-            player.position.pos_z = z;
+            player.position = position;
+            player.rotation = rotation;
+            player.moving = moving;
 
             // Update player position
             Player::update_player_id_eq(player_id, player);
@@ -35,10 +45,12 @@ pub fn move_player(_sender: Hash, _timestamp: u64, player_id: u32, x: f32, y: f3
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Position) {
+pub fn create_new_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Position, rotation: Rotation) {
     let player = Player {
         player_id,
         position,
+        rotation,
+        moving: false
     };
 
     Player::insert(player);

@@ -12,6 +12,7 @@ public class PlayerMovementController : MonoBehaviour
 
     private Vector2 movementVec;
     private NetworkPlayer player;
+    private bool moving;
 
     private Rigidbody body;
     private static readonly int WalkingProperty = Animator.StringToHash("Walking");
@@ -24,6 +25,8 @@ public class PlayerMovementController : MonoBehaviour
         player = GetComponent<NetworkPlayer>();
     }
 
+    public Transform GetModelTransform() => modelTransform;
+    
     public void SetMove(Vector3 vec) => movementVec = vec;
 
     private void FixedUpdate()
@@ -39,8 +42,22 @@ public class PlayerMovementController : MonoBehaviour
         body.MovePosition(body.position + vec * (Time.fixedDeltaTime * movementSpeed));
     }
 
+    public bool IsMoving() => moving;
+    
+    public void SetMoving(bool moving)
+    {
+        if (player.IsLocal())
+        {
+            return;
+        }
+
+        this.moving = moving;
+    }
+
     private void Update()
     {
+        anim.SetBool(WalkingProperty, moving);
+        
         if (!player.IsLocal())
         {
             return;
@@ -48,7 +65,7 @@ public class PlayerMovementController : MonoBehaviour
         
         var vec = new Vector3(movementVec.x, 0.0f, movementVec.y);
         vec = CameraController.instance.transform.TransformDirection(vec);
-        var moving = movementVec.sqrMagnitude > 0; 
+        moving = movementVec.sqrMagnitude > 0; 
         
         if (moving)
         {
@@ -56,7 +73,5 @@ public class PlayerMovementController : MonoBehaviour
             modelTransform.rotation = Quaternion.RotateTowards(modelTransform.rotation, 
                 worldMovementDirection, modelTurnSpeed * Time.deltaTime);
         }
-        
-        anim.SetBool(WalkingProperty, moving);
     }
 }

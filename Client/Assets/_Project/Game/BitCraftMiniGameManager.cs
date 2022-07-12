@@ -24,7 +24,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 Debug.Log("Sending request for new player.");
                 var ourId = (uint)(Random.value * uint.MaxValue);
                 NetworkPlayer._localPlayerId = ourId;
-                Reducer.CreateNewPlayer(ourId, spawnPosition.transform.position.ToStdb());
+                Reducer.CreateNewPlayer(ourId, spawnPosition.transform.position.ToStdb(), Quaternion.identity.ToStdb());
             }
             catch (Exception e)
             {
@@ -50,12 +50,23 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         var playerTuple = decoded.Value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
                         var playerId = (uint)playerTuple![0].GetValue(TypeDef.Def.U32);
                         var positionTuple = playerTuple[1].GetValue(TypeDef.Def.Tuple);
+                        var rotationTuple = playerTuple[2].GetValue(TypeDef.Def.Tuple);
+                        var moving = (bool)playerTuple[3].GetValue(TypeDef.Def.Bool);
                         var positionTupleElements = positionTuple as TypeValue[];
                         Position position = new Position
                         {
                             posX = (float)positionTupleElements![0].GetValue(TypeDef.Def.F32),
                             posY = (float)positionTupleElements![1].GetValue(TypeDef.Def.F32),
                             posZ = (float)positionTupleElements![2].GetValue(TypeDef.Def.F32),
+                        };
+                        
+                        var rotationTupleElements = rotationTuple as TypeValue[];
+                        Rotation rotation = new Rotation
+                        {
+                            rotX = (float)rotationTupleElements![0].GetValue(TypeDef.Def.F32),
+                            rotY = (float)rotationTupleElements![1].GetValue(TypeDef.Def.F32),
+                            rotZ = (float)rotationTupleElements![2].GetValue(TypeDef.Def.F32),
+                            rotW = (float)rotationTupleElements![3].GetValue(TypeDef.Def.F32),
                         };
 
                         // check to see if this player already exists
@@ -68,6 +79,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             } else
                             {
                                 networkPlayer.transform.position = position.ToVector3();
+                                networkPlayer.transform.rotation = rotation.ToQuaternion();
+                                networkPlayer.GetComponent<PlayerMovementController>().SetMoving(moving);
                             }
 
                         }
@@ -75,6 +88,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         {
                             // Create a new player
                             var newNetworkPlayer = Instantiate(playerPrefab);
+                            newNetworkPlayer.transform.position = position.ToVector3();
+                            newNetworkPlayer.transform.rotation = rotation.ToQuaternion();
                             newNetworkPlayer.Spawn(playerId);
                             players[playerId] = newNetworkPlayer;
                         }

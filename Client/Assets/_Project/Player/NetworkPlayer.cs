@@ -13,6 +13,7 @@ public class NetworkPlayer : MonoBehaviour
     private void Awake()
     {
         cameraRig.SetActive(false);
+        StdbNetworkManager.instance.clientTick += GameTick;
     }
 
     public void Spawn(uint playerId)
@@ -34,14 +35,15 @@ public class NetworkPlayer : MonoBehaviour
 
     public bool IsLocal() => _localPlayerId.HasValue && _localPlayerId.Value == _playerId;
 
-    private void Update()
+    void GameTick()
     {
         if (!IsLocal())
         {
             return;
         }
 
-        var ourPos = transform.position;
-        Reducer.MovePlayer(_playerId, ourPos.x, ourPos.y, ourPos.z);
+        var ourPos = PlayerMovementController.Local.GetModelTransform().position.ToStdb();
+        var ourRot = PlayerMovementController.Local.GetModelTransform().rotation.ToStdb();
+        Reducer.MovePlayer(_playerId, ourPos, ourRot, PlayerMovementController.Local.IsMoving());
     }
 }

@@ -22,4 +22,26 @@
                 z = position.posZ,
             };
         }
+        
+        public static SpacetimeDB.Rotation ToStdb(this Quaternion rotation)
+        {
+            return new SpacetimeDB.Rotation
+            {
+                rotX = rotation.x,
+                rotY = rotation.y,
+                rotZ = rotation.z,
+                rotW = rotation.w,
+            };
+        }
+        
+        public static Quaternion ToQuaternion(this SpacetimeDB.Rotation rotation)
+        {
+            return new Quaternion()
+            {
+                x = rotation.rotX,
+                y = rotation.rotY,
+                z = rotation.rotZ,
+                w = rotation.rotW,
+            };
+        }
     }

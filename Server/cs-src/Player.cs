@@ -9,12 +9,18 @@ namespace SpacetimeDB
 		public uint playerId;
 		[Newtonsoft.Json.JsonProperty("position")]
 		public Position position;
+		[Newtonsoft.Json.JsonProperty("rotation")]
+		public Rotation rotation;
+		[Newtonsoft.Json.JsonProperty("moving")]
+		public bool moving;
 		public static TypeDef GetTypeDef()
 		{
 			return TypeDef.Tuple(new ElementDef[]
 			{
 				new SpacetimeDB.ElementDef(0, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.U32)),
 				new SpacetimeDB.ElementDef(1, SpacetimeDB.Position.GetTypeDef()),
+				new SpacetimeDB.ElementDef(2, SpacetimeDB.Rotation.GetTypeDef()),
+				new SpacetimeDB.ElementDef(3, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.Bool)),
 			});
 		}
 	}
