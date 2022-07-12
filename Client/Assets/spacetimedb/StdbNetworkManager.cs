@@ -88,6 +88,16 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     }
                 }
                 break;
+            case Websocket.Message.TypeOneofCase.TransactionUpdate:
+                foreach (var tableUpdate in message.TransactionUpdate.SubscriptionUpdate.TableUpdates)
+                {
+                    var tableId = tableUpdate.TableId;
+                    foreach (var row in tableUpdate.TableRowOperations)
+                    {
+                        onRowUpdate?.Invoke(tableId, row);
+                    }
+                }
+                break;
         }
     }
 
@@ -101,7 +111,6 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     internal void InternalCallReducer(Message message)
     {
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(message);
-        Debug.LogWarning($"JSON: {json}");
         Task.Run(async () => await webSocket.Send(
             Encoding.ASCII.GetBytes(json)));
     }

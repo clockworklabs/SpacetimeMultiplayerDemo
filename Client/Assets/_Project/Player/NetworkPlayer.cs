@@ -8,13 +8,27 @@ public class NetworkPlayer : MonoBehaviour
 {
     private uint _playerId;
     public static uint? _localPlayerId;
-    
+    public GameObject cameraRig;
+
+    private void Awake()
+    {
+        cameraRig.SetActive(false);
+    }
+
     public void Spawn(uint playerId)
     {
         _playerId = playerId;
         if (IsLocal())
         {
+            gameObject.name = $"Local Player - {playerId}";
             _localPlayerId = playerId;
+            BitCraftMiniGameManager.instance.LocalPlayerCreated();
+            cameraRig.SetActive(true);
+            PlayerMovementController.Local = GetComponent<PlayerMovementController>();
+        }
+        else
+        {
+            gameObject.name = $"Remote Player - {playerId}";
         }
     }
 
@@ -22,10 +36,12 @@ public class NetworkPlayer : MonoBehaviour
 
     private void Update()
     {
-        if (IsLocal())
+        if (!IsLocal())
         {
-            var ourPos = transform.position;
-            Reducer.MovePlayer(_playerId, ourPos.x, ourPos.y, ourPos.z);
+            return;
         }
+
+        var ourPos = transform.position;
+        Reducer.MovePlayer(_playerId, ourPos.x, ourPos.y, ourPos.z);
     }
 }

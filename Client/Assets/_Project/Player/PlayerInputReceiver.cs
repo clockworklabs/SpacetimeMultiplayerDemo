@@ -14,7 +14,12 @@ public class PlayerInputReceiver : MonoBehaviour
 
     void OnMove(InputValue value)
     {
-        PlayerMovementController.instance.SetMove(value.Get<Vector2>());
+        if (PlayerMovementController.Local == null)
+        {
+            return;
+        }
+
+        PlayerMovementController.Local.SetMove(value.Get<Vector2>());
     }
 
     void OnPointerPosition(InputValue value)

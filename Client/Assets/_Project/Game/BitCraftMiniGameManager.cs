@@ -11,6 +11,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     [SerializeField] private NetworkPlayer playerPrefab;
     [SerializeField] private StdbNetworkManager networkManager;
     [SerializeField] private GameObject spawnPosition;
+    [SerializeField] private GameObject preSpawnCamera;
 
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
 
@@ -44,18 +45,38 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                     if (tableId == 1)
                     {
                         // Player deserialized from row update
-                        Player player = new Player();
-                        
-                        // check to see if this player already exists
-                        if (players.TryGetValue(player.playerId, out var networkPlayer))
+                        var rowBytes = row.Row.ToByteArray();
+                        var (decoded, _) = TypeValue.Decode(Player.GetTypeDef(), rowBytes, 0, rowBytes.Length);
+                        var playerTuple = decoded.Value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+                        var playerId = (uint)playerTuple![0].GetValue(TypeDef.Def.U32);
+                        var positionTuple = playerTuple[1].GetValue(TypeDef.Def.Tuple);
+                        var positionTupleElements = positionTuple as TypeValue[];
+                        Position position = new Position
                         {
-                            networkPlayer.transform.position = player.position.ToVector3();
+                            posX = (float)positionTupleElements![0].GetValue(TypeDef.Def.F32),
+                            posY = (float)positionTupleElements![1].GetValue(TypeDef.Def.F32),
+                            posZ = (float)positionTupleElements![2].GetValue(TypeDef.Def.F32),
+                        };
+
+                        // check to see if this player already exists
+                        if (players.TryGetValue(playerId, out var networkPlayer))
+                        {
+                            // Is this our player?
+                            if (networkPlayer.IsLocal())
+                            {
+                                // Ignore local updates
+                            } else
+                            {
+                                networkPlayer.transform.position = position.ToVector3();
+                            }
+
                         }
                         else
                         {
                             // Create a new player
                             var newNetworkPlayer = Instantiate(playerPrefab);
-                            newNetworkPlayer.Spawn(player.playerId);
+                            newNetworkPlayer.Spawn(playerId);
+                            players[playerId] = newNetworkPlayer;
                         }
                     }
                     
@@ -64,5 +85,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         };
         
         networkManager.Connect();
+    }
+
+    public void LocalPlayerCreated()
+    {
+        preSpawnCamera.SetActive(false);
     }
 }

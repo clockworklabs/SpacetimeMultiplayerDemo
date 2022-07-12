@@ -170,6 +170,7 @@ MonoBehaviour:
   playerPrefab: {fileID: 7979707959555921424, guid: 412d89e4212abfc489869de4e240a1db, type: 3}
   networkManager: {fileID: 797852690}
   spawnPosition: {fileID: 624314606}
+  preSpawnCamera: {fileID: 1824497358}
 --- !u!1 &578609928
 GameObject:
   m_ObjectHideFlags: 0
@@ -399,6 +400,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c626ceb3689c4a50959fd47200cbb5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  clientTicksPerSecond: 30
 --- !u!4 &797852691
 Transform:
   m_ObjectHideFlags: 0
