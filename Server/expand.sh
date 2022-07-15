@@ -1,10 +1,9 @@
 #!/bin/bash
 
-set -uo pipefail
+set -uoe pipefail
 
 cd "$(dirname "$0")"
-bash ./build.sh
-
 cd crates/bitcraft-mini
-
-cargo expand
+# cargo clean
+# cargo build --package bitcraft-mini
+cargo expand > ../bitcraft-mini-expand/src/lib.rs

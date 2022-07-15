@@ -12,7 +12,7 @@ rm -rf cs-src/*
 cp ../../spacetimedb/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
 
 cargo clean
-STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release --all
+STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release --package bitcraft-mini
 # cargo build --target wasm32-unknown-unknown
 # wasm2wat ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm > ./bitcraft-mini-module-wat
 
@@ -30,4 +30,4 @@ rsync -a ./cs-src/ ../Client/Assets/_Project/autogen
 MODULE=$(pwd)/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../spacetimedb/
 # cargo run update "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
-cargo run init "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+cargo run init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"

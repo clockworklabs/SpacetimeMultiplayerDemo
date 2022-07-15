@@ -6,7 +6,9 @@ namespace SpacetimeDB
 	public partial class Player
 	{
 		[Newtonsoft.Json.JsonProperty("player_id")]
-		public uint playerId;
+		public byte[] playerId;
+		[Newtonsoft.Json.JsonProperty("creation_time")]
+		public ulong creationTime;
 		[Newtonsoft.Json.JsonProperty("position")]
 		public Position position;
 		[Newtonsoft.Json.JsonProperty("rotation")]
@@ -17,10 +19,11 @@ namespace SpacetimeDB
 		{
 			return TypeDef.Tuple(new ElementDef[]
 			{
-				new SpacetimeDB.ElementDef(0, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.U32)),
-				new SpacetimeDB.ElementDef(1, SpacetimeDB.Position.GetTypeDef()),
-				new SpacetimeDB.ElementDef(2, SpacetimeDB.Rotation.GetTypeDef()),
-				new SpacetimeDB.ElementDef(3, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.Bool)),
+				new SpacetimeDB.ElementDef(0, SpacetimeDB.Hash.GetTypeDef()),
+				new SpacetimeDB.ElementDef(1, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.U64)),
+				new SpacetimeDB.ElementDef(2, SpacetimeDB.Position.GetTypeDef()),
+				new SpacetimeDB.ElementDef(3, SpacetimeDB.Rotation.GetTypeDef()),
+				new SpacetimeDB.ElementDef(4, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.Bool)),
 			});
 		}
 	}

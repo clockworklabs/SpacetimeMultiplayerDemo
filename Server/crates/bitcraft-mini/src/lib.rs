@@ -19,16 +19,16 @@ pub struct Rotation {
 #[spacetimedb(table(1))]
 pub struct Player {
     #[primary_key]
-    pub player_id: u32,
-    // pub sender: Hash,
+    pub player_id: Hash,
+    pub creation_time: u64,
     pub position: Position,
     pub rotation: Rotation,
     pub moving: bool,
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Position, rotation: Rotation, moving: bool) {
-    let player = Player::filter_player_id_eq(player_id);
+pub fn move_player(player_id: Hash, _timestamp: u64, position: Position, rotation: Rotation, moving: bool) {
+    let player = Player::filter_player_id_eq(player_id.clone());
     match player {
         Some(mut player) => {
             player.position = position;
@@ -45,9 +45,10 @@ pub fn move_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Pos
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(_sender: Hash, _timestamp: u64, player_id: u32, position: Position, rotation: Rotation) {
+pub fn create_new_player(player_id: Hash, timestamp: u64, position: Position, rotation: Rotation) {
     let player = Player {
         player_id,
+        creation_time: timestamp,
         position,
         rotation,
         moving: false

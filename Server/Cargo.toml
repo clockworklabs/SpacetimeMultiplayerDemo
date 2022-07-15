@@ -1,6 +1,6 @@
 [workspace]
-members = ["crates/bitcraft-mini"]
-# exclude = ["crates/rust-wasm-goal", "crates/rust-wasm-output", "crates/rust-wasm"]
+members = ["crates/bitcraft-mini", "crates/bitcraft-mini-expand"]
+# members = ["crates/bitcraft-mini"]
 default-members = ["crates/bitcraft-mini"]
 
 [profile.release]
