@@ -24,7 +24,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 Debug.Log("Sending request for new player.");
                 var ourId = (uint)(Random.value * uint.MaxValue);
                 NetworkPlayer._localPlayerId = ourId;
-                Reducer.CreateNewPlayer(ourId, spawnPosition.transform.position.ToStdb(), Quaternion.identity.ToStdb());
+                Reducer.CreateNewPlayer(spawnPosition.transform.position.ToStdb(), Quaternion.identity.ToStdb());
             }
             catch (Exception e)
             {

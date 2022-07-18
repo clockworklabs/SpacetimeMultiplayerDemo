@@ -256,8 +256,13 @@ namespace SpacetimeDB
         }
     }
 
-    public class TypeDefSerialization
+    public struct Hash
     {
-        
+        public byte[] bytes;
+
+        public static TypeDef GetTypeDef()
+        {
+            return TypeDef.BuiltInType(TypeDef.Def.Bytes);
+        }
     }
 }
