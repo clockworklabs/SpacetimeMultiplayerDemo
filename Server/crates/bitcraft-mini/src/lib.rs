@@ -16,6 +16,19 @@ pub struct Rotation {
     pub rot_w: f32,
 }
 
+#[spacetimedb(table(2))]
+pub struct Character {
+    #[primary_key]
+    ident: CharacterIdentity,
+    character_name: String,
+}
+
+#[spacetimedb(tuple)]
+pub struct CharacterIdentity {
+    pub player_id: Hash,
+    pub index: u32,
+}
+
 #[spacetimedb(table(1))]
 pub struct Player {
     #[primary_key]
@@ -46,13 +59,36 @@ pub fn move_player(player_id: Hash, _timestamp: u64, position: Position, rotatio
 
 #[spacetimedb(reducer)]
 pub fn create_new_player(player_id: Hash, timestamp: u64, position: Position, rotation: Rotation) {
-    let player = Player {
+    // let player = Player {
+    //     player_id,
+    //     creation_time: timestamp,
+    //     position,
+    //     rotation,
+    //     moving: false
+    // };
+    //
+    // Player::insert(player);
+
+    let ident = CharacterIdentity {
         player_id,
-        creation_time: timestamp,
-        position,
-        rotation,
-        moving: false
+        index: 0,
     };
 
-    Player::insert(player);
+    Character::insert(Character {
+        ident: ident.clone(),
+        character_name: "My Character".to_string(),
+    });
+
+    let got_character = Character::filter_ident_eq(ident);
+    match got_character {
+        Some(a) => {
+            if a.character_name.eq("My Character".to_string()) {
+                panic!("Success!");
+            }
+
+            panic!("Failure 2");
+        }, None => {
+            panic!("Failure!");
+        }
+    }
 }
