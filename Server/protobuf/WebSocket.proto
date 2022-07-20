@@ -52,6 +52,7 @@ message TableRowOperation {
     enum OperationType {
         DELETE = 0;
         INSERT = 1;
+        UPDATE = 2;
     }
     OperationType op = 1;
     bytes row_pk = 2;

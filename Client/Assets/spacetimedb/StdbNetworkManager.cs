@@ -14,11 +14,10 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     
     public event Action onConnect;
     public event Action onDisconnect;
-    public event Action<uint, TableRowOperation> onRowUpdate;
-    
     public event Action clientTick;
     
     private WebSocketDispatch.WebSocket webSocket;
+    public static StdbClientCache clientDB;
 
     private float? lastClientTick;
     public static float clientTickInterval;
@@ -43,6 +42,9 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         };
         webSocket.OnConnect += OnConnect;
 
+        clientDB = new StdbClientCache();
+        clientDB.AddTable("Players", 1, Player.GetTypeDef());
+        
         clientTickInterval = 1 / clientTicksPerSecond;
     }
 
@@ -84,7 +86,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     var tableId = tableUpdate.TableId;
                     foreach (var row in tableUpdate.TableRowOperations)
                     {
-                        onRowUpdate?.Invoke(tableId, row);
+                        clientDB.ReceiveUpdate(tableId, row);
                     }
                 }
                 break;
@@ -94,7 +96,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     var tableId = tableUpdate.TableId;
                     foreach (var row in tableUpdate.TableRowOperations)
                     {
-                        onRowUpdate?.Invoke(tableId, row);
+                        clientDB.ReceiveUpdate(tableId, row);
                     }
                 }
                 break;

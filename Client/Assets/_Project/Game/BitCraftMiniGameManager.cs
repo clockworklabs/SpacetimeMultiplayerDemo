@@ -24,34 +24,29 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 Debug.Log("Sending request for new player.");
                 var ourId = (uint)(Random.value * uint.MaxValue);
                 NetworkPlayer._localPlayerId = ourId;
-                Reducer.CreateNewPlayer(spawnPosition.transform.position.ToStdb(), Quaternion.identity.ToStdb());
+                Reducer.CreateNewPlayer(ourId, spawnPosition.transform.position.ToStdb(), Quaternion.identity.ToStdb());
             }
             catch (Exception e)
             {
                 Debug.LogError($"Exception: {e}");
             }
         };
-        
-        networkManager.onDisconnect += () =>
-        {
 
-        };
-        
-        networkManager.onRowUpdate += (tableId, row) =>
+        networkManager.onDisconnect += () => { };
+
+        StdbNetworkManager.clientDB.tableUpdated += (index, op, value, newValue) =>
         {
-            switch (row.Op)
+            switch (op)
             {
-                case TableRowOperation.Types.OperationType.Insert:
-                    if (tableId == 1)
+                case StdbClientCache.TableOp.Insert:
+                    if (index == 1 && newValue.HasValue)
                     {
                         // Player deserialized from row update
-                        var rowBytes = row.Row.ToByteArray();
-                        var (decoded, _) = TypeValue.Decode(Player.GetTypeDef(), rowBytes, 0, rowBytes.Length);
-                        var playerTuple = decoded.Value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
-                        var playerId = (uint)playerTuple![0].GetValue(TypeDef.Def.U32);
-                        var positionTuple = playerTuple[1].GetValue(TypeDef.Def.Tuple);
-                        var rotationTuple = playerTuple[2].GetValue(TypeDef.Def.Tuple);
-                        var moving = (bool)playerTuple[3].GetValue(TypeDef.Def.Bool);
+                        var playerTuple = newValue.Value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+                        var playerId = (uint)playerTuple![1].GetValue(TypeDef.Def.U32);
+                        var positionTuple = playerTuple[3].GetValue(TypeDef.Def.Tuple);
+                        var rotationTuple = playerTuple[4].GetValue(TypeDef.Def.Tuple);
+                        var moving = (bool)playerTuple[5].GetValue(TypeDef.Def.Bool);
                         var positionTupleElements = positionTuple as TypeValue[];
                         Position position = new Position
                         {
@@ -59,7 +54,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             posY = (float)positionTupleElements![1].GetValue(TypeDef.Def.F32),
                             posZ = (float)positionTupleElements![2].GetValue(TypeDef.Def.F32),
                         };
-                        
+
                         var rotationTupleElements = rotationTuple as TypeValue[];
                         Rotation rotation = new Rotation
                         {
@@ -76,13 +71,13 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             if (networkPlayer.IsLocal())
                             {
                                 // Ignore local updates
-                            } else
+                            }
+                            else
                             {
                                 networkPlayer.transform.position = position.ToVector3();
                                 networkPlayer.transform.rotation = rotation.ToQuaternion();
                                 networkPlayer.GetComponent<PlayerMovementController>().SetMoving(moving);
                             }
-
                         }
                         else
                         {
@@ -94,11 +89,11 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             players[playerId] = newNetworkPlayer;
                         }
                     }
-                    
+
                     break;
             }
         };
-        
+
         networkManager.Connect();
     }
 

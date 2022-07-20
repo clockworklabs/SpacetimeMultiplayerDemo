@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Google.Protobuf;
 using Microsoft.CSharp.RuntimeBinder;
 using UnityEditor.Rendering;
 using Debug = UnityEngine.Debug;
@@ -203,6 +204,11 @@ namespace SpacetimeDB
         private double f64;
         private TypeValue[] tupleElements;
 
+        public static (TypeValue?, int) Decode(TypeDef def, ByteString bytes)
+        {
+            var byteArr = bytes.ToByteArray();
+            return Decode(def, byteArr, 0, byteArr.Length);
+        }
 
         public static (TypeValue?, int) Decode(TypeDef def, byte[] arr, int offset, int length)
         {
@@ -265,6 +271,12 @@ namespace SpacetimeDB
                     break;
                 case TypeDef.Def.Bytes:
                     var byteLength = BitConverter.ToUInt16(arr, offset);
+                    if (byteLength >= arr.Length - (offset + 2))
+                    {
+                        throw new InvalidOperationException(
+                            $"Read error: byte array goes past the end of the array: {byteLength}");
+                    }
+                    
                     value.bytes = new byte[byteLength];
                     Array.Copy(arr, offset + 2, value.bytes, 0, byteLength);
                     read += byteLength + 2;

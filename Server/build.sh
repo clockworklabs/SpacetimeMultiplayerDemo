@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+[ $# == 0 ] && echo "No deploy command, only building!"
+
 cd "$(dirname "$0")"
 
 # Clear protobuf and language files
@@ -29,5 +31,11 @@ rsync -a ./cs-src/ ../Client/Assets/_Project/autogen
 # Update the running module
 MODULE=$(pwd)/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../spacetimedb/
-# cargo run update "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
-cargo run init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+
+if [[ $# > 0 ]]; then
+	if [ "$1" == "init" ] ; then
+		cargo run init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+	elif [ "$2" == "update" ]; then
+		cargo run update "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+	fi
+fi
