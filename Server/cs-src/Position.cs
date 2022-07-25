@@ -20,5 +20,19 @@ namespace SpacetimeDB
 				new SpacetimeDB.ElementDef(2, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.F32)),
 			});
 		}
+		public static Position From(TypeValue value)
+		{
+			var tupleValue = value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+			if (tupleValue == null)
+			{
+				throw new System.InvalidOperationException("Invalid value (must be Tuple): {value.GetType()}");
+			}
+			return new Position
+			{
+				posX = (float)tupleValue[0].GetValue(TypeDef.Def.F32),
+				posY = (float)tupleValue[1].GetValue(TypeDef.Def.F32),
+				posZ = (float)tupleValue[2].GetValue(TypeDef.Def.F32),
+			};
+		}
 	}
 }

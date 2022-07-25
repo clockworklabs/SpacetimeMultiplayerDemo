@@ -374,5 +374,13 @@ namespace SpacetimeDB
         {
             return TypeDef.BuiltInType(TypeDef.Def.Bytes);
         }
+
+        public static Hash From(byte[] bytes)
+        {
+            return new Hash
+            {
+                bytes = bytes,
+            };
+        }
     }
 }

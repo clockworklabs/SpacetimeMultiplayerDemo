@@ -150,8 +150,6 @@ namespace SpacetimeDB
                         tableUpdated?.Invoke(tableIndex, TableOp.Insert, null, insertedValue.Value);
                     }
                     break;
-                case TableRowOperation.Types.OperationType.Update:
-                    throw new NotImplementedException();
             }
         }
     }

@@ -6,7 +6,7 @@ namespace SpacetimeDB
 	public partial class Player
 	{
 		[Newtonsoft.Json.JsonProperty("owner_id")]
-		public byte[] ownerId;
+		public SpacetimeDB.Hash ownerId;
 		[Newtonsoft.Json.JsonProperty("player_id")]
 		public uint playerId;
 		[Newtonsoft.Json.JsonProperty("creation_time")]
@@ -28,6 +28,23 @@ namespace SpacetimeDB
 				new SpacetimeDB.ElementDef(4, SpacetimeDB.Rotation.GetTypeDef()),
 				new SpacetimeDB.ElementDef(5, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.Bool)),
 			});
+		}
+		public static Player From(TypeValue value)
+		{
+			var tupleValue = value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+			if (tupleValue == null)
+			{
+				throw new System.InvalidOperationException("Invalid value (must be Tuple): {value.GetType()}");
+			}
+			return new Player
+			{
+				ownerId = SpacetimeDB.Hash.From(tupleValue[0].GetValue(TypeDef.Def.Bytes) as byte[]),
+				playerId = (uint)tupleValue[1].GetValue(TypeDef.Def.U32),
+				creationTime = (ulong)tupleValue[2].GetValue(TypeDef.Def.U64),
+				position = Position.From(tupleValue[3]),
+				rotation = Rotation.From(tupleValue[4]),
+				moving = (bool)tupleValue[5].GetValue(TypeDef.Def.Bool),
+			};
 		}
 	}
 }

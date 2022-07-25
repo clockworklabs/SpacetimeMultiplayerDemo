@@ -23,5 +23,20 @@ namespace SpacetimeDB
 				new SpacetimeDB.ElementDef(3, SpacetimeDB.TypeDef.BuiltInType(SpacetimeDB.TypeDef.Def.F32)),
 			});
 		}
+		public static Rotation From(TypeValue value)
+		{
+			var tupleValue = value.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+			if (tupleValue == null)
+			{
+				throw new System.InvalidOperationException("Invalid value (must be Tuple): {value.GetType()}");
+			}
+			return new Rotation
+			{
+				rotX = (float)tupleValue[0].GetValue(TypeDef.Def.F32),
+				rotY = (float)tupleValue[1].GetValue(TypeDef.Def.F32),
+				rotZ = (float)tupleValue[2].GetValue(TypeDef.Def.F32),
+				rotW = (float)tupleValue[3].GetValue(TypeDef.Def.F32),
+			};
+		}
 	}
 }

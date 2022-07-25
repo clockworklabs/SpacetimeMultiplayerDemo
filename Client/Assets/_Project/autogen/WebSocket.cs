@@ -38,13 +38,13 @@ namespace Websocket {
             "ZBABIkIKElN1YnNjcmlwdGlvblVwZGF0ZRIsCgx0YWJsZVVwZGF0ZXMYASAD",
             "KAsyFi53ZWJzb2NrZXQuVGFibGVVcGRhdGUiWAoLVGFibGVVcGRhdGUSDwoH",
             "dGFibGVJZBgBIAEoDRI4ChJ0YWJsZVJvd09wZXJhdGlvbnMYAiADKAsyHC53",
-            "ZWJzb2NrZXQuVGFibGVSb3dPcGVyYXRpb24inQEKEVRhYmxlUm93T3BlcmF0",
+            "ZWJzb2NrZXQuVGFibGVSb3dPcGVyYXRpb24ikQEKEVRhYmxlUm93T3BlcmF0",
             "aW9uEjYKAm9wGAEgASgOMioud2Vic29ja2V0LlRhYmxlUm93T3BlcmF0aW9u",
-            "Lk9wZXJhdGlvblR5cGUSDgoGcm93X3BrGAIgASgMEgsKA3JvdxgDIAEoDCIz",
-            "Cg1PcGVyYXRpb25UeXBlEgoKBkRFTEVURRAAEgoKBklOU0VSVBABEgoKBlVQ",
-            "REFURRACIm8KEVRyYW5zYWN0aW9uVXBkYXRlEh8KBWV2ZW50GAEgASgLMhAu",
-            "d2Vic29ja2V0LkV2ZW50EjkKEnN1YnNjcmlwdGlvblVwZGF0ZRgCIAEoCzId",
-            "LndlYnNvY2tldC5TdWJzY3JpcHRpb25VcGRhdGViBnByb3RvMw=="));
+            "Lk9wZXJhdGlvblR5cGUSDgoGcm93X3BrGAIgASgMEgsKA3JvdxgDIAEoDCIn",
+            "Cg1PcGVyYXRpb25UeXBlEgoKBkRFTEVURRAAEgoKBklOU0VSVBABIm8KEVRy",
+            "YW5zYWN0aW9uVXBkYXRlEh8KBWV2ZW50GAEgASgLMhAud2Vic29ja2V0LkV2",
+            "ZW50EjkKEnN1YnNjcmlwdGlvblVwZGF0ZRgCIAEoCzIdLndlYnNvY2tldC5T",
+            "dWJzY3JpcHRpb25VcGRhdGViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -1239,7 +1239,6 @@ namespace Websocket {
       public enum OperationType {
         [pbr::OriginalName("DELETE")] Delete = 0,
         [pbr::OriginalName("INSERT")] Insert = 1,
-        [pbr::OriginalName("UPDATE")] Update = 2,
       }
 
     }
