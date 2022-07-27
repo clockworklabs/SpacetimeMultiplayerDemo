@@ -46,5 +46,114 @@ namespace SpacetimeDB
 				moving = (bool)tupleValue[5].GetValue(TypeDef.Def.Bool),
 			};
 		}
+		public static System.Collections.Generic.IEnumerable<Player> FilterByOwnerId(Hash value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = SpacetimeDB.Hash.From(tupleArr[0].GetValue(TypeDef.Def.Bytes) as byte[]);
+				if (compareValue.Equals(value))
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					yield return From(tuple);
+				}
+			}
+		}
+		public static Player FilterByPlayerId(uint value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = (uint)tupleArr[1].GetValue(TypeDef.Def.U32);
+				if (compareValue == value)
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					return From(tuple);
+				}
+			}
+			return null;
+		}
+		public static System.Collections.Generic.IEnumerable<Player> FilterByCreationTime(ulong value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = (ulong)tupleArr[2].GetValue(TypeDef.Def.U64);
+				if (compareValue == value)
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					yield return From(tuple);
+				}
+			}
+		}
+		public static System.Collections.Generic.IEnumerable<Player> FilterByPosition(Position value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = Position.From(tupleArr[3]);
+				if (compareValue.Equals(value))
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					yield return From(tuple);
+				}
+			}
+		}
+		public static System.Collections.Generic.IEnumerable<Player> FilterByRotation(Rotation value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = Rotation.From(tupleArr[4]);
+				if (compareValue.Equals(value))
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					yield return From(tuple);
+				}
+			}
+		}
+		public static System.Collections.Generic.IEnumerable<Player> FilterByMoving(bool value)
+		{
+			var typeDef = GetTypeDef();
+			foreach(var entry in StdbNetworkManager.clientDB.GetEntries(1))
+			{
+				var tupleArr = entry.GetValue(TypeDef.Def.Tuple) as TypeValue[];
+				if (tupleArr == null)
+				{
+					continue;
+				}
+				var compareValue = (bool)tupleArr[5].GetValue(TypeDef.Def.Bool);
+				if (compareValue == value)
+				{
+					var tuple = TypeValue.GetTuple(typeDef, tupleArr);
+					yield return From(tuple);
+				}
+			}
+		}
 	}
 }

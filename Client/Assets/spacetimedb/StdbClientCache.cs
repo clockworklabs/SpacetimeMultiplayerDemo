@@ -126,6 +126,19 @@ namespace SpacetimeDB
             tables[tableIndex] = new TableCache(name, tableIndex, tableRowDef);
         }
 
+        public IEnumerable<TypeValue> GetEntries(uint tableNum)
+        {
+            if (!tables.TryGetValue(tableNum, out var table))
+            {
+                yield break;
+            }
+
+            foreach (var entry in table.entries)
+            {
+                yield return entry.Value;
+            }
+        }
+
         public void ReceiveUpdate(uint tableIndex, TableRowOperation op)
         {
             if (!tables.TryGetValue(tableIndex, out var table))
