@@ -937,7 +937,7 @@ impl Player {
         let table_iter = Player::iter();
         if let Some(table_iter) = table_iter {
             for row in table_iter {
-                let column_data = row.elements[1usize].clone();
+                let column_data = row.elements[1u32].clone();
                 if let spacetimedb_bindings::TypeValue::U32(entry_data) = column_data.clone() {
                     if entry_data == player_id {
                         let tuple = __tuple_to_struct__Player(row);
@@ -947,7 +947,7 @@ impl Player {
                             };
                             return None;
                         }
-                        Some(tuple.unwrap())
+                        return Some(tuple.unwrap());
                     }
                 }
             }
@@ -969,7 +969,7 @@ impl Player {
         let equatable = spacetimedb_bindings::EqTypeValue::try_from(data);
         match equatable {
             Ok(value) => {
-                let result = spacetimedb_bindings::delete_eq(1, 0, value);
+                let result = spacetimedb_bindings::delete_eq(1, 1u32, value);
                 match result {
                     None => {
                         {
@@ -1012,11 +1012,11 @@ impl Player {
         let table_iter = Player::iter();
         if let Some(table_iter) = table_iter {
             for row in table_iter {
-                let column_data = row.elements[0usize].clone();
+                let column_data = row.elements[0u32].clone();
                 if let spacetimedb_bindings::TypeValue::Bytes(entry_data) = column_data.clone() {
                     let entry_data =
                         *spacetimedb_bindings::hash::Hash::from_slice(&entry_data[0..32]);
-                    if entry_data.eq(owner_id) {
+                    if owner_id.eq(&entry_data) {
                         let tuple = __tuple_to_struct__Player(row);
                         if let None = tuple {
                             {
@@ -1038,7 +1038,7 @@ impl Player {
         let table_iter = Player::iter();
         if let Some(table_iter) = table_iter {
             for row in table_iter {
-                let column_data = row.elements[2usize].clone();
+                let column_data = row.elements[2u32].clone();
                 if let spacetimedb_bindings::TypeValue::U64(entry_data) = column_data.clone() {
                     if entry_data == creation_time {
                         let tuple = __tuple_to_struct__Player(row);
@@ -1062,7 +1062,7 @@ impl Player {
         let table_iter = Player::iter();
         if let Some(table_iter) = table_iter {
             for row in table_iter {
-                let column_data = row.elements[5usize].clone();
+                let column_data = row.elements[5u32].clone();
                 if let spacetimedb_bindings::TypeValue::Bool(entry_data) = column_data.clone() {
                     if entry_data == moving {
                         let tuple = __tuple_to_struct__Player(row);
