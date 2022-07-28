@@ -11,7 +11,7 @@ rm -f protobuf/*.proto
 rm -rf cs-src/*
 
 # Copy stdb proto files
-cp ../../spacetimedb/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
+cp ../../SpacetimeDB/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
 
 cargo clean
 STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release --package bitcraft-mini
@@ -25,12 +25,12 @@ for file in ./protobuf/* ; do
 done
 
 # Copy everything that was generated into the the client repo
-rm ../Client/Assets/_Project/autogen/*.cs
+rm -f ../Client/Assets/_Project/autogen/*.cs
 rsync -a ./cs-src/ ../Client/Assets/_Project/autogen
 
 # Update the running module
 MODULE=$(pwd)/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
-cd ../../spacetimedb/
+cd ../../SpacetimeDB/
 
 if [[ $# > 0 ]]; then
 	if [ "$1" == "init" ] ; then
