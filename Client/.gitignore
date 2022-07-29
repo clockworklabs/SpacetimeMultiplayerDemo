@@ -73,3 +73,6 @@ crashlytics-build.properties
 
 # JetBrains Rider
 .idea/
+
+# Automatically generated files
+Assets/_Project/autogen

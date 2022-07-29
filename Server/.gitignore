@@ -15,3 +15,7 @@ Cargo.lock
 
 # JetBrains
 .idea/
+
+# Generated files
+cs-src/
+protobuf/
