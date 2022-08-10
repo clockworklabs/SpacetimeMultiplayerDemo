@@ -9,7 +9,6 @@ using Random = UnityEngine.Random;
 public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 {
     [SerializeField] private NetworkPlayer playerPrefab;
-    [SerializeField] private StdbNetworkManager networkManager;
     [SerializeField] private GameObject spawnPosition;
     [SerializeField] private GameObject preSpawnCamera;
 
@@ -17,7 +16,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
     protected void Start()
     {
-        networkManager.onConnect += () =>
+        StdbNetworkManager.instance.onConnect += () =>
         {
             try
             {
@@ -32,7 +31,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
             }
         };
 
-        networkManager.onDisconnect += () => { };
+        StdbNetworkManager.instance.onDisconnect += () => { };
 
         StdbNetworkManager.clientDB.tableUpdated += (index, op, value, newValue) =>
         {
@@ -94,7 +93,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
             }
         };
 
-        networkManager.Connect();
+        StdbNetworkManager.instance.Connect();
     }
 
     public void LocalPlayerCreated()
