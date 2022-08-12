@@ -113,8 +113,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     internal void InternalCallReducer(Message message)
     {
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(message);
-        Task.Run(async () => await webSocket.Send(
-            Encoding.ASCII.GetBytes(json)));
+        webSocket.Send(Encoding.ASCII.GetBytes(json));
     }
 
     private void Update()
