@@ -36,6 +36,41 @@ pub struct EntityInventory {
     pub pockets: Vec<Pocket>,
 }
 
+impl EntityInventory {
+    fn get_pocket(&self, pocket_idx: u32) -> Option<Pocket> {
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket_idx && self.pockets[x].item_count > 0 {
+                return Some(self.pockets[x]);
+            }
+        }
+
+        return None;
+    }
+
+    fn set_pocket(&mut self, pocket: Pocket) {
+        // Try to find the pocket in the inventory
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket.pocket_idx {
+                self.pockets[x] = pocket;
+                return;
+            }
+        }
+
+        // We did not find this pocket, create a new pocket
+        self.pockets.push(pocket);
+    }
+
+    fn delete_pocket(&mut self, pocket_idx: u32) {
+        // Try to find the pocket in the inventory
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket_idx {
+                self.pockets.remove(x);
+                return;
+            }
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 #[spacetimedb(tuple)]
 pub struct Pocket {
@@ -109,15 +144,15 @@ pub fn move_or_swap_inventory_slot(
 
     let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
         .expect("move_or_swap_inventory_slot: This player doesn't have an inventory!");
-    let mut source_pocket = get_pocket_from_inventory(&inventory, source_pocket_idx)
+    let mut source_pocket = inventory.get_pocket(source_pocket_idx)
         .expect("move_or_swap_inventory_slot: Nothing in source pocket, nothing to do.");
-    let dest_pocket = get_pocket_from_inventory(&inventory, dest_pocket_idx);
+    let dest_pocket = inventory.get_pocket(dest_pocket_idx);
 
     // If we don't have a dest pocket, then just do a direct move
     if let None = dest_pocket {
-        delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
+        inventory.delete_pocket(source_pocket_idx);
         source_pocket.pocket_idx = dest_pocket_idx;
-        set_pocket_in_inventory(&mut inventory, source_pocket);
+        inventory.set_pocket(source_pocket);
         EntityInventory::update_entity_id_eq(entity_id, inventory);
         spacetimedb_bindings::println!(
             "move_or_swap_inventory_slot: Source pocket moved to dest pocket."
@@ -130,8 +165,8 @@ pub fn move_or_swap_inventory_slot(
     if source_pocket.item_id == dest_pocket.item_id {
         // Move source items to dest
         dest_pocket.item_count += source_pocket.item_count;
-        delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
-        set_pocket_in_inventory(&mut inventory, dest_pocket);
+        inventory.delete_pocket(source_pocket_idx);
+        inventory.set_pocket(dest_pocket);
         EntityInventory::update_entity_id_eq(entity_id, inventory);
         spacetimedb_bindings::println!(
             "move_or_swap_inventory_slot: Source pocket moved into dest pocket (same item)"
@@ -139,12 +174,12 @@ pub fn move_or_swap_inventory_slot(
         return;
     }
 
-    delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
-    delete_pocket_in_inventory(&mut inventory, dest_pocket_idx);
+    inventory.delete_pocket(source_pocket_idx);
+    inventory.delete_pocket(dest_pocket_idx);
     dest_pocket.pocket_idx = source_pocket_idx;
     source_pocket.pocket_idx = dest_pocket_idx;
-    set_pocket_in_inventory(&mut inventory, source_pocket);
-    set_pocket_in_inventory(&mut inventory, dest_pocket);
+    inventory.set_pocket(source_pocket);
+    inventory.set_pocket(dest_pocket);
     EntityInventory::update_entity_id_eq(entity_id, inventory);
     spacetimedb_bindings::println!(
         "move_or_swap_inventory_slot: Pockets swapped (different items)"
@@ -175,14 +210,13 @@ pub fn add_item_to_inventory(
     }
 
     let mut inventory = EntityInventory::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't have an inventory!");
-    match get_pocket_from_inventory(&inventory, pocket_idx) {
+    match inventory.get_pocket(pocket_idx) {
         Some(mut pocket) => {
             assert_eq!(pocket.item_id, item_id, "add_item_to_inventory: Item ID mismatch");
             pocket.item_count += item_count;
         }
         None => {
-            set_pocket_in_inventory(
-                &mut inventory,
+            inventory.set_pocket(
                 Pocket {
                     pocket_idx,
                     item_id,
@@ -200,38 +234,7 @@ pub fn add_item_to_inventory(
     );
 }
 
-fn get_pocket_from_inventory(inventory: &EntityInventory, index: u32) -> Option<Pocket> {
-    for x in 0..inventory.pockets.len() {
-        if inventory.pockets[x].pocket_idx == index && inventory.pockets[x].item_count > 0 {
-            return Some(inventory.pockets[x]);
-        }
-    }
 
-    return None;
-}
-
-fn set_pocket_in_inventory(inventory: &mut EntityInventory, pocket: Pocket) {
-    // Try to find the pocket in the inventory
-    for x in 0..inventory.pockets.len() {
-        if inventory.pockets[x].pocket_idx == pocket.pocket_idx {
-            inventory.pockets[x] = pocket;
-            return;
-        }
-    }
-
-    // We did not find this pocket, create a new pocket
-    inventory.pockets.push(pocket);
-}
-
-fn delete_pocket_in_inventory(inventory: &mut EntityInventory, idx: u32) {
-    // Try to find the pocket in the inventory
-    for x in 0..inventory.pockets.len() {
-        if inventory.pockets[x].pocket_idx == idx {
-            inventory.pockets.remove(x);
-            return;
-        }
-    }
-}
 
 #[spacetimedb(reducer)]
 pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
