@@ -1,12 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using SpacetimeDB;
 using UnityEngine;
-using Websocket;
 
 public class StdbNetworkManager : Singleton<StdbNetworkManager>
 {
@@ -41,9 +37,15 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
             OnDisconnect();
         };
         webSocket.OnConnect += OnConnect;
-
+        
         clientDB = new StdbClientCache();
-        clientDB.AddTable("Players", 1, Player.GetTypeDef());
+        
+        // TODO: This part should be automatically generated!
+        clientDB.AddTable("Player", 1, Player.GetTypeDef());
+        clientDB.AddTable("EntityTransform", 2, EntityTransform.GetTypeDef());
+        clientDB.AddTable("PlayerAnimation", 3, PlayerAnimation.GetTypeDef());
+        clientDB.AddTable("EntityInventory", 4, EntityInventory.GetTypeDef());
+        clientDB.AddTable("EntityInventory", 5, Config.GetTypeDef());
         
         clientTickInterval = 1 / clientTicksPerSecond;
     }

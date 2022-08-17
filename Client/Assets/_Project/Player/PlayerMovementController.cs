@@ -53,7 +53,7 @@ public class PlayerMovementController : MonoBehaviour
 
         this.moving = moving;
     }
-
+    
     private void Update()
     {
         anim.SetBool(WalkingProperty, moving);
@@ -62,7 +62,7 @@ public class PlayerMovementController : MonoBehaviour
         {
             return;
         }
-        
+
         var vec = new Vector3(movementVec.x, 0.0f, movementVec.y);
         vec = CameraController.instance.transform.TransformDirection(vec);
         moving = movementVec.sqrMagnitude > 0; 

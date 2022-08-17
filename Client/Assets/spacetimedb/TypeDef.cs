@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Google.Protobuf;
-using Microsoft.CSharp.RuntimeBinder;
-using UnityEditor.Rendering;
-using Debug = UnityEngine.Debug;
+using UnityEngine;
 
 namespace SpacetimeDB
 {
-    public struct TypeDef
+    public class TypeDef
     {
         public enum Def
         {
@@ -38,14 +34,15 @@ namespace SpacetimeDB
         }
 
         public Def Type => type;
-        public Def? VecMemberType => vecMemberType;
         public ElementDef[] TupleElements => tupleElements;
 
-        private Def type;
-        private Def? vecMemberType;
-        private ElementDef[] tupleElements;
+        public TypeDef VecMemberType => vecMemberType;
+        
+        public Def type;
+        private TypeDef vecMemberType;
+        public ElementDef[] tupleElements;
 
-        public static TypeDef GetVec(Def memberType)
+        public static TypeDef GetVec(TypeDef memberType)
         {
             return new TypeDef
             {
@@ -103,7 +100,7 @@ namespace SpacetimeDB
                 {
                     return false;
                 }
-
+        
                 // Handle any strange cases
                 switch (value1.typeDef.Type)
                 {
@@ -112,7 +109,7 @@ namespace SpacetimeDB
                         {
                             return false;
                         }
-
+        
                         if (value1.tupleElements == null)
                         {
                             break;
@@ -122,13 +119,13 @@ namespace SpacetimeDB
                         {
                             return false;
                         }
-
+        
                         break;
                 }
-
+        
                 return true;
             }
-
+        
             public int GetHashCode(TypeValue obj)
             {
                 switch (obj.typeDef.Type)
@@ -178,32 +175,38 @@ namespace SpacetimeDB
                         {
                             hash ^= element.GetHashCode();
                         }
-
+        
                         return hash;
                     }
                     case TypeDef.Def.Unit:
                         return 0x64b22bc4;
                     case TypeDef.Def.Vec:
-                        throw new NotImplementedException();
+                        var vecHash = 0x0fec85d5;
+                        foreach (var value in obj.vec)
+                        {
+                            vecHash ^= value.GetHashCode();
+                        }
+                        return vecHash;
                 }
-
+        
                 throw new NotImplementedException($"Hashing on: {obj.typeDef.Type}");
             }
         }
-
+        
         public TypeDef TypeDef => typeDef;
-
+        
         private TypeDef typeDef;
         private ulong unsigned;
         private long signed;
         private string str;
         private byte[] bytes;
         private bool b;
-
+        
         private float f32;
         private double f64;
         private TypeValue[] tupleElements;
-
+        private List<TypeValue> vec;
+        
         public static (TypeValue?, int) Decode(TypeDef def, ByteString bytes)
         {
             var byteArr = bytes.ToByteArray();
@@ -217,7 +220,7 @@ namespace SpacetimeDB
                 typeDef = def
             };
             var read = 0;
-
+            
             switch (def.Type)
             {
                 case TypeDef.Def.Bool:
@@ -283,11 +286,30 @@ namespace SpacetimeDB
                     break;
                 case TypeDef.Def.Tuple:
                     return ReadTuple(def, arr, offset, length);
+                case TypeDef.Def.Vec:
+                    if (def.VecMemberType == null)
+                    {
+                        throw new InvalidOperationException("Read error: vec has no member type!");
+                    }
+                    
+                    var vecLength = BitConverter.ToUInt16(arr, offset);
+                    read += 2;
+                    value.vec = new List<TypeValue>();
+                    for (var idx = 0; idx < vecLength; idx++)
+                    {
+                        var (entry, subDecodeRead) = Decode(def.VecMemberType, arr, offset + read, length);
+                        read += subDecodeRead;
+                        if (entry.HasValue)
+                        {
+                            value.vec.Add(entry.Value);
+                        }
+                    }
+                    break;
                 default:
                     Debug.LogError($"This type is unsupported for now: {def.Type}");
                     return (null, 0);
             }
-
+            
             return (value, read);
         }
 
@@ -299,16 +321,16 @@ namespace SpacetimeDB
             foreach (var elementDef in def.TupleElements)
             {
                 var (value, bytesRead) = Decode(elementDef.element, arr, offset + read, length);
-
+            
                 if (!value.HasValue)
                 {
                     return (null, 0);
                 }
-
+            
                 read += bytesRead;
                 resultElements[elementIdx++] = value.Value;
             }
-
+            
             return (GetTuple(def, resultElements), read);
         }
 
@@ -325,34 +347,37 @@ namespace SpacetimeDB
                 case TypeDef.Def.U32:
                     return (uint) unsigned;
                 case TypeDef.Def.U64:
-                    return (uint) unsigned;
+                    return unsigned;
                 case TypeDef.Def.U128:
                     throw new InvalidOperationException("U128 not supported in C#");
-
+            
                 case TypeDef.Def.I8:
                     return (byte) signed;
                 case TypeDef.Def.I16:
                     return (ushort) signed;
                 case TypeDef.Def.I32:
-                    return (uint) signed;
+                    return (int) signed;
                 case TypeDef.Def.I64:
-                    return (uint) signed;
+                    return signed;
                 case TypeDef.Def.I128:
                     throw new InvalidOperationException("I128 not supported in C#");
-
+            
                 case TypeDef.Def.String:
                     return str;
                 case TypeDef.Def.Bytes:
+                    if(bytes == null)
+                        throw new InvalidOperationException("byte array is null!");
                     return bytes;
-
                 case TypeDef.Def.F32:
                     return f32;
                 case TypeDef.Def.F64:
                     return f64;
                 case TypeDef.Def.Tuple:
                     return tupleElements;
+                case TypeDef.Def.Vec:
+                    return vec;
             }
-
+            
             throw new InvalidOperationException($"Type not supported yet! {def}");
         }
 
@@ -362,6 +387,15 @@ namespace SpacetimeDB
             {
                 typeDef = def,
                 tupleElements = tupleValues,
+            };
+        }
+
+        public static TypeValue GetVec(TypeDef memberType, IEnumerable<TypeValue> values)
+        {
+            return new TypeValue
+            {
+                typeDef = TypeDef.GetVec(memberType),
+                vec = new List<TypeValue>(values),
             };
         }
     }

@@ -3,45 +3,24 @@
 
     public static class PositionExtensions
     {
-        public static SpacetimeDB.Position ToStdb(this Vector3 position)
-        {
-            return new Position
-            {
-                posX = position.x,
-                posY = position.y,
-                posZ = position.z,
-            };
-        }
-        
-        public static Vector3 ToVector3(this SpacetimeDB.Position position)
+        public static Vector3 ToVector3(this EntityTransform transform)
         {
             return new Vector3
             {
-                x = position.posX,
-                y = position.posY,
-                z = position.posZ,
+                x = transform.posX,
+                y = transform.posY,
+                z = transform.posZ,
             };
         }
         
-        public static SpacetimeDB.Rotation ToStdb(this Quaternion rotation)
-        {
-            return new SpacetimeDB.Rotation
-            {
-                rotX = rotation.x,
-                rotY = rotation.y,
-                rotZ = rotation.z,
-                rotW = rotation.w,
-            };
-        }
-        
-        public static Quaternion ToQuaternion(this SpacetimeDB.Rotation rotation)
+        public static Quaternion ToQuaternion(this EntityTransform transform)
         {
             return new Quaternion()
             {
-                x = rotation.rotX,
-                y = rotation.rotY,
-                z = rotation.rotZ,
-                w = rotation.rotW,
+                x = transform.rotX,
+                y = transform.rotY,
+                z = transform.rotZ,
+                w = transform.rotW,
             };
         }
     }

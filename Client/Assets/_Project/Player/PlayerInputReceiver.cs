@@ -12,6 +12,11 @@ public class PlayerInputReceiver : MonoBehaviour
     private Vector2 lastPointerPosition;
     private float zoomDelta;
 
+    void OnToggleInventory(InputValue value)
+    {
+        UIInventoryWindow.instance.GetComponent<UIFade>().Toggle();
+    }
+    
     void OnMove(InputValue value)
     {
         if (PlayerMovementController.Local == null)

@@ -1,60 +1,337 @@
 use spacetimedb_bindgen::spacetimedb;
 use spacetimedb_bindings::hash::Hash;
 
-#[spacetimedb(tuple)]
-pub struct Position {
+#[spacetimedb(table(1))]
+pub struct Player {
+    #[primary_key]
+    pub entity_id: u32,
+    pub owner_id: Hash,
+    pub creation_time: u64,
+}
+
+#[spacetimedb(table(2))]
+pub struct EntityTransform {
+    #[primary_key]
+    pub entity_id: u32,
     pub pos_x: f32,
     pub pos_y: f32,
     pub pos_z: f32,
-}
-
-#[spacetimedb(tuple)]
-pub struct Rotation {
     pub rot_x: f32,
     pub rot_y: f32,
     pub rot_z: f32,
     pub rot_w: f32,
 }
 
-#[spacetimedb(table(1))]
-pub struct Player {
-    pub owner_id: Hash,
+#[spacetimedb(table(3))]
+pub struct PlayerAnimation {
     #[primary_key]
-    pub player_id: u32,
-    pub creation_time: u64,
-    pub position: Position,
-    pub rotation: Rotation,
+    pub entity_id: u32,
     pub moving: bool,
 }
 
-#[spacetimedb(reducer)]
-pub fn move_player(_identity_id: Hash, _timestamp: u64, player_id: u32, position: Position, rotation: Rotation, moving: bool) {
-    let player = Player::filter_player_id_eq(player_id);
-    match player {
-        Some(mut player) => {
-            player.position = position;
-            player.rotation = rotation;
-            player.moving = moving;
+#[spacetimedb(table(4))]
+pub struct EntityInventory {
+    #[primary_key]
+    pub entity_id: u32,
+    pub pockets: Vec<Pocket>,
+}
 
-            // Update player position
-            Player::update_player_id_eq(player_id, player);
-        },
+#[derive(Copy, Clone)]
+#[spacetimedb(tuple)]
+pub struct Pocket {
+    pub item_id: u32,
+    pub pocket_idx: u32,
+    pub item_count: i32,
+}
+
+#[derive(Copy, Clone)]
+#[spacetimedb(table(5))]
+pub struct Config {
+    #[primary_key]
+    pub version: u32,
+    // always 0 for now
+    pub max_player_inventory_slots: u32,
+}
+
+// This is in charge of initializing any static global data
+#[spacetimedb(reducer)]
+pub fn initialize(_identity: Hash, _timestamp: u64) {
+    match Config::filter_version_eq(0) {
+        Some(_) => {
+            spacetimedb_bindings::println!("Config already exists, skipping config.");
+        }
         None => {
-            // Player not found!
+            spacetimedb_bindings::println!("Creating new config!");
+            Config::insert(Config {
+                version: 0,
+                max_player_inventory_slots: 30,
+            });
         }
     }
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(identity: Hash, timestamp: u64, player_id: u32, position: Position, rotation: Rotation) {
-    let player = Player {
-        owner_id: identity,
-        player_id,
-        creation_time: timestamp,
-        position,
-        rotation,
-        moving: false
-    };
+pub fn move_or_swap_inventory_slot(
+    identity: Hash,
+    _timestamp: u64,
+    entity_id: u32,
+    source_pocket_idx: u32,
+    dest_pocket_idx: u32,
+) {
+    let config = Config::filter_version_eq(0).unwrap();
 
-    Player::insert(player);
+    // Check to see if the source pocket index is bad
+    if source_pocket_idx >= config.max_player_inventory_slots {
+        panic!(
+            "move_or_swap_inventory_slot: The source pocket index is invalid: {}",
+            source_pocket_idx
+        );
+    }
+
+    // Check to see if the dest pocket index is bad
+    if dest_pocket_idx >= config.max_player_inventory_slots {
+        panic!(
+            "move_or_swap_inventory_slot: The dest pocket index is invalid: {}",
+            dest_pocket_idx
+        );
+    }
+
+    // Make sure this identity owns this player
+    let player = Player::filter_entity_id_eq(entity_id)
+        .expect("move_or_swap_inventory_slot: This player doesn't exist!");
+    if player.owner_id != identity {
+        // TODO: We are doing this for now so that its easier to test reducers from the command line
+        spacetimedb_bindings::println!(
+            "move_or_swap_inventory_slot: This identity doesn't own this player! (allowed for now)"
+        );
+        // return;
+    }
+
+    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
+        .expect("move_or_swap_inventory_slot: This player doesn't have an inventory!");
+    let mut source_pocket = get_pocket_from_inventory(&inventory, source_pocket_idx)
+        .expect("move_or_swap_inventory_slot: Nothing in source pocket, nothing to do.");
+    let dest_pocket = get_pocket_from_inventory(&inventory, dest_pocket_idx);
+
+    // If we don't have a dest pocket, then just do a direct move
+    if let None = dest_pocket {
+        delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
+        source_pocket.pocket_idx = dest_pocket_idx;
+        set_pocket_in_inventory(&mut inventory, source_pocket);
+        EntityInventory::update_entity_id_eq(entity_id, inventory);
+        spacetimedb_bindings::println!(
+            "move_or_swap_inventory_slot: Source pocket moved to dest pocket."
+        );
+        return;
+    }
+
+    // If we have a dest and source pocket then we have to see if we can stack onto the dest
+    let mut dest_pocket = dest_pocket.unwrap();
+    if source_pocket.item_id == dest_pocket.item_id {
+        // Move source items to dest
+        dest_pocket.item_count += source_pocket.item_count;
+        delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
+        set_pocket_in_inventory(&mut inventory, dest_pocket);
+        EntityInventory::update_entity_id_eq(entity_id, inventory);
+        spacetimedb_bindings::println!(
+            "move_or_swap_inventory_slot: Source pocket moved into dest pocket (same item)"
+        );
+        return;
+    }
+
+    delete_pocket_in_inventory(&mut inventory, source_pocket_idx);
+    delete_pocket_in_inventory(&mut inventory, dest_pocket_idx);
+    dest_pocket.pocket_idx = source_pocket_idx;
+    source_pocket.pocket_idx = dest_pocket_idx;
+    set_pocket_in_inventory(&mut inventory, source_pocket);
+    set_pocket_in_inventory(&mut inventory, dest_pocket);
+    EntityInventory::update_entity_id_eq(entity_id, inventory);
+    spacetimedb_bindings::println!(
+        "move_or_swap_inventory_slot: Pockets swapped (different items)"
+    );
+}
+
+/// This adds or removes items from an inventory slot. you can pass a negative item count in order
+/// to remove items.
+#[spacetimedb(reducer)]
+pub fn add_item_to_inventory(
+    identity: Hash,
+    _timestamp: u64,
+    entity_id: u32,
+    item_id: u32,
+    pocket_idx: u32,
+    item_count: i32,
+) {
+    // Check to see if this pocket index is bad
+    let config = Config::filter_version_eq(0).unwrap();
+    assert!(pocket_idx < config.max_player_inventory_slots, "add_item_to_inventory: This pocket index is invalid: {}", pocket_idx);
+
+    // Make sure this identity owns this player
+    let player = Player::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
+    if player.owner_id != identity {
+        // TODO: We are doing this for now so that its easier to test reducers from the command line
+        spacetimedb_bindings::println!("add_item_to_inventory: This identity doesn't own this player! (allowed for now)");
+        // return;
+    }
+
+    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't have an inventory!");
+    match get_pocket_from_inventory(&inventory, pocket_idx) {
+        Some(mut pocket) => {
+            assert_eq!(pocket.item_id, item_id, "add_item_to_inventory: Item ID mismatch");
+            pocket.item_count += item_count;
+        }
+        None => {
+            set_pocket_in_inventory(
+                &mut inventory,
+                Pocket {
+                    pocket_idx,
+                    item_id,
+                    item_count,
+                },
+            );
+        }
+    }
+
+    EntityInventory::update_entity_id_eq(entity_id, inventory);
+    spacetimedb_bindings::println!(
+        "add_item_to_inventory: Item {} inserted into inventory {}",
+        item_id,
+        entity_id
+    );
+}
+
+fn get_pocket_from_inventory(inventory: &EntityInventory, index: u32) -> Option<Pocket> {
+    for x in 0..inventory.pockets.len() {
+        if inventory.pockets[x].pocket_idx == index && inventory.pockets[x].item_count > 0 {
+            return Some(inventory.pockets[x]);
+        }
+    }
+
+    return None;
+}
+
+fn set_pocket_in_inventory(inventory: &mut EntityInventory, pocket: Pocket) {
+    // Try to find the pocket in the inventory
+    for x in 0..inventory.pockets.len() {
+        if inventory.pockets[x].pocket_idx == pocket.pocket_idx {
+            inventory.pockets[x] = pocket;
+            return;
+        }
+    }
+
+    // We did not find this pocket, create a new pocket
+    inventory.pockets.push(pocket);
+}
+
+fn delete_pocket_in_inventory(inventory: &mut EntityInventory, idx: u32) {
+    // Try to find the pocket in the inventory
+    for x in 0..inventory.pockets.len() {
+        if inventory.pockets[x].pocket_idx == idx {
+            inventory.pockets.remove(x);
+            return;
+        }
+    }
+}
+
+#[spacetimedb(reducer)]
+pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
+    let inventory = EntityInventory::filter_entity_id_eq(entity_id);
+    assert!(inventory.is_some(), "Inventory NOT found for entity:: {}", entity_id);
+    let inventory = inventory.unwrap();
+
+    spacetimedb_bindings::println!("Inventory found for entity: {}", entity_id);
+    for pocket in inventory.pockets {
+        spacetimedb_bindings::println!(
+            "PocketIdx: {} Item: {} Count: {}",
+            pocket.pocket_idx,
+            pocket.item_id,
+            pocket.item_count
+        );
+    }
+}
+
+#[spacetimedb(reducer)]
+pub fn move_player(
+    identity: Hash,
+    _timestamp: u64,
+    entity_id: u32,
+    pos_x: f32,
+    pos_y: f32,
+    pos_z: f32,
+    rot_x: f32,
+    rot_y: f32,
+    rot_z: f32,
+    rot_w: f32,
+) {
+    // Make sure this identity owns this player
+    match Player::filter_entity_id_eq(entity_id) {
+        Some(player) => {
+            if player.owner_id != identity {
+                spacetimedb_bindings::println!(
+                    "move_player: This identity doesn't own this player! (allowed for now)"
+                );
+                // return;
+            }
+        }
+        None => {
+            spacetimedb_bindings::println!("move_player: This player doesn't exist: {}", entity_id);
+            return;
+        }
+    }
+
+    EntityTransform::update_entity_id_eq(
+        entity_id,
+        EntityTransform {
+            entity_id,
+            pos_x,
+            pos_y,
+            pos_z,
+            rot_x,
+            rot_y,
+            rot_z,
+            rot_w,
+        },
+    );
+}
+
+#[spacetimedb(reducer)]
+pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool) {
+    // Make sure this identity owns this player
+    match Player::filter_entity_id_eq(entity_id) {
+        Some(player) => {
+            if player.owner_id != identity {
+                spacetimedb_bindings::println!("update_player_animation: This identity doesn't own this player! (allowed for now)");
+                // return;
+            }
+        }
+        None => {
+            spacetimedb_bindings::println!("update_player_animation: This player doesn't exist!");
+            return;
+        }
+    }
+
+    PlayerAnimation::update_entity_id_eq(entity_id, PlayerAnimation { entity_id, moving });
+}
+
+#[spacetimedb(reducer)]
+pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32) {
+    // Make sure this player doesn't already exist
+    if let Some(_) = Player::filter_entity_id_eq(entity_id) {
+        spacetimedb_bindings::println!(
+            "create_new_player: A player with this entity_id already exists: {}",
+            entity_id
+        );
+        return;
+    }
+
+    spacetimedb_bindings::println!("create_new_player: player created: {}", entity_id);
+    Player::insert(Player {
+        entity_id,
+        owner_id: identity,
+        creation_time: timestamp,
+    });
+    EntityInventory::insert(EntityInventory {
+        entity_id,
+        pockets: Vec::<Pocket>::new(),
+    });
 }
