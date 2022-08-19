@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
 using UnityEngine;
-using Websocket;
+using ClientApi;
 using Random = UnityEngine.Random;
 
 public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>

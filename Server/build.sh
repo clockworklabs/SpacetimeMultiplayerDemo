@@ -16,7 +16,7 @@ rm -rf cs-src/*
 
 # Copy stdb proto files
 mkdir -p protobuf
-cp ../../SpacetimeDB/crates/spacetimedb/protobuf/WebSocket.proto ./protobuf/
+cp ../../SpacetimeDB/crates/spacetimedb/protobuf/client_api.proto ./protobuf/
 
 # Install the wasm32 target if it doesn't exist
 rustup target add wasm32-unknown-unknown

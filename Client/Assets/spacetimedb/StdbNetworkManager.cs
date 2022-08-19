@@ -78,11 +78,11 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     /// </summary>
     protected virtual void OnMessageReceived(byte[] bytes)
     {
-        var message = Websocket.Message.Parser.ParseFrom(bytes);
+        var message = ClientApi.Message.Parser.ParseFrom(bytes);
 
         switch (message.TypeCase)
         {
-            case Websocket.Message.TypeOneofCase.SubscriptionUpdate:
+            case ClientApi.Message.TypeOneofCase.SubscriptionUpdate:
                 foreach (var tableUpdate in message.SubscriptionUpdate.TableUpdates)
                 {
                     var tableId = tableUpdate.TableId;
@@ -92,7 +92,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     }
                 }
                 break;
-            case Websocket.Message.TypeOneofCase.TransactionUpdate:
+            case ClientApi.Message.TypeOneofCase.TransactionUpdate:
                 foreach (var tableUpdate in message.TransactionUpdate.SubscriptionUpdate.TableUpdates)
                 {
                     var tableId = tableUpdate.TableId;
