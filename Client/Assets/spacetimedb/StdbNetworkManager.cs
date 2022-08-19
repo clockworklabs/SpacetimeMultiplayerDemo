@@ -45,7 +45,8 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB.AddTable("EntityTransform", 2, EntityTransform.GetTypeDef());
         clientDB.AddTable("PlayerAnimation", 3, PlayerAnimation.GetTypeDef());
         clientDB.AddTable("EntityInventory", 4, EntityInventory.GetTypeDef());
-        clientDB.AddTable("EntityInventory", 5, Config.GetTypeDef());
+        clientDB.AddTable("Config", 5, Config.GetTypeDef());
+        clientDB.AddTable("PlayerChatMessage", 6, PlayerChatMessage.GetTypeDef());
         
         clientTickInterval = 1 / clientTicksPerSecond;
     }

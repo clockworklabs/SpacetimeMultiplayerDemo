@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
 using UnityEngine;
+using UnityEngine.UI;
 using ClientApi;
 using Random = UnityEngine.Random;
 
@@ -10,8 +11,9 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 {
     [SerializeField] private NetworkPlayer playerPrefab;
     [SerializeField] private GameObject preSpawnCamera;
+    
     [SerializeField] private float spawnAreaRadius;
-
+    
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
 
     protected void Start()
@@ -113,6 +115,14 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                     }
                                 }
                             }
+                            break;
+                        case 6:
+                            if (newValue.HasValue)
+                            {
+                                var chatMessage = PlayerChatMessage.From(newValue.Value);
+                                UIChatController.instance.OnChatMessageReceived(chatMessage.playerId, chatMessage.message);
+                            }
+
                             break;
                     }
                     break;

@@ -14,6 +14,7 @@ public class PlayerMovementController : MonoBehaviour
     private NetworkPlayer player;
     private bool moving;
 
+    public static CallbackBool LocalMovementDisabled = new CallbackBool(CallbackBool.Mode.Or);
     private Rigidbody body;
     private static readonly int WalkingProperty = Animator.StringToHash("Walking");
 
@@ -31,7 +32,7 @@ public class PlayerMovementController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (!player.IsLocal())
+        if (!player.IsLocal() || LocalMovementDisabled.Invoke())
         {
             return;
         }
@@ -58,7 +59,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         anim.SetBool(WalkingProperty, moving);
         
-        if (!player.IsLocal())
+        if (!player.IsLocal() || LocalMovementDisabled.Invoke())
         {
             return;
         }

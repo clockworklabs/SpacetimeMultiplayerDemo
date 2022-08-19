@@ -88,6 +88,13 @@ pub struct Config {
     pub max_player_inventory_slots: u32,
 }
 
+#[spacetimedb(table(6))]
+pub struct PlayerChatMessage {
+    pub player_id: u32,
+    pub msg_time: u64,
+    pub message: String,
+}
+
 // This is in charge of initializing any static global data
 #[spacetimedb(reducer)]
 pub fn initialize(_identity: Hash, _timestamp: u64) {
@@ -337,4 +344,15 @@ pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32) {
         entity_id,
         pockets: Vec::<Pocket>::new(),
     });
+}
+
+#[spacetimedb(reducer)]
+pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: String) {
+    let chat = PlayerChatMessage {
+        player_id,
+        msg_time: timestamp,
+        message
+    };
+
+    PlayerChatMessage::insert(chat);
 }
