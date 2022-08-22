@@ -26,7 +26,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
             {
                 Debug.Log("Sending request for new player.");
                 var ourId = (uint)(Random.value * uint.MaxValue);
-                NetworkPlayer._localPlayerId = ourId;
+                NetworkPlayer.localPlayerId = ourId;
                 Reducer.CreateNewPlayer(ourId);
             }
             catch (Exception e)

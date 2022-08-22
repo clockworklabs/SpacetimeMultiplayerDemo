@@ -171,7 +171,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 7979707959555921424, guid: 412d89e4212abfc489869de4e240a1db, type: 3}
   preSpawnCamera: {fileID: 1824497358}
-  spawnAreaRadius: 0
+  spawnAreaRadius: 15
 --- !u!114 &397722946
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1156,6 +1156,18 @@ PrefabInstance:
     - target: {fileID: 3345241735536613540, guid: c43923841e601e3079447789ae7db6ff, type: 3}
       propertyPath: m_Name
       value: ChatWindow
+      objectReference: {fileID: 0}
+    - target: {fileID: 3681767826211573080, guid: c43923841e601e3079447789ae7db6ff, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3681767826211573080, guid: c43923841e601e3079447789ae7db6ff, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3681767826211573080, guid: c43923841e601e3079447789ae7db6ff, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4025327616143953420, guid: c43923841e601e3079447789ae7db6ff, type: 3}
       propertyPath: m_AnchorMax.y

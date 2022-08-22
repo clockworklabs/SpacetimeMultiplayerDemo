@@ -52,7 +52,7 @@ public class UIChatController : Singleton<UIChatController>
     
     public void OnChatButtonPress()
     {
-        Reducer.PlayerChat(NetworkPlayer._localPlayerId.Value, _chatInput.text);
+        Reducer.PlayerChat(NetworkPlayer.localPlayerId.Value, _chatInput.text);
         _chatInput.text = "";
     }
 }

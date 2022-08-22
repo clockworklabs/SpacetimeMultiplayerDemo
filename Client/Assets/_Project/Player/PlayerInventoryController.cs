@@ -37,8 +37,8 @@ public class PlayerInventoryController : MonoBehaviour
         foreach (var item in startingItems)
         {
             Debug.Log($"Starting item: {item.item.name}, amount: {item.amount}");
-            Debug.Assert(NetworkPlayer._localPlayerId != null, "NetworkPlayer._localPlayerId != null");
-            Reducer.AddItemToInventory(NetworkPlayer._localPlayerId.Value, item.item.itemId, (uint)pocketIdx, (int)item.amount);
+            Debug.Assert(NetworkPlayer.localPlayerId != null, "NetworkPlayer._localPlayerId != null");
+            Reducer.AddItemToInventory(NetworkPlayer.localPlayerId.Value, item.item.itemId, (uint)pocketIdx, (int)item.amount);
             pocketIdx++;
         }
     }

@@ -1,14 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using SpacetimeDB;
 using UnityEngine;
 
 public class NetworkPlayer : MonoBehaviour
 {
     private uint _playerId;
-    public static uint? _localPlayerId;
+    public static uint? localPlayerId;
     public GameObject cameraRig;
+    public static byte[] identity;
+    public static string token;
 
     private void Awake()
     {
@@ -22,7 +25,7 @@ public class NetworkPlayer : MonoBehaviour
         if (IsLocal())
         {
             gameObject.name = $"Local Player - {playerId}";
-            _localPlayerId = playerId;
+            localPlayerId = playerId;
             BitCraftMiniGameManager.instance.LocalPlayerCreated();
             cameraRig.SetActive(true);
             PlayerMovementController.Local = GetComponent<PlayerMovementController>();
@@ -36,7 +39,7 @@ public class NetworkPlayer : MonoBehaviour
         }
     }
 
-    public bool IsLocal() => _localPlayerId.HasValue && _localPlayerId.Value == _playerId;
+    public bool IsLocal() => localPlayerId.HasValue && localPlayerId.Value == _playerId;
 
     private Vector3? lastUpdatePosition;
     private Quaternion? lastUpdateRotation;

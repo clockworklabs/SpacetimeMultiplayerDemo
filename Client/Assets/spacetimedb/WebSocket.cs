@@ -138,16 +138,22 @@ namespace WebSocketDispatch
         public event WebSocketErrorEventHandler OnError;
         public event WebSocketCloseEventHandler OnClose;
 
-        public async Task Connect()
+        public async Task Connect(string auth)
         {
             var url = new Uri(_options.Url);
             Ws.Options.AddSubProtocol(_options.Protocol);
-            Ws.Options.UseDefaultCredentials = true;
 
             var source = new CancellationTokenSource(10000);
-            // var auth = Convert.ToBase64String(
-            //     Encoding.Default.GetBytes(_options.Username + ":" + _options.Password));
-            // Ws.Options.SetRequestHeader("Authorization", "Basic " + auth);
+            if (!string.IsNullOrEmpty(auth))
+            {
+                var tokenBytes = Encoding.UTF8.GetBytes($"token:{auth}");
+                var base64 = Convert.ToBase64String(tokenBytes);
+                Ws.Options.SetRequestHeader("Authorization", "Basic " + base64);
+            }
+            else
+            {
+                Ws.Options.UseDefaultCredentials = true;
+            }
 
             try
             {
@@ -162,13 +168,11 @@ namespace WebSocketDispatch
                     return;
                 }
 
-                dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
                 Debug.LogError("Error connecting: " + ex);
                 return;
             }
             catch (Exception e)
             {
-                dispatchQueue.Enqueue(new OnDisconnectMessage(OnClose, WebSocketCloseStatus.EndpointUnavailable));
                 Debug.LogError("Other error: " + e);
                 return;
             }

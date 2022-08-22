@@ -356,3 +356,13 @@ pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: Str
 
     PlayerChatMessage::insert(chat);
 }
+
+#[spacetimedb(connect)]
+pub fn identity_connected(_identity: Hash, _timestamp: u64) {
+
+}
+
+#[spacetimedb(disconnect)]
+pub fn identity_disconnected(_identity: Hash, _timestamp: u64) {
+
+}

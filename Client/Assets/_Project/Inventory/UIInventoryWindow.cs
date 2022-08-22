@@ -38,8 +38,8 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
             return;
         }
 
-        Debug.Assert(NetworkPlayer._localPlayerId != null, "Local player not set!");
-        Reducer.MoveOrSwapInventorySlot(NetworkPlayer._localPlayerId.Value, sourcePocketIdx.Value, destPocketIdx.Value);
+        Debug.Assert(NetworkPlayer.localPlayerId != null, "Local player not set!");
+        Reducer.MoveOrSwapInventorySlot(NetworkPlayer.localPlayerId.Value, sourcePocketIdx.Value, destPocketIdx.Value);
     }
 
     public UIInventorySlot GetSlot(int idx)

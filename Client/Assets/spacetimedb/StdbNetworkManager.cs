@@ -18,6 +18,8 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     private float? lastClientTick;
     public static float clientTickInterval;
 
+    private const string tokenKey = "bitcraftmini.identity_token";
+
     protected override void Awake()
     {
         base.Awake();
@@ -53,7 +55,19 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
 
     public void Connect()
     {
-        Task.Run(async () => await webSocket.Connect());
+        var token = PlayerPrefs.HasKey(tokenKey) ? PlayerPrefs.GetString(tokenKey) : null;
+        
+        Task.Run(async () =>
+        {
+            try
+            {
+                await webSocket.Connect(token);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        });
     }
 
     /// <summary>
@@ -102,6 +116,11 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                         clientDB.ReceiveUpdate(tableId, row);
                     }
                 }
+                break;
+            case ClientApi.Message.TypeOneofCase.IdentityToken:
+                NetworkPlayer.identity = message.IdentityToken.Identity.ToByteArray();
+                NetworkPlayer.token = message.IdentityToken.Token;
+                PlayerPrefs.SetString(tokenKey, NetworkPlayer.token);
                 break;
         }
     }
