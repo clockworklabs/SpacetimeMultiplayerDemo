@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf;
 using UnityEngine;
 using ClientApi;
@@ -8,37 +9,32 @@ namespace SpacetimeDB
 {
     public class StdbClientCache
     {
-        private interface IStdbClientCache
+        public class TableCache
         {
-            public bool Insert(ByteString pk, ByteString value);
-            
-            /// <summary>
-            /// Updates an entry. Returns whether or not the update was successful. Updates only succeed if
-            /// a previous value was overwritten.
-            /// </summary>
-            /// <param name="value">The new value</param>
-            /// <returns>True when the old value was removed and the new value was inserted.</returns>
-            public bool Update(ByteString pk, ByteString value);
-            
-            /// <summary>
-            /// Deletes a value from the table.
-            /// </summary>
-            /// <param name="value">The value to delete from the table.</param>
-            /// <returns></returns>
-            public bool Delete(ByteString row_pk, ByteString value);
-        }
+            private class ByteArrayComparer : IEqualityComparer<byte[]> {
+                public bool Equals(byte[] left, byte[] right) {
+                    if ( left == null || right == null ) {
+                        return left == right;
+                    }
+                    return left.SequenceEqual(right);
+                }
+                public int GetHashCode(byte[] key) {
+                    if (key == null)
+                        throw new ArgumentNullException(nameof(key));
+                    return key.Sum(b => b);
+                }
+            }
 
-        private class TableCache
-        {
-            public readonly string name;
-            public readonly uint tableIndex;
-            public readonly TypeDef tableRowDef;
+            private readonly string name;
+            private readonly uint tableIndex;
+            private readonly TypeDef tableRowDef;
 
             public TableCache(string name, uint tableIndex, TypeDef tableRowDef)
             {
                 this.name = name;
                 this.tableIndex = tableIndex;
                 this.tableRowDef = tableRowDef;
+                entries = new Dictionary<byte[], TypeValue>(new ByteArrayComparer());
             }
 
             /// <summary>
@@ -98,19 +94,8 @@ namespace SpacetimeDB
             }
 
             // Maps from primary key to value
-            public readonly Dictionary<byte[], TypeValue> entries = new Dictionary<byte[], TypeValue>();
+            public readonly Dictionary<byte[], TypeValue> entries;
         }
-        
-        public enum TableOp
-        {
-            Insert,
-            Delete,
-            Update
-        }
-        
-        public delegate void TableUpdated(uint tableIndex, TableOp op, TypeValue? oldValue, TypeValue? newValue);
-
-        public event TableUpdated tableUpdated;
 
         private readonly Dictionary<uint, TableCache> tables = new Dictionary<uint, TableCache>();
 
@@ -139,31 +124,41 @@ namespace SpacetimeDB
             }
         }
 
-        public void ReceiveUpdate(uint tableIndex, TableRowOperation op)
+        /// <summary>
+        /// Updates the given table with the given operation. If an entry is deleted due to this operation, it is returned.
+        /// </summary>
+        /// <param name="tableIndex">The index of the table the update is for.</param>
+        /// <param name="op">The operation on the table row</param>
+        /// <returns>The deleted value, if there is one.</returns>
+        public TypeValue? ReceiveUpdate(uint tableIndex, TableRowOperation op)
         {
             if (!tables.TryGetValue(tableIndex, out var table))
             {
                 Debug.LogError($"We don't know that this table is: {tableIndex}");
-                return;
+                return null;
             }
 
             switch (op.Op)
             {
                 case TableRowOperation.Types.OperationType.Delete:
-                    var deletedValue = table.Delete(op.RowPk);
-                    if (deletedValue.HasValue)
-                    {
-                        tableUpdated?.Invoke(tableIndex, TableOp.Delete, deletedValue.Value, null);
-                    }
-                    break;
+                    return table.Delete(op.RowPk);
                 case TableRowOperation.Types.OperationType.Insert:
-                    var insertedValue = table.Insert(op.RowPk, op.Row); 
-                    if (insertedValue.HasValue)
-                    {
-                        tableUpdated?.Invoke(tableIndex, TableOp.Insert, null, insertedValue.Value);
-                    }
+                    table.Insert(op.RowPk, op.Row);
                     break;
             }
+            
+            return null;
+        }
+
+        public TableCache GetTable(uint tableIndex)
+        {
+            if (tables.TryGetValue(tableIndex, out var table))
+            {
+                return table;
+            }
+            
+            Debug.LogError($"We don't know that this table is: {tableIndex}");
+            return null;
         }
     }
 }

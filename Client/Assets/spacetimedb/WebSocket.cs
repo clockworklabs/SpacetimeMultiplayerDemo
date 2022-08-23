@@ -77,43 +77,6 @@ namespace WebSocketDispatch
         public string Protocol;
     }
 
-    public static class WebSocketHelpers
-    {
-        public static WebSocketCloseStatus ParseCloseCodeEnum(int closeCode)
-        {
-            if (Enum.IsDefined(typeof(WebSocketCloseStatus), closeCode))
-            {
-                return (WebSocketCloseStatus)closeCode;
-            }
-
-            return WebSocketCloseStatus.Empty;
-        }
-
-        public static WebSocketException GetErrorMessageFromCode(int errorCode)
-        {
-            switch (errorCode)
-            {
-                case -1:
-                    return new WebSocketException(errorCode, "WebSocket instance not found.");
-                case -2:
-                    return new WebSocketException(errorCode, "WebSocket is already connected or in connecting state.");
-                case -3:
-                    return new WebSocketException(errorCode, "WebSocket is not connected.");
-                case -4:
-                    return new WebSocketException(errorCode, "WebSocket is already closing.");
-                case -5:
-                    return new WebSocketException(errorCode, "WebSocket is already closed.");
-                case -6:
-                    return new WebSocketException(errorCode, "WebSocket is not in open state.");
-                case -7:
-                    return new WebSocketException(errorCode,
-                        "Cannot close WebSocket. An invalid code was specified or reason is too long.");
-                default:
-                    return new WebSocketException(errorCode, "Unknown error.");
-            }
-        }
-    }
-
 
     public class WebSocket
     {

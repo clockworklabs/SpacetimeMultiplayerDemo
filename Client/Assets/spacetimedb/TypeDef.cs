@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Google.Protobuf;
 using UnityEngine;
@@ -400,7 +401,7 @@ namespace SpacetimeDB
         }
     }
 
-    public struct Hash
+    public struct Hash : IEquatable<Hash>
     {
         public byte[] bytes;
 
@@ -415,6 +416,11 @@ namespace SpacetimeDB
             {
                 bytes = bytes,
             };
+        }
+
+        public bool Equals(Hash other)
+        {
+            return bytes.SequenceEqual(other.bytes);
         }
     }
 }

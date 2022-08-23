@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using SpacetimeDB;
 using UnityEngine;
 using UnityEngine.UI;
-using ClientApi;
 using Random = UnityEngine.Random;
 
 public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
@@ -13,6 +14,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     [SerializeField] private GameObject preSpawnCamera;
     
     [SerializeField] private float spawnAreaRadius;
+
+    private bool playerCreated;
     
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
 
@@ -22,26 +25,16 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         
         StdbNetworkManager.instance.onConnect += () =>
         {
-            try
-            {
-                Debug.Log("Sending request for new player.");
-                var ourId = (uint)(Random.value * uint.MaxValue);
-                NetworkPlayer.localPlayerId = ourId;
-                Reducer.CreateNewPlayer(ourId);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Exception: {e}");
-            }
+            Debug.Log("Connected.");
         };
 
         StdbNetworkManager.instance.onDisconnect += () => { };
 
-        StdbNetworkManager.clientDB.tableUpdated += (index, op, value, newValue) =>
+        StdbNetworkManager.instance.tableUpdate += (index, op, value, newValue) =>
         {
             switch (op)
             {
-                case StdbClientCache.TableOp.Insert:
+                case StdbNetworkManager.TableOp.Insert:
                     switch (index)
                     {
                         case 1:
@@ -54,10 +47,29 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 {
                                     // Create a new player
                                     var newNetworkPlayer = Instantiate(playerPrefab);
-                                    // spawn position
-                                    var spawnPosition = Random.insideUnitSphere * spawnAreaRadius;
-                                    spawnPosition.y = 0.0f;
-                                    newNetworkPlayer.Spawn(player.entityId, spawnPosition);
+
+                                    // Do we own this player?
+                                    if (NetworkPlayer.identity.HasValue && player.ownerId.Equals(NetworkPlayer.identity.Value))
+                                    {
+                                        if (NetworkPlayer.localPlayerId.HasValue)
+                                        {
+                                            Debug.LogWarning("This identity has more than one player!");
+                                            return;
+                                        }
+                                        
+                                        // spawn position
+                                        if (playerCreated)
+                                        {
+                                            var spawnPosition = Random.insideUnitSphere * spawnAreaRadius;
+                                            spawnPosition.y = 0.0f;
+                                            newNetworkPlayer.transform.position = spawnPosition;
+                                        }
+
+                                        Debug.Log($"Attaching to player with id: {player.entityId}");
+                                        NetworkPlayer.localPlayerId = player.entityId;
+                                    }
+
+                                    newNetworkPlayer.Spawn(player.entityId, true);
                                     players[player.entityId] = newNetworkPlayer;
                                 }
                             }
@@ -126,6 +138,20 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             break;
                     }
                     break;
+            }
+        };
+
+        StdbNetworkManager.instance.subscriptionUpdate += () =>
+        {
+            // If we don't have any data for our player, then we are creating a new one.
+            var player = Player.FilterByOwnerId(NetworkPlayer.identity.Value).FirstOrDefault();
+            if (!NetworkPlayer.localPlayerId.HasValue || player == null)
+            {
+                playerCreated = true;
+                Debug.Log("Sending request for new player.");
+                var ourId = (uint)(Random.value * uint.MaxValue);
+                NetworkPlayer.localPlayerId = ourId;
+                Reducer.CreateNewPlayer(ourId);
             }
         };
 

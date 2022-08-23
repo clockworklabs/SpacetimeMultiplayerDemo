@@ -10,7 +10,7 @@ public class NetworkPlayer : MonoBehaviour
     private uint _playerId;
     public static uint? localPlayerId;
     public GameObject cameraRig;
-    public static byte[] identity;
+    public static Hash? identity;
     public static string token;
 
     private void Awake()
@@ -19,23 +19,28 @@ public class NetworkPlayer : MonoBehaviour
         StdbNetworkManager.instance.clientTick += GameTick;
     }
 
-    public void Spawn(uint playerId, Vector3 spawnPosition)
+    public void Spawn(uint playerId, bool updatePosition)
     {
         _playerId = playerId;
         if (IsLocal())
         {
             gameObject.name = $"Local Player - {playerId}";
-            localPlayerId = playerId;
             BitCraftMiniGameManager.instance.LocalPlayerCreated();
             cameraRig.SetActive(true);
             PlayerMovementController.Local = GetComponent<PlayerMovementController>();
             PlayerInventoryController.Local = GetComponent<PlayerInventoryController>();
             PlayerInventoryController.Local.Spawn();
-            transform.position = spawnPosition;
         }
         else
         {
             gameObject.name = $"Remote Player - {playerId}";
+        }
+
+        if (updatePosition)
+        {
+            var entityTransform = EntityTransform.FilterByEntityId(playerId);
+            transform.position = entityTransform.ToVector3();
+            transform.rotation = entityTransform.ToQuaternion();
         }
     }
 

@@ -3,15 +3,16 @@ use spacetimedb_bindings::hash::Hash;
 
 #[spacetimedb(table(1))]
 pub struct Player {
-    #[primary_key]
+    #[unique]
     pub entity_id: u32,
+    #[unique]
     pub owner_id: Hash,
     pub creation_time: u64,
 }
 
 #[spacetimedb(table(2))]
 pub struct EntityTransform {
-    #[primary_key]
+    #[unique]
     pub entity_id: u32,
     pub pos_x: f32,
     pub pos_y: f32,
@@ -24,14 +25,14 @@ pub struct EntityTransform {
 
 #[spacetimedb(table(3))]
 pub struct PlayerAnimation {
-    #[primary_key]
+    #[unique]
     pub entity_id: u32,
     pub moving: bool,
 }
 
 #[spacetimedb(table(4))]
 pub struct EntityInventory {
-    #[primary_key]
+    #[unique]
     pub entity_id: u32,
     pub pockets: Vec<Pocket>,
 }
@@ -82,7 +83,7 @@ pub struct Pocket {
 #[derive(Copy, Clone)]
 #[spacetimedb(table(5))]
 pub struct Config {
-    #[primary_key]
+    #[unique]
     pub version: u32,
     // always 0 for now
     pub max_player_inventory_slots: u32,
@@ -151,7 +152,8 @@ pub fn move_or_swap_inventory_slot(
 
     let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
         .expect("move_or_swap_inventory_slot: This player doesn't have an inventory!");
-    let mut source_pocket = inventory.get_pocket(source_pocket_idx)
+    let mut source_pocket = inventory
+        .get_pocket(source_pocket_idx)
         .expect("move_or_swap_inventory_slot: Nothing in source pocket, nothing to do.");
     let dest_pocket = inventory.get_pocket(dest_pocket_idx);
 
@@ -206,30 +208,39 @@ pub fn add_item_to_inventory(
 ) {
     // Check to see if this pocket index is bad
     let config = Config::filter_version_eq(0).unwrap();
-    assert!(pocket_idx < config.max_player_inventory_slots, "add_item_to_inventory: This pocket index is invalid: {}", pocket_idx);
+    assert!(
+        pocket_idx < config.max_player_inventory_slots,
+        "add_item_to_inventory: This pocket index is invalid: {}",
+        pocket_idx
+    );
 
     // Make sure this identity owns this player
-    let player = Player::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
+    let player = Player::filter_entity_id_eq(entity_id)
+        .expect("add_item_to_inventory: This player doesn't exist!");
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
-        spacetimedb_bindings::println!("add_item_to_inventory: This identity doesn't own this player! (allowed for now)");
+        spacetimedb_bindings::println!(
+            "add_item_to_inventory: This identity doesn't own this player! (allowed for now)"
+        );
         // return;
     }
 
-    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't have an inventory!");
+    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
+        .expect("add_item_to_inventory: This player doesn't have an inventory!");
     match inventory.get_pocket(pocket_idx) {
         Some(mut pocket) => {
-            assert_eq!(pocket.item_id, item_id, "add_item_to_inventory: Item ID mismatch");
+            assert_eq!(
+                pocket.item_id, item_id,
+                "add_item_to_inventory: Item ID mismatch"
+            );
             pocket.item_count += item_count;
         }
         None => {
-            inventory.set_pocket(
-                Pocket {
-                    pocket_idx,
-                    item_id,
-                    item_count,
-                },
-            );
+            inventory.set_pocket(Pocket {
+                pocket_idx,
+                item_id,
+                item_count,
+            });
         }
     }
 
@@ -241,12 +252,14 @@ pub fn add_item_to_inventory(
     );
 }
 
-
-
 #[spacetimedb(reducer)]
 pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
     let inventory = EntityInventory::filter_entity_id_eq(entity_id);
-    assert!(inventory.is_some(), "Inventory NOT found for entity:: {}", entity_id);
+    assert!(
+        inventory.is_some(),
+        "Inventory NOT found for entity:: {}",
+        entity_id
+    );
     let inventory = inventory.unwrap();
 
     spacetimedb_bindings::println!("Inventory found for entity: {}", entity_id);
@@ -351,18 +364,14 @@ pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: Str
     let chat = PlayerChatMessage {
         player_id,
         msg_time: timestamp,
-        message
+        message,
     };
 
     PlayerChatMessage::insert(chat);
 }
 
 #[spacetimedb(connect)]
-pub fn identity_connected(_identity: Hash, _timestamp: u64) {
-
-}
+pub fn identity_connected(_identity: Hash, _timestamp: u64) {}
 
 #[spacetimedb(disconnect)]
-pub fn identity_disconnected(_identity: Hash, _timestamp: u64) {
-
-}
+pub fn identity_disconnected(_identity: Hash, _timestamp: u64) {}
