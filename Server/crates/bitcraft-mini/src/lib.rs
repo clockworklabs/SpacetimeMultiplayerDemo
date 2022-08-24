@@ -14,13 +14,23 @@ pub struct Player {
 pub struct EntityTransform {
     #[unique]
     pub entity_id: u32,
-    pub pos_x: f32,
-    pub pos_y: f32,
-    pub pos_z: f32,
-    pub rot_x: f32,
-    pub rot_y: f32,
-    pub rot_z: f32,
-    pub rot_w: f32,
+    pub pos: StdbPosition,
+    pub rot: StdbQuaternion,
+}
+
+#[spacetimedb(tuple)]
+pub struct StdbPosition {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[spacetimedb(tuple)]
+pub struct StdbQuaternion {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }
 
 #[spacetimedb(table(3))]
@@ -35,6 +45,37 @@ pub struct EntityInventory {
     #[unique]
     pub entity_id: u32,
     pub pockets: Vec<Pocket>,
+}
+
+#[derive(Copy, Clone)]
+#[spacetimedb(tuple)]
+pub struct Pocket {
+    pub item_id: u32,
+    pub pocket_idx: u32,
+    pub item_count: i32,
+}
+
+#[spacetimedb(table(5))]
+pub struct PlayerLogin {
+    #[unique]
+    pub entity_id: u32,
+    pub logged_in: bool,
+}
+
+#[derive(Copy, Clone)]
+#[spacetimedb(table(6))]
+pub struct Config {
+    #[unique]
+    pub version: u32,
+    // always 0 for now
+    pub max_player_inventory_slots: u32,
+}
+
+#[spacetimedb(table(7))]
+pub struct PlayerChatMessage {
+    pub player_id: u32,
+    pub msg_time: u64,
+    pub message: String,
 }
 
 impl EntityInventory {
@@ -70,30 +111,6 @@ impl EntityInventory {
             }
         }
     }
-}
-
-#[derive(Copy, Clone)]
-#[spacetimedb(tuple)]
-pub struct Pocket {
-    pub item_id: u32,
-    pub pocket_idx: u32,
-    pub item_count: i32,
-}
-
-#[derive(Copy, Clone)]
-#[spacetimedb(table(5))]
-pub struct Config {
-    #[unique]
-    pub version: u32,
-    // always 0 for now
-    pub max_player_inventory_slots: u32,
-}
-
-#[spacetimedb(table(6))]
-pub struct PlayerChatMessage {
-    pub player_id: u32,
-    pub msg_time: u64,
-    pub message: String,
 }
 
 // This is in charge of initializing any static global data
@@ -278,13 +295,8 @@ pub fn move_player(
     identity: Hash,
     _timestamp: u64,
     entity_id: u32,
-    pos_x: f32,
-    pos_y: f32,
-    pos_z: f32,
-    rot_x: f32,
-    rot_y: f32,
-    rot_z: f32,
-    rot_w: f32,
+    pos: StdbPosition,
+    rot: StdbQuaternion,
 ) {
     // Make sure this identity owns this player
     match Player::filter_entity_id_eq(entity_id) {
@@ -302,19 +314,7 @@ pub fn move_player(
         }
     }
 
-    EntityTransform::update_entity_id_eq(
-        entity_id,
-        EntityTransform {
-            entity_id,
-            pos_x,
-            pos_y,
-            pos_z,
-            rot_x,
-            rot_y,
-            rot_z,
-            rot_w,
-        },
-    );
+    EntityTransform::update_entity_id_eq(entity_id, EntityTransform { entity_id, pos, rot });
 }
 
 #[spacetimedb(reducer)]
@@ -337,7 +337,7 @@ pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, 
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32) {
+pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32, start_pos: StdbPosition, start_rot: StdbQuaternion) {
     // Make sure this player doesn't already exist
     if let Some(_) = Player::filter_entity_id_eq(entity_id) {
         spacetimedb_bindings::println!(
@@ -357,6 +357,11 @@ pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32) {
         entity_id,
         pockets: Vec::<Pocket>::new(),
     });
+    EntityTransform::insert(EntityTransform {
+        entity_id,
+        pos: start_pos,
+        rot: start_rot,
+    })
 }
 
 #[spacetimedb(reducer)]
@@ -370,8 +375,56 @@ pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: Str
     PlayerChatMessage::insert(chat);
 }
 
+#[spacetimedb(reducer)]
+pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: bool) {
+    match Player::filter_owner_id_eq(identity) {
+        Some(player) => {
+            match PlayerLogin::filter_entity_id_eq(player.entity_id) {
+                Some(login_state) => {
+                    assert!(login_state.logged_in != logged_in, "Player is already set to this login state: {}", logged_in);
+                    PlayerLogin::update_entity_id_eq(player.entity_id, PlayerLogin {
+                        entity_id: player.entity_id,
+                        logged_in,
+                    });
+                }
+                None => {
+                    spacetimedb_bindings::println!("Player set login state to: {}", logged_in);
+                    PlayerLogin::insert(PlayerLogin {
+                        entity_id: player.entity_id,
+                        logged_in,
+                    });
+                }
+            }
+        }
+        None => {
+            panic!("You cannot sign in without a player!");
+        }
+    }
+}
+
 #[spacetimedb(connect)]
-pub fn identity_connected(_identity: Hash, _timestamp: u64) {}
+pub fn identity_connected(identity: Hash, _timestamp: u64) {
+    match Player::filter_owner_id_eq(identity) {
+        Some(_) => {
+            spacetimedb_bindings::println!("Player has returned.");
+        }
+        None => {
+            spacetimedb_bindings::println!("A new identity has connected.");
+        }
+    }
+}
 
 #[spacetimedb(disconnect)]
-pub fn identity_disconnected(_identity: Hash, _timestamp: u64) {}
+pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
+    if let Some(player) = Player::filter_owner_id_eq(identity) {
+        if let Some(login_state) = PlayerLogin::filter_entity_id_eq(player.entity_id) {
+            if login_state.logged_in {
+                spacetimedb_bindings::println!("User has disconnected without signing out.");
+                PlayerLogin::update_entity_id_eq(player.entity_id, PlayerLogin {
+                    entity_id: player.entity_id,
+                    logged_in: false,
+                });
+            }
+        }
+    }
+}

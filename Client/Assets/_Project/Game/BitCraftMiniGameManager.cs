@@ -56,20 +56,12 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                             Debug.LogWarning("This identity has more than one player!");
                                             return;
                                         }
-                                        
-                                        // spawn position
-                                        if (playerCreated)
-                                        {
-                                            var spawnPosition = Random.insideUnitSphere * spawnAreaRadius;
-                                            spawnPosition.y = 0.0f;
-                                            newNetworkPlayer.transform.position = spawnPosition;
-                                        }
 
                                         Debug.Log($"Attaching to player with id: {player.entityId}");
                                         NetworkPlayer.localPlayerId = player.entityId;
                                     }
 
-                                    newNetworkPlayer.Spawn(player.entityId, true);
+                                    newNetworkPlayer.Spawn(player.entityId);
                                     players[player.entityId] = newNetworkPlayer;
                                 }
                             }
@@ -88,8 +80,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                     }
                                     else
                                     {
-                                        networkPlayer.transform.position = entityTransform.ToVector3();
-                                        networkPlayer.transform.rotation = entityTransform.ToQuaternion();
+                                        networkPlayer.transform.position = entityTransform.pos.ToVector3();
+                                        networkPlayer.transform.rotation = entityTransform.rot.ToQuaternion();
                                     }
                                 }
                             }
@@ -97,9 +89,9 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         case 3:
                             if (newValue.HasValue)
                             {
-                                var entityTransform = PlayerAnimation.From(newValue.Value);
+                                var playerAnimation = PlayerAnimation.From(newValue.Value);
                                 // check to see if this player already exists
-                                if (players.TryGetValue(entityTransform.entityId, out var networkPlayer))
+                                if (players.TryGetValue(playerAnimation.entityId, out var networkPlayer))
                                 {
                                     // Is this our player?
                                     if (networkPlayer.IsLocal())
@@ -108,7 +100,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                     }
                                     else
                                     {
-                                        networkPlayer.GetComponent<PlayerMovementController>().SetMoving(entityTransform.moving);
+                                        networkPlayer.GetComponent<PlayerMovementController>().SetMoving(playerAnimation.moving);
                                     }
                                 }
                             }
@@ -128,7 +120,18 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 }
                             }
                             break;
-                        case 6:
+                        case 5:
+                            if (newValue.HasValue)
+                            {
+                                var loginState = PlayerLogin.From(newValue.Value);
+                                // check to see if this player already exists
+                                if (players.TryGetValue(loginState.entityId, out var networkPlayer))
+                                {
+                                    networkPlayer.LoginStateChanged();
+                                }
+                            }
+                            break;
+                        case 7:
                             if (newValue.HasValue)
                             {
                                 var chatMessage = PlayerChatMessage.From(newValue.Value);
@@ -144,14 +147,15 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.subscriptionUpdate += () =>
         {
             // If we don't have any data for our player, then we are creating a new one.
-            var player = Player.FilterByOwnerId(NetworkPlayer.identity.Value).FirstOrDefault();
+            var player = Player.FilterByOwnerId(NetworkPlayer.identity.Value);
             if (!NetworkPlayer.localPlayerId.HasValue || player == null)
             {
                 playerCreated = true;
                 Debug.Log("Sending request for new player.");
-                var ourId = (uint)(Random.value * uint.MaxValue);
-                NetworkPlayer.localPlayerId = ourId;
-                Reducer.CreateNewPlayer(ourId);
+                var newPlayerId = (uint)(Random.value * uint.MaxValue);
+                var spawnPosition = Random.insideUnitSphere * spawnAreaRadius;
+                spawnPosition.y = 0.0f;
+                Reducer.CreateNewPlayer(newPlayerId, spawnPosition.ToStdb(), Quaternion.identity.ToStdb());
             }
         };
 

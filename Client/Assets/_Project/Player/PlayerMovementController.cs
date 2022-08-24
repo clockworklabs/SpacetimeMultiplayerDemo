@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using SpacetimeDB;
 using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
@@ -59,13 +60,14 @@ public class PlayerMovementController : MonoBehaviour
     {
         anim.SetBool(WalkingProperty, moving);
         
-        if (!player.IsLocal() || LocalMovementDisabled.Invoke())
+        if (!player.IsLocal() || LocalMovementDisabled.Invoke() || !NetworkPlayer.localPlayerId.HasValue)
         {
             return;
         }
 
         var vec = new Vector3(movementVec.x, 0.0f, movementVec.y);
         vec = CameraController.instance.transform.TransformDirection(vec);
+        var wasMoving = moving;
         moving = movementVec.sqrMagnitude > 0; 
         
         if (moving)
@@ -73,6 +75,11 @@ public class PlayerMovementController : MonoBehaviour
             var worldMovementDirection = Quaternion.LookRotation(vec, Vector3.up);
             modelTransform.rotation = Quaternion.RotateTowards(modelTransform.rotation, 
                 worldMovementDirection, modelTurnSpeed * Time.deltaTime);
+        }
+
+        if (moving != wasMoving)
+        {
+            Reducer.UpdatePlayerAnimation(NetworkPlayer.localPlayerId.Value, moving);
         }
     }
 }

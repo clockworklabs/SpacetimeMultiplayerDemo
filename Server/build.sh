@@ -44,9 +44,11 @@ cd ../../SpacetimeDB/
 if [[ $# > 0 ]]; then
 	if [ "$1" == "init" ] ; then
 		cargo run init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+		sleep 3
 		cargo run call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
 	elif [ "$1" == "update" ]; then
 		cargo run update "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
+		sleep 3
 		cargo run call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
 	else 
 		echo "Command not understood: $1" 1>&2

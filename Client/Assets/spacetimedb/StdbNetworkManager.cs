@@ -14,18 +14,18 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         Delete,
         Update
     }
-    
+
     [Serializable]
     public class Message
     {
         public string fn;
         public object[] args;
     }
-    
+
     [SerializeField] private float clientTicksPerSecond = 30.0f;
 
     public delegate void RowUpdate(uint tableId, TableOp op, TypeValue? oldValue, TypeValue? newValue);
-    
+
     public event Action onConnect;
     public event Action onDisconnect;
     public event Action clientTick;
@@ -34,12 +34,11 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     public event Action transactionUpdateComplete;
 
     private WebSocketDispatch.WebSocket webSocket;
+    private bool connectionClosed;
     public static StdbClientCache clientDB;
 
     private float? lastClientTick;
     public static float clientTickInterval;
-
-    private const string tokenKey = "bitcraftmini.identity_token";
 
     protected override void Awake()
     {
@@ -65,15 +64,23 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB.AddTable("EntityTransform", 2, EntityTransform.GetTypeDef());
         clientDB.AddTable("PlayerAnimation", 3, PlayerAnimation.GetTypeDef());
         clientDB.AddTable("EntityInventory", 4, EntityInventory.GetTypeDef());
-        clientDB.AddTable("Config", 5, Config.GetTypeDef());
-        clientDB.AddTable("PlayerChatMessage", 6, PlayerChatMessage.GetTypeDef());
+        clientDB.AddTable("PlayerLogin", 5, PlayerLogin.GetTypeDef());
+        clientDB.AddTable("Config", 6, Config.GetTypeDef());
+        clientDB.AddTable("PlayerChatMessage", 7, PlayerChatMessage.GetTypeDef());
 
         clientTickInterval = 1 / clientTicksPerSecond;
     }
 
+    private void OnDestroy()
+    {
+        connectionClosed = true;
+        webSocket.Close();
+        webSocket = null;
+    }
+
     public void Connect()
     {
-        var token = PlayerPrefs.HasKey(tokenKey) ? PlayerPrefs.GetString(tokenKey) : null;
+        var token = PlayerPrefs.HasKey(GetTokenKey()) ? PlayerPrefs.GetString(GetTokenKey()) : null;
 
         Task.Run(async () =>
         {
@@ -83,6 +90,12 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
             }
             catch (Exception e)
             {
+                if (connectionClosed)
+                {
+                    Debug.Log("Connection closed gracefully.");
+                    return;
+                }
+                
                 Debug.LogException(e);
             }
         });
@@ -95,9 +108,9 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         public TypeValue? oldValue;
         public TypeValue? newValue;
     }
-    
+
     private readonly List<DbEvent> _dbEvents = new List<DbEvent>();
-    
+
     private void OnMessageReceived(byte[] bytes)
     {
         _dbEvents.Clear();
@@ -113,7 +126,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 subscriptionUpdate = message.TransactionUpdate.SubscriptionUpdate;
                 break;
         }
-        
+
         switch (message.TypeCase)
         {
             case ClientApi.Message.TypeOneofCase.SubscriptionUpdate:
@@ -127,7 +140,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     {
                         continue;
                     }
-                    
+
                     foreach (var row in update.TableRowOperations)
                     {
                         switch (row.Op)
@@ -144,6 +157,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                                         oldValue = deletedValue.Value
                                     });
                                 }
+
                                 break;
                             case TableRowOperation.Types.OperationType.Insert:
                                 var insertedValue = table.Insert(row.RowPk, row.Row);
@@ -157,11 +171,12 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                                         oldValue = null
                                     });
                                 }
+
                                 break;
                         }
                     }
                 }
-                
+
                 // Send out events
                 foreach (var dbEvent in _dbEvents)
                 {
@@ -177,13 +192,25 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                         transactionUpdateComplete?.Invoke();
                         break;
                 }
+
                 break;
             case ClientApi.Message.TypeOneofCase.IdentityToken:
                 NetworkPlayer.identity = Hash.From(message.IdentityToken.Identity.ToByteArray());
                 NetworkPlayer.token = message.IdentityToken.Token;
-                PlayerPrefs.SetString(tokenKey, NetworkPlayer.token);
+
+                PlayerPrefs.SetString(GetTokenKey(), NetworkPlayer.token);
                 break;
         }
+    }
+
+    private string GetTokenKey()
+    {
+        var key = "bitcraftmini.identity_token";
+#if UNITY_EDITOR
+        // Different editors need different keys
+        key += $" - {Application.dataPath}";
+#endif
+        return key;
     }
 
     internal void InternalCallReducer(Message message)
