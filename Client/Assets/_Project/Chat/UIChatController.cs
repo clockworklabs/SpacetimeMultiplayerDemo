@@ -27,6 +27,9 @@ public class UIChatController : Singleton<UIChatController>
         PlayerMovementController.LocalMovementDisabled.Add(() => EventSystem.current.currentSelectedGameObject == _chatInput.gameObject);
     }
 
+    public void Show() => GetComponent<UIFade>().FadeIn();
+    public void Hide() => GetComponent<UIFade>().FadeOut();
+
     // TODO: this redraws the whole scroll layout each time, causing a visible redraw that is ugly
     // TODO: this doesn't seem to work on initial chat load.
     private IEnumerator AutoScroll()
@@ -41,12 +44,16 @@ public class UIChatController : Singleton<UIChatController>
     
     public void OnChatMessageReceived(uint playerId, String message)
     {
-        _messages.text += $"{playerId} says, \"{message}\"\n";
-
-        // Force scroll to bottom.
-        if (gameObject.activeSelf)
+        var player = Player.FilterByEntityId(playerId);
+        if (player != null)
         {
-            StartCoroutine(AutoScroll());
+            _messages.text += $"{player.username} says, \"{message}\"\n";
+
+            // Force scroll to bottom.
+            if (gameObject.activeSelf)
+            {
+                StartCoroutine(AutoScroll());
+            }   
         }
     }
     

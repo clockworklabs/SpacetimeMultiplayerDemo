@@ -62,6 +62,9 @@ public class NetworkPlayer : MonoBehaviour
 
             // We are now logged in
             Reducer.PlayerUpdateLoginState(true);
+            
+            // Show chat
+            UIChatController.instance.Show();
         }
         else
         {

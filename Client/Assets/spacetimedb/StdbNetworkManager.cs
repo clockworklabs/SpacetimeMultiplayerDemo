@@ -29,9 +29,20 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
     public event Action onConnect;
     public event Action onDisconnect;
     public event Action clientTick;
+    
+    /// <summary>
+    /// Invoked on each row update to each table.
+    /// </summary>
     public event RowUpdate tableUpdate;
-    public event Action subscriptionUpdate;
-    public event Action transactionUpdateComplete;
+    
+    /// <summary>
+    /// Callback is invoked after a transaction or subscription update is received and all updates have been applied.
+    /// </summary>
+    public event Action onRowUpdateComplete;
+    /// <summary>
+    /// Invoked when an event message is received or at the end of a transaction update.
+    /// </summary>
+    public event Action<ClientApi.Event> onEvent;
 
     private WebSocketDispatch.WebSocket webSocket;
     private bool connectionClosed;
@@ -186,10 +197,11 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 switch (message.TypeCase)
                 {
                     case ClientApi.Message.TypeOneofCase.SubscriptionUpdate:
-                        this.subscriptionUpdate?.Invoke();
+                        onRowUpdateComplete?.Invoke();
                         break;
                     case ClientApi.Message.TypeOneofCase.TransactionUpdate:
-                        transactionUpdateComplete?.Invoke();
+                        onRowUpdateComplete?.Invoke();
+                        onEvent?.Invoke(message.TransactionUpdate.Event);
                         break;
                 }
 
@@ -199,6 +211,9 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 NetworkPlayer.token = message.IdentityToken.Token;
 
                 PlayerPrefs.SetString(GetTokenKey(), NetworkPlayer.token);
+                break;
+            case ClientApi.Message.TypeOneofCase.Event:
+                onEvent?.Invoke(message.Event);
                 break;
         }
     }

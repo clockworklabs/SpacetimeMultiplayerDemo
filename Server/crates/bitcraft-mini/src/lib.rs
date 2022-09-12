@@ -7,6 +7,8 @@ pub struct Player {
     pub entity_id: u32,
     #[unique]
     pub owner_id: Hash,
+    #[unique]
+    pub username: String,
     pub creation_time: u64,
 }
 
@@ -337,7 +339,7 @@ pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, 
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32, start_pos: StdbPosition, start_rot: StdbQuaternion) {
+pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32, start_pos: StdbPosition, start_rot: StdbQuaternion, username: String) {
     // Make sure this player doesn't already exist
     if let Some(_) = Player::filter_entity_id_eq(entity_id) {
         spacetimedb_bindings::println!(
@@ -351,6 +353,7 @@ pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32, start_p
     Player::insert(Player {
         entity_id,
         owner_id: identity,
+        username,
         creation_time: timestamp,
     });
     EntityInventory::insert(EntityInventory {
