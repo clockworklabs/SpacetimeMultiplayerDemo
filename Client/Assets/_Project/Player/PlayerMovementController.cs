@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using SpacetimeDB;
 using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
@@ -15,7 +14,8 @@ public class PlayerMovementController : MonoBehaviour
     private NetworkPlayer player;
     private bool moving;
 
-    public static CallbackBool LocalMovementDisabled = new CallbackBool(CallbackBool.Mode.Or);
+    public static CallbackBool localMovementDisabled = new CallbackBool(CallbackBool.Mode.Or);
+    public static CallbackBool rigidBodyDisabled = new CallbackBool(CallbackBool.Mode.Or);
     private Rigidbody body;
     private static readonly int WalkingProperty = Animator.StringToHash("Walking");
 
@@ -25,19 +25,36 @@ public class PlayerMovementController : MonoBehaviour
     {
         body = GetComponent<Rigidbody>();
         player = GetComponent<NetworkPlayer>();
+
+        // We must be standing in a valid chunk
+        rigidBodyDisabled.Add(() =>
+        {
+            var config = SpacetimeDB.Config.FilterByVersion(0);
+            var position = transform.position;
+            var chunkPosX = MathUtil.RoundNegInf(position.x / config.chunkSize);
+            var chunkPosY = MathUtil.RoundNegInf(position.z / config.chunkSize);
+            var chunk = TerrainController.instance.GetChunk(chunkPosX, chunkPosY);
+            return chunk == null;
+        });
     }
 
     public Transform GetModelTransform() => modelTransform;
     
-    public void SetMove(Vector3 vec) => movementVec = vec;
+    public void SetMove(UnityEngine.Vector3 vec) => movementVec = vec;
 
     private void FixedUpdate()
     {
-        if (!player.IsLocal() || LocalMovementDisabled.Invoke())
+        // Check to see if we need to disable/enable kinematics
+        if (rigidBodyDisabled.Invoke() != body.isKinematic)
+        {
+            body.isKinematic = !body.isKinematic;
+        }
+        
+        if (!player.IsLocal() || localMovementDisabled.Invoke())
         {
             return;
         }
-        
+
         var vec = new Vector3(movementVec.x, 0.0f, movementVec.y);
         vec = CameraController.instance.transform.TransformDirection(vec);
         
@@ -60,7 +77,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         anim.SetBool(WalkingProperty, moving);
         
-        if (!player.IsLocal() || LocalMovementDisabled.Invoke() || !NetworkPlayer.localPlayerId.HasValue)
+        if (!player.IsLocal() || localMovementDisabled.Invoke() || !NetworkPlayer.localPlayerId.HasValue)
         {
             return;
         }
@@ -79,7 +96,7 @@ public class PlayerMovementController : MonoBehaviour
 
         if (moving != wasMoving)
         {
-            Reducer.UpdatePlayerAnimation(NetworkPlayer.localPlayerId.Value, moving);
+            SpacetimeDB.Reducer.UpdatePlayerAnimation(NetworkPlayer.localPlayerId.Value, moving);
         }
     }
 }

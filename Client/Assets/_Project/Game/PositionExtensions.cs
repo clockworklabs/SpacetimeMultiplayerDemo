@@ -1,9 +1,8 @@
-    using SpacetimeDB;
     using UnityEngine;
 
     public static class PositionExtensions
     {
-        public static Vector3 ToVector3(this StdbPosition position)
+        public static Vector3 ToVector3(this SpacetimeDB.StdbVector3 position)
         {
             return new Vector3
             {
@@ -13,9 +12,9 @@
             };
         }
         
-        public static Quaternion ToQuaternion(this StdbQuaternion rotation)
+        public static Quaternion ToQuaternion(this SpacetimeDB.StdbQuarternion rotation)
         {
-            return new Quaternion()
+            return new Quaternion
             {
                 x = rotation.x,
                 y = rotation.y,
@@ -24,9 +23,9 @@
             };
         }
 
-        public static StdbPosition ToStdb(this Vector3 vec)
+        public static SpacetimeDB.StdbVector3 ToStdb(this Vector3 vec)
         {
-            return new StdbPosition
+            return new SpacetimeDB.StdbVector3 
             {
                 x = vec.x,
                 y = vec.y,
@@ -34,9 +33,9 @@
             };
         }
 
-        public static StdbQuaternion ToStdb(this Quaternion q)
+        public static SpacetimeDB.StdbQuarternion ToStdb(this Quaternion q)
         {
-            return new StdbQuaternion
+            return new SpacetimeDB.StdbQuarternion 
             {
                 x = q.x,
                 y = q.y,

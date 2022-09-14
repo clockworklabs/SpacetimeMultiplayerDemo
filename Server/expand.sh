@@ -3,7 +3,11 @@
 set -uoe pipefail
 
 cd "$(dirname "$0")"
-cd crates/bitcraft-mini
-# cargo clean
-# cargo build --package bitcraft-mini
-cargo expand > ../bitcraft-mini-expand/src/lib.rs
+
+rm -rf ./crates/bitcraft-mini-expand/src
+mkdir -p ./crates/bitcraft-mini-expand/src
+touch ./crates/bitcraft-mini-expand/src/lib.rs
+
+set +e
+cargo clean
+PROC_MACRO_DEBUG=1 cargo build > ./crates/bitcraft-mini-expand/src/lib.rs

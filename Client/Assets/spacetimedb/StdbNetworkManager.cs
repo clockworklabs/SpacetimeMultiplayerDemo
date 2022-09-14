@@ -24,7 +24,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
 
     [SerializeField] private float clientTicksPerSecond = 30.0f;
 
-    public delegate void RowUpdate(uint tableId, TableOp op, TypeValue? oldValue, TypeValue? newValue);
+    public delegate void RowUpdate(string tableName, TableOp op, TypeValue? oldValue, TypeValue? newValue);
 
     public event Action onConnect;
     public event Action onDisconnect;
@@ -71,13 +71,15 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB = new StdbClientCache();
 
         // TODO: This part should be automatically generated!
-        clientDB.AddTable("Player", 1, Player.GetTypeDef());
-        clientDB.AddTable("EntityTransform", 2, EntityTransform.GetTypeDef());
-        clientDB.AddTable("PlayerAnimation", 3, PlayerAnimation.GetTypeDef());
-        clientDB.AddTable("EntityInventory", 4, EntityInventory.GetTypeDef());
-        clientDB.AddTable("PlayerLogin", 5, PlayerLogin.GetTypeDef());
-        clientDB.AddTable("Config", 6, Config.GetTypeDef());
-        clientDB.AddTable("PlayerChatMessage", 7, PlayerChatMessage.GetTypeDef());
+        clientDB.AddTable("PlayerComponent", PlayerComponent.GetTypeDef());
+        clientDB.AddTable("TransformComponent", TransformComponent.GetTypeDef());
+        clientDB.AddTable("PlayerAnimationComponent", PlayerAnimationComponent.GetTypeDef());
+        clientDB.AddTable("InventoryComponent", InventoryComponent.GetTypeDef());
+        clientDB.AddTable("PlayerLoginComponent", PlayerLoginComponent.GetTypeDef());
+        clientDB.AddTable("Config", Config.GetTypeDef());
+        clientDB.AddTable("PlayerChatMessage", PlayerChatMessage.GetTypeDef());
+        clientDB.AddTable("Chunk", Chunk.GetTypeDef());
+        clientDB.AddTable("ChunkData", ChunkData.GetTypeDef());
 
         clientTickInterval = 1 / clientTicksPerSecond;
     }
@@ -114,7 +116,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
 
     private struct DbEvent
     {
-        public uint tableId;
+        public string tableName;
         public TableOp op;
         public TypeValue? oldValue;
         public TypeValue? newValue;
@@ -145,8 +147,9 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 // First apply all of the state
                 foreach (var update in subscriptionUpdate.TableUpdates)
                 {
+                    var tableName = update.TableName;
                     var tableId = update.TableId;
-                    var table = clientDB.GetTable(tableId);
+                    var table = clientDB.GetTable(tableName);
                     if (table == null)
                     {
                         continue;
@@ -162,7 +165,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                                 {
                                     _dbEvents.Add(new DbEvent()
                                     {
-                                        tableId = tableId,
+                                        tableName = tableName,
                                         op = TableOp.Delete,
                                         newValue = null,
                                         oldValue = deletedValue.Value
@@ -176,7 +179,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                                 {
                                     _dbEvents.Add(new DbEvent
                                     {
-                                        tableId = tableId,
+                                        tableName = tableName,
                                         op = TableOp.Insert,
                                         newValue = insertedValue.Value,
                                         oldValue = null
@@ -191,7 +194,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 // Send out events
                 foreach (var dbEvent in _dbEvents)
                 {
-                    tableUpdate?.Invoke(dbEvent.tableId, dbEvent.op, dbEvent.oldValue, dbEvent.newValue);
+                    tableUpdate?.Invoke(dbEvent.tableName, dbEvent.op, dbEvent.oldValue, dbEvent.newValue);
                 }
 
                 switch (message.TypeCase)

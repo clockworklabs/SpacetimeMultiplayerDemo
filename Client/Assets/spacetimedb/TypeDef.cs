@@ -211,6 +211,22 @@ namespace SpacetimeDB
         private TypeValue[] tupleElements;
         private List<TypeValue> vec;
 
+        public override string ToString()
+        {
+            if (tupleElements != null) {
+                var s = "(\n";
+                foreach (var e in tupleElements) {
+                    s += "\t";
+                    s += e.ToString();
+                    s += "\n";
+                }
+                s += ")";
+                return s;
+            } else {
+                return String.Format($"typeDef={typeDef.Type}, unsigned={unsigned}, signed={signed}, str={str}, bytes={bytes}, bool={b}, float={f32}, double={f64}");
+            }
+        }
+
         public static (TypeValue?, int) Decode(TypeDef def, ByteString bytes)
         {
             var byteArr = bytes.ToByteArray();

@@ -26,13 +26,11 @@ namespace SpacetimeDB
             }
 
             private readonly string name;
-            private readonly uint tableIndex;
             private readonly TypeDef tableRowDef;
 
-            public TableCache(string name, uint tableIndex, TypeDef tableRowDef)
+            public TableCache(string name, TypeDef tableRowDef)
             {
                 this.name = name;
-                this.tableIndex = tableIndex;
                 this.tableRowDef = tableRowDef;
                 entries = new Dictionary<byte[], TypeValue>(new ByteArrayComparer());
             }
@@ -59,7 +57,7 @@ namespace SpacetimeDB
                 }
 
                 // Read failure
-                Debug.LogError($"Read error when converting row value for table: {name}:{tableIndex} (version issue?)");
+                Debug.LogError($"Read error when converting row value for table: {name} (version issue?)");
                 return null;
             }
 
@@ -97,23 +95,23 @@ namespace SpacetimeDB
             public readonly Dictionary<byte[], TypeValue> entries;
         }
 
-        private readonly Dictionary<uint, TableCache> tables = new Dictionary<uint, TableCache>();
+        private readonly Dictionary<string, TableCache> tables = new Dictionary<string, TableCache>();
 
-        public void AddTable(string name, uint tableIndex, TypeDef tableRowDef)
+        public void AddTable(string name, TypeDef tableRowDef)
         {
-            if (tables.TryGetValue(tableIndex, out _))
+            if (tables.TryGetValue(name, out _))
             {
-                Debug.LogError($"Table with index already exists: {tableIndex}");
+                Debug.LogError($"Table with name already exists: {name}");
                 return;
             }
 
             // Initialize this table
-            tables[tableIndex] = new TableCache(name, tableIndex, tableRowDef);
+            tables[name] = new TableCache(name, tableRowDef);
         }
 
-        public IEnumerable<TypeValue> GetEntries(uint tableNum)
+        public IEnumerable<TypeValue> GetEntries(string name)
         {
-            if (!tables.TryGetValue(tableNum, out var table))
+            if (!tables.TryGetValue(name, out var table))
             {
                 yield break;
             }
@@ -127,14 +125,14 @@ namespace SpacetimeDB
         /// <summary>
         /// Updates the given table with the given operation. If an entry is deleted due to this operation, it is returned.
         /// </summary>
-        /// <param name="tableIndex">The index of the table the update is for.</param>
+        /// <param name="name">The name of the table the update is for.</param>
         /// <param name="op">The operation on the table row</param>
         /// <returns>The deleted value, if there is one.</returns>
-        public TypeValue? ReceiveUpdate(uint tableIndex, TableRowOperation op)
+        public TypeValue? ReceiveUpdate(string name, TableRowOperation op)
         {
-            if (!tables.TryGetValue(tableIndex, out var table))
+            if (!tables.TryGetValue(name, out var table))
             {
-                Debug.LogError($"We don't know that this table is: {tableIndex}");
+                Debug.LogError($"We don't know that this table is: {name}");
                 return null;
             }
 
@@ -150,14 +148,14 @@ namespace SpacetimeDB
             return null;
         }
 
-        public TableCache GetTable(uint tableIndex)
+        public TableCache GetTable(string name)
         {
-            if (tables.TryGetValue(tableIndex, out var table))
+            if (tables.TryGetValue(name, out var table))
             {
                 return table;
             }
             
-            Debug.LogError($"We don't know that this table is: {tableIndex}");
+            Debug.LogError($"We don't know that this table is: {name}");
             return null;
         }
     }

@@ -23,7 +23,7 @@ public class UIUsernameChooser : Singleton<UIUsernameChooser>
     public void ButtonPressed()
     {
         var username = _usernameField.text;
-        var player = Player.FilterByUsername(username);
+        var player = PlayerComponent.FilterByUsername(username);
         if (player == null)
         {
             BitCraftMiniGameManager.instance.CreatePlayer(username);

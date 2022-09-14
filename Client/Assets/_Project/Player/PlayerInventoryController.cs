@@ -43,7 +43,7 @@ public class PlayerInventoryController : MonoBehaviour
         }
     }
     
-    public void InventoryUpdate(EntityInventory inventory)
+    public void InventoryUpdate(InventoryComponent inventory)
     {
         if (Local != this)
         {

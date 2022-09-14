@@ -34,7 +34,7 @@ public class NetworkPlayer : MonoBehaviour
             return;
         }
         
-        var loginState = PlayerLogin.FilterByEntityId(_playerId.Value);
+        var loginState = PlayerLoginComponent.FilterByEntityId(_playerId.Value);
         if (loginState != null)
         {
             Debug.Log($"Player {_playerId.Value} has changed login state: {loginState.loggedIn}");
@@ -72,7 +72,7 @@ public class NetworkPlayer : MonoBehaviour
             LoginStateChanged();
         }
 
-        var entityTransform = EntityTransform.FilterByEntityId(playerId);
+        var entityTransform = TransformComponent.FilterByEntityId(playerId);
         if (entityTransform != null)
         {
             transform.position = entityTransform.pos.ToVector3();
@@ -86,7 +86,7 @@ public class NetworkPlayer : MonoBehaviour
 
     public bool IsLocal() => localPlayerId.HasValue && localPlayerId.Value == _playerId;
 
-    private Vector3? lastUpdatePosition;
+    private UnityEngine.Vector3? lastUpdatePosition;
     private Quaternion? lastUpdateRotation;
 
     void GameTick()

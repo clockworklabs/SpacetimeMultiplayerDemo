@@ -24,7 +24,7 @@ public class UIChatController : Singleton<UIChatController>
         {
             OnChatButtonPress();
         });
-        PlayerMovementController.LocalMovementDisabled.Add(() => EventSystem.current.currentSelectedGameObject == _chatInput.gameObject);
+        PlayerMovementController.localMovementDisabled.Add(() => EventSystem.current.currentSelectedGameObject == _chatInput.gameObject);
     }
 
     public void Show() => GetComponent<UIFade>().FadeIn();
@@ -44,7 +44,7 @@ public class UIChatController : Singleton<UIChatController>
     
     public void OnChatMessageReceived(uint playerId, String message)
     {
-        var player = Player.FilterByEntityId(playerId);
+        var player = PlayerComponent.FilterByEntityId(playerId);
         if (player != null)
         {
             _messages.text += $"{player.username} says, \"{message}\"\n";

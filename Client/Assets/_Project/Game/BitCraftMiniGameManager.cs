@@ -27,7 +27,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.onRowUpdateComplete += () =>
         {
             // If we don't have any data for our player, then we are creating a new one.
-            var player = Player.FilterByOwnerId(NetworkPlayer.identity.Value);
+            var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value);
             if (!NetworkPlayer.localPlayerId.HasValue || player == null)
             {
                 // Show username selection
@@ -38,17 +38,17 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.Connect();
     }
 
-    void OnTableUpdate(uint index, StdbNetworkManager.TableOp op, TypeValue? oldVAlue, TypeValue? newValue)
+    void OnTableUpdate(string tableName, StdbNetworkManager.TableOp op, TypeValue? oldVAlue, TypeValue? newValue)
     {
         switch (op)
         {
             case StdbNetworkManager.TableOp.Insert:
-                switch (index)
+                switch (tableName)
                 {
-                    case 1:
+                    case "PlayerComponent":
                         if (newValue.HasValue)
                         {
-                            var player = Player.From(newValue.Value);
+                            var player = PlayerComponent.From(newValue.Value);
 
                             // check to see if this player already exists
                             if (!players.TryGetValue(player.entityId, out _))
@@ -76,10 +76,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case 2:
+                    case "TransformComponent":
                         if (newValue.HasValue)
                         {
-                            var entityTransform = EntityTransform.From(newValue.Value);
+                            var entityTransform = TransformComponent.From(newValue.Value);
                             // check to see if this player already exists
                             if (players.TryGetValue(entityTransform.entityId, out var networkPlayer))
                             {
@@ -97,10 +97,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case 3:
+                    case "PlayerAnimationComponent":
                         if (newValue.HasValue)
                         {
-                            var playerAnimation = PlayerAnimation.From(newValue.Value);
+                            var playerAnimation = PlayerAnimationComponent.From(newValue.Value);
                             // check to see if this player already exists
                             if (players.TryGetValue(playerAnimation.entityId, out var networkPlayer))
                             {
@@ -118,10 +118,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case 4:
+                    case "InventoryComponent":
                         if (newValue.HasValue)
                         {
-                            var entityInventory = EntityInventory.From(newValue.Value);
+                            var entityInventory = InventoryComponent.From(newValue.Value);
                             // check to see if this player already exists
                             if (players.TryGetValue(entityInventory.entityId, out var networkPlayer))
                             {
@@ -135,10 +135,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case 5:
+                    case "PlayerLoginComponent":
                         if (newValue.HasValue)
                         {
-                            var loginState = PlayerLogin.From(newValue.Value);
+                            var loginState = PlayerLoginComponent.From(newValue.Value);
                             // check to see if this player already exists
                             if (players.TryGetValue(loginState.entityId, out var networkPlayer))
                             {
@@ -147,11 +147,19 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case 7:
+                    case "PlayerChatMessage":
                         if (newValue.HasValue)
                         {
                             var chatMessage = PlayerChatMessage.From(newValue.Value);
                             UIChatController.instance.OnChatMessageReceived(chatMessage.playerId, chatMessage.message);
+                        }
+
+                        break;
+                    case "Chunk":
+                        if (newValue.HasValue)
+                        {
+                            var chunk = Chunk.From(newValue.Value);
+                            TerrainController.instance.AddChunk(chunk);
                         }
 
                         break;

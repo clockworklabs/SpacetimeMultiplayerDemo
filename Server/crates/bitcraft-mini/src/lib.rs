@@ -1,135 +1,46 @@
+mod components;
+mod tables;
+mod tuples;
+mod math;
+
+use components::{
+    InventoryComponent,
+    PlayerAnimationComponent,
+    TransformComponent,
+    PlayerComponent,
+    PlayerLoginComponent
+};
+use math::{StdbVector3, StdbQuarternion};
 use spacetimedb_bindgen::spacetimedb;
 use spacetimedb_bindings::hash::Hash;
+use spacetimedb_bindings::println;
+use crate::tables::{Config, PlayerChatMessage};
+use crate::tuples::Pocket;
 
-#[spacetimedb(table(1))]
-pub struct Player {
-    #[unique]
-    pub entity_id: u32,
-    #[unique]
-    pub owner_id: Hash,
-    #[unique]
-    pub username: String,
-    pub creation_time: u64,
-}
-
-#[spacetimedb(table(2))]
-pub struct EntityTransform {
-    #[unique]
-    pub entity_id: u32,
-    pub pos: StdbPosition,
-    pub rot: StdbQuaternion,
-}
-
-#[spacetimedb(tuple)]
-pub struct StdbPosition {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[spacetimedb(tuple)]
-pub struct StdbQuaternion {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-}
-
-#[spacetimedb(table(3))]
-pub struct PlayerAnimation {
-    #[unique]
-    pub entity_id: u32,
-    pub moving: bool,
-}
-
-#[spacetimedb(table(4))]
-pub struct EntityInventory {
-    #[unique]
-    pub entity_id: u32,
-    pub pockets: Vec<Pocket>,
-}
-
-#[derive(Copy, Clone)]
-#[spacetimedb(tuple)]
-pub struct Pocket {
-    pub item_id: u32,
-    pub pocket_idx: u32,
-    pub item_count: i32,
-}
-
-#[spacetimedb(table(5))]
-pub struct PlayerLogin {
-    #[unique]
-    pub entity_id: u32,
-    pub logged_in: bool,
-}
-
-#[derive(Copy, Clone)]
-#[spacetimedb(table(6))]
-pub struct Config {
-    #[unique]
-    pub version: u32,
-    // always 0 for now
-    pub max_player_inventory_slots: u32,
-}
-
-#[spacetimedb(table(7))]
-pub struct PlayerChatMessage {
-    pub player_id: u32,
-    pub msg_time: u64,
-    pub message: String,
-}
-
-impl EntityInventory {
-    fn get_pocket(&self, pocket_idx: u32) -> Option<Pocket> {
-        for x in 0..self.pockets.len() {
-            if self.pockets[x].pocket_idx == pocket_idx && self.pockets[x].item_count > 0 {
-                return Some(self.pockets[x]);
-            }
-        }
-
-        return None;
-    }
-
-    fn set_pocket(&mut self, pocket: Pocket) {
-        // Try to find the pocket in the inventory
-        for x in 0..self.pockets.len() {
-            if self.pockets[x].pocket_idx == pocket.pocket_idx {
-                self.pockets[x] = pocket;
-                return;
-            }
-        }
-
-        // We did not find this pocket, create a new pocket
-        self.pockets.push(pocket);
-    }
-
-    fn delete_pocket(&mut self, pocket_idx: u32) {
-        // Try to find the pocket in the inventory
-        for x in 0..self.pockets.len() {
-            if self.pockets[x].pocket_idx == pocket_idx {
-                self.pockets.remove(x);
-                return;
-            }
-        }
-    }
-}
+mod terrain_generation;
+mod random;
 
 // This is in charge of initializing any static global data
 #[spacetimedb(reducer)]
 pub fn initialize(_identity: Hash, _timestamp: u64) {
-    match Config::filter_version_eq(0) {
-        Some(_) => {
-            spacetimedb_bindings::println!("Config already exists, skipping config.");
-        }
-        None => {
-            spacetimedb_bindings::println!("Creating new config!");
-            Config::insert(Config {
-                version: 0,
-                max_player_inventory_slots: 30,
-            });
-        }
+    // TODO(cloutiertyler): Validate that the identity is the authorized
+    // identity. (i.e. the one who initialized this database)
+
+    let config = Config::filter_version_eq(0);
+    if config.is_some() {
+        println!("Config already exists, skipping config.");
+        return;
     }
+    println!("Creating new config!");
+    Config::insert(Config {
+        version: 0,
+        max_player_inventory_slots: 30,
+        chunk_terrain_resolution: 16,
+        chunk_splat_resolution: 128,
+        chunk_size: 10.0,
+        entity_density: 16,
+        terrain_seed: 78648326,
+    });
 }
 
 #[spacetimedb(reducer)]
@@ -140,40 +51,32 @@ pub fn move_or_swap_inventory_slot(
     source_pocket_idx: u32,
     dest_pocket_idx: u32,
 ) {
-    let config = Config::filter_version_eq(0).unwrap();
+    let config = Config::filter_version_eq(0).expect("Config exists.");
 
     // Check to see if the source pocket index is bad
     if source_pocket_idx >= config.max_player_inventory_slots {
-        panic!(
-            "move_or_swap_inventory_slot: The source pocket index is invalid: {}",
-            source_pocket_idx
-        );
+        panic!("The source pocket index is invalid: {}", source_pocket_idx);
     }
 
     // Check to see if the dest pocket index is bad
     if dest_pocket_idx >= config.max_player_inventory_slots {
-        panic!(
-            "move_or_swap_inventory_slot: The dest pocket index is invalid: {}",
-            dest_pocket_idx
-        );
+        panic!("The dest pocket index is invalid: {}", dest_pocket_idx);
     }
 
     // Make sure this identity owns this player
-    let player = Player::filter_entity_id_eq(entity_id)
-        .expect("move_or_swap_inventory_slot: This player doesn't exist!");
+    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist!");
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
-        spacetimedb_bindings::println!(
-            "move_or_swap_inventory_slot: This identity doesn't own this player! (allowed for now)"
-        );
-        // return;
+        panic!("This identity doesn't own this player! (allowed for now)");
     }
 
-    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
-        .expect("move_or_swap_inventory_slot: This player doesn't have an inventory!");
+    let mut inventory =
+        InventoryComponent::filter_entity_id_eq(entity_id).expect("This player doesn't have an inventory!");
+
     let mut source_pocket = inventory
         .get_pocket(source_pocket_idx)
-        .expect("move_or_swap_inventory_slot: Nothing in source pocket, nothing to do.");
+        .expect("Nothing in source pocket, nothing to do.");
+
     let dest_pocket = inventory.get_pocket(dest_pocket_idx);
 
     // If we don't have a dest pocket, then just do a direct move
@@ -181,10 +84,8 @@ pub fn move_or_swap_inventory_slot(
         inventory.delete_pocket(source_pocket_idx);
         source_pocket.pocket_idx = dest_pocket_idx;
         inventory.set_pocket(source_pocket);
-        EntityInventory::update_entity_id_eq(entity_id, inventory);
-        spacetimedb_bindings::println!(
-            "move_or_swap_inventory_slot: Source pocket moved to dest pocket."
-        );
+        InventoryComponent::update_entity_id_eq(entity_id, inventory);
+        println!("Source pocket moved to dest pocket.");
         return;
     }
 
@@ -195,10 +96,8 @@ pub fn move_or_swap_inventory_slot(
         dest_pocket.item_count += source_pocket.item_count;
         inventory.delete_pocket(source_pocket_idx);
         inventory.set_pocket(dest_pocket);
-        EntityInventory::update_entity_id_eq(entity_id, inventory);
-        spacetimedb_bindings::println!(
-            "move_or_swap_inventory_slot: Source pocket moved into dest pocket (same item)"
-        );
+        InventoryComponent::update_entity_id_eq(entity_id, inventory);
+        println!("Source pocket moved into dest pocket (same item)");
         return;
     }
 
@@ -208,10 +107,8 @@ pub fn move_or_swap_inventory_slot(
     source_pocket.pocket_idx = dest_pocket_idx;
     inventory.set_pocket(source_pocket);
     inventory.set_pocket(dest_pocket);
-    EntityInventory::update_entity_id_eq(entity_id, inventory);
-    spacetimedb_bindings::println!(
-        "move_or_swap_inventory_slot: Pockets swapped (different items)"
-    );
+    InventoryComponent::update_entity_id_eq(entity_id, inventory);
+    println!("Pockets swapped (different items)");
 }
 
 /// This adds or removes items from an inventory slot. you can pass a negative item count in order
@@ -229,29 +126,24 @@ pub fn add_item_to_inventory(
     let config = Config::filter_version_eq(0).unwrap();
     assert!(
         pocket_idx < config.max_player_inventory_slots,
-        "add_item_to_inventory: This pocket index is invalid: {}",
+        "This pocket index is invalid: {}",
         pocket_idx
     );
 
     // Make sure this identity owns this player
-    let player = Player::filter_entity_id_eq(entity_id)
-        .expect("add_item_to_inventory: This player doesn't exist!");
+    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
-        spacetimedb_bindings::println!(
-            "add_item_to_inventory: This identity doesn't own this player! (allowed for now)"
-        );
+        println!("This identity doesn't own this player! (allowed for now)");
         // return;
     }
 
-    let mut inventory = EntityInventory::filter_entity_id_eq(entity_id)
-        .expect("add_item_to_inventory: This player doesn't have an inventory!");
+    let mut inventory =
+        InventoryComponent::filter_entity_id_eq(entity_id).expect("This player doesn't have an inventory!");
+
     match inventory.get_pocket(pocket_idx) {
         Some(mut pocket) => {
-            assert_eq!(
-                pocket.item_id, item_id,
-                "add_item_to_inventory: Item ID mismatch"
-            );
+            assert_eq!(pocket.item_id, item_id, "Item ID mismatch");
             pocket.item_count += item_count;
         }
         None => {
@@ -263,108 +155,82 @@ pub fn add_item_to_inventory(
         }
     }
 
-    EntityInventory::update_entity_id_eq(entity_id, inventory);
-    spacetimedb_bindings::println!(
-        "add_item_to_inventory: Item {} inserted into inventory {}",
-        item_id,
-        entity_id
-    );
+    InventoryComponent::update_entity_id_eq(entity_id, inventory);
+    println!("Item {} inserted into inventory {}", item_id, entity_id);
 }
 
 #[spacetimedb(reducer)]
 pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
-    let inventory = EntityInventory::filter_entity_id_eq(entity_id);
-    assert!(
-        inventory.is_some(),
-        "Inventory NOT found for entity:: {}",
-        entity_id
-    );
-    let inventory = inventory.unwrap();
+    let inventory = InventoryComponent::filter_entity_id_eq(entity_id)
+        .expect(&format!("Inventory NOT found for entity {}", entity_id));
 
-    spacetimedb_bindings::println!("Inventory found for entity: {}", entity_id);
+    println!("Inventory found for entity: {}", entity_id);
     for pocket in inventory.pockets {
-        spacetimedb_bindings::println!(
+        println!(
             "PocketIdx: {} Item: {} Count: {}",
-            pocket.pocket_idx,
-            pocket.item_id,
-            pocket.item_count
+            pocket.pocket_idx, pocket.item_id, pocket.item_count
         );
     }
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(
-    identity: Hash,
-    _timestamp: u64,
-    entity_id: u32,
-    pos: StdbPosition,
-    rot: StdbQuaternion,
-) {
+pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuarternion) {
+    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist.");
+
     // Make sure this identity owns this player
-    match Player::filter_entity_id_eq(entity_id) {
-        Some(player) => {
-            if player.owner_id != identity {
-                spacetimedb_bindings::println!(
-                    "move_player: This identity doesn't own this player! (allowed for now)"
-                );
-                // return;
-            }
-        }
-        None => {
-            spacetimedb_bindings::println!("move_player: This player doesn't exist: {}", entity_id);
-            return;
-        }
+    if player.owner_id != identity {
+        println!("This identity doesn't own this player! (allowed for now)");
     }
 
-    EntityTransform::update_entity_id_eq(entity_id, EntityTransform { entity_id, pos, rot });
+    TransformComponent::update_entity_id_eq(entity_id, TransformComponent { entity_id, pos, rot });
 }
 
 #[spacetimedb(reducer)]
 pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool) {
+    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist!");
+
     // Make sure this identity owns this player
-    match Player::filter_entity_id_eq(entity_id) {
-        Some(player) => {
-            if player.owner_id != identity {
-                spacetimedb_bindings::println!("update_player_animation: This identity doesn't own this player! (allowed for now)");
-                // return;
-            }
-        }
-        None => {
-            spacetimedb_bindings::println!("update_player_animation: This player doesn't exist!");
-            return;
-        }
+    if player.owner_id != identity {
+        println!("This identity doesn't own this player! (allowed for now)");
     }
 
-    PlayerAnimation::update_entity_id_eq(entity_id, PlayerAnimation { entity_id, moving });
+    PlayerAnimationComponent::update_entity_id_eq(entity_id, PlayerAnimationComponent { entity_id, moving });
 }
 
 #[spacetimedb(reducer)]
-pub fn create_new_player(identity: Hash, timestamp: u64, entity_id: u32, start_pos: StdbPosition, start_rot: StdbQuaternion, username: String) {
+pub fn create_new_player(
+    identity: Hash,
+    timestamp: u64,
+    entity_id: u32,
+    start_pos: StdbVector3,
+    start_rot: StdbQuarternion,
+    username: String,
+) {
     // Make sure this player doesn't already exist
-    if let Some(_) = Player::filter_entity_id_eq(entity_id) {
-        spacetimedb_bindings::println!(
-            "create_new_player: A player with this entity_id already exists: {}",
-            entity_id
-        );
-        return;
+    if PlayerComponent::filter_entity_id_eq(entity_id).is_some() {
+        panic!("A player with this entity_id already exists: {}", entity_id);
     }
-
-    spacetimedb_bindings::println!("create_new_player: player created: {}", entity_id);
-    Player::insert(Player {
+    println!("Creating player with this ID: {}", entity_id);
+    PlayerComponent::insert(PlayerComponent {
         entity_id,
         owner_id: identity,
         username,
         creation_time: timestamp,
     });
-    EntityInventory::insert(EntityInventory {
+    InventoryComponent::insert(InventoryComponent {
         entity_id,
         pockets: Vec::<Pocket>::new(),
     });
-    EntityTransform::insert(EntityTransform {
+    TransformComponent::insert(TransformComponent {
         entity_id,
         pos: start_pos,
         rot: start_rot,
-    })
+    });
+    println!(
+        "We have to make sure this entity has a chunk to stand on: {}",
+        entity_id
+    );
+    println!("Player created: {}", entity_id);
 }
 
 #[spacetimedb(reducer)]
@@ -380,53 +246,54 @@ pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: Str
 
 #[spacetimedb(reducer)]
 pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: bool) {
-    match Player::filter_owner_id_eq(identity) {
-        Some(player) => {
-            match PlayerLogin::filter_entity_id_eq(player.entity_id) {
-                Some(login_state) => {
-                    assert!(login_state.logged_in != logged_in, "Player is already set to this login state: {}", logged_in);
-                    PlayerLogin::update_entity_id_eq(player.entity_id, PlayerLogin {
-                        entity_id: player.entity_id,
-                        logged_in,
-                    });
-                }
-                None => {
-                    spacetimedb_bindings::println!("Player set login state to: {}", logged_in);
-                    PlayerLogin::insert(PlayerLogin {
-                        entity_id: player.entity_id,
-                        logged_in,
-                    });
-                }
-            }
-        }
-        None => {
-            panic!("You cannot sign in without a player!");
-        }
+    let player = PlayerComponent::filter_owner_id_eq(identity).expect("You cannot sign in without a player!");
+
+    if let Some(login_state) = PlayerLoginComponent::filter_entity_id_eq(player.entity_id) {
+        assert!(
+            login_state.logged_in != logged_in,
+            "Player is already set to this login state: {}",
+            logged_in
+        );
+        PlayerLoginComponent::update_entity_id_eq(
+            player.entity_id,
+            PlayerLoginComponent {
+                entity_id: player.entity_id,
+                logged_in,
+            },
+        );
+        return;
     }
+
+    println!("Player set login state to: {}", logged_in);
+    PlayerLoginComponent::insert(PlayerLoginComponent {
+        entity_id: player.entity_id,
+        logged_in,
+    });
 }
 
 #[spacetimedb(connect)]
 pub fn identity_connected(identity: Hash, _timestamp: u64) {
-    match Player::filter_owner_id_eq(identity) {
-        Some(_) => {
-            spacetimedb_bindings::println!("Player has returned.");
-        }
-        None => {
-            spacetimedb_bindings::println!("A new identity has connected.");
-        }
+    let player = PlayerComponent::filter_owner_id_eq(identity);
+    if let Some(player) = player {
+        println!("Player {} has returned.", player.entity_id);
+    } else {
+        println!("A new identity has connected.");
     }
 }
 
 #[spacetimedb(disconnect)]
 pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
-    if let Some(player) = Player::filter_owner_id_eq(identity) {
-        if let Some(login_state) = PlayerLogin::filter_entity_id_eq(player.entity_id) {
+    if let Some(player) = PlayerComponent::filter_owner_id_eq(identity) {
+        if let Some(login_state) = PlayerLoginComponent::filter_entity_id_eq(player.entity_id) {
             if login_state.logged_in {
-                spacetimedb_bindings::println!("User has disconnected without signing out.");
-                PlayerLogin::update_entity_id_eq(player.entity_id, PlayerLogin {
-                    entity_id: player.entity_id,
-                    logged_in: false,
-                });
+                println!("User has disconnected without signing out.");
+                PlayerLoginComponent::update_entity_id_eq(
+                    player.entity_id,
+                    PlayerLoginComponent {
+                        entity_id: player.entity_id,
+                        logged_in: false,
+                    },
+                );
             }
         }
     }

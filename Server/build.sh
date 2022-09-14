@@ -10,9 +10,11 @@ if ! [ -d ../../SpacetimeDB ] ; then
 	exit 1
 fi
 
-# Clear protobuf and language files
-rm -f protobuf/*.proto
-rm -rf cs-src/*
+if [[ $# == 0 || $1 != "fast-init"  ]] ; then
+	# Clear protobuf and language files
+	rm -f protobuf/*.proto
+	rm -rf cs-src/*
+fi
 
 # Copy stdb proto files
 mkdir -p protobuf
@@ -22,7 +24,9 @@ cp ../../SpacetimeDB/crates/spacetimedb/protobuf/client_api.proto ./protobuf/
 rustup target add wasm32-unknown-unknown
 
 # Build bitcraft mini
-cargo clean
+if [[ $# == 0 || $1 != "fast-init"  ]] ; then
+	cargo clean
+fi
 STDB_LANG=cs cargo build --target wasm32-unknown-unknown --release --package bitcraft-mini
 
 # Export the protobuf
@@ -42,13 +46,13 @@ MODULE=$(pwd)/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../SpacetimeDB/
 
 if [[ $# > 0 ]]; then
-	if [ "$1" == "init" ] ; then
+	if [[ "$1" == "init" || "$1" == "fast-init" ]] ; then
 		cargo run init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
-		sleep 3
+		sleep 5
 		cargo run call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
 	elif [ "$1" == "update" ]; then
 		cargo run update "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "$MODULE"
-		sleep 3
+		sleep 5
 		cargo run call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
 	else 
 		echo "Command not understood: $1" 1>&2
