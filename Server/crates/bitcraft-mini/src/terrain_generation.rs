@@ -16,9 +16,7 @@ pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
     let mut chunk_positions = BTreeSet::<ChunkPosition>::new();
     let spawn_radius = 8;
 
-    let iter = PlayerComponent::iter().unwrap();
-    for player_tuple in iter {
-        let player = PlayerComponent::tuple_to_struct(player_tuple).unwrap();
+    for player in PlayerComponent::iter() {
         let transform = TransformComponent::filter_entity_id_eq(player.entity_id).unwrap();
         let player_chunk_position =
             world_pos_to_chunk_pos(transform.pos.x as f64, transform.pos.z as f64, config.chunk_size);
@@ -37,8 +35,7 @@ pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
         }
     }
 
-    for chunk_tuple in Chunk::iter().unwrap() {
-        let chunk = Chunk::tuple_to_struct(chunk_tuple).unwrap();
+    for chunk in Chunk::iter() {
         chunk_positions.remove(&chunk.position);
     }
 
