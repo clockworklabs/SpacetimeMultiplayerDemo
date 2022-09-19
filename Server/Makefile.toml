@@ -86,6 +86,10 @@ cd ../../SpacetimeDB/
 
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" ${module}
 sleep 3000
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-balance "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" 5000000000
+sleep 3000
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-default-maximum "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" 1000000000
+
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
 '''
 
