@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028337, g: 0.22571355, b: 0.3069222, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028328, g: 0.22571328, b: 0.3069218, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -212,7 +212,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _terrainChunkPrefab: {fileID: 2319733308656175141, guid: cc20381bfdbc8569384986738a26ff45, type: 3}
-  _grassPrefab: {fileID: 3187637587044923573, guid: 535ec76783ea9094aa70c41a8902b402, type: 3}
+  _grassPrefab: {fileID: -4050493188470775884, guid: 535ec76783ea9094aa70c41a8902b402, type: 3}
   _treePrefab: {fileID: 2737571065352445621, guid: 808fe5fd574a5164c9306c59855dc993, type: 3}
   _ironDepositPrefab: {fileID: 7685275626274994537, guid: 07b8dfa24111040d1bc21c863dbfd9fb, type: 3}
 --- !u!1001 &512153512

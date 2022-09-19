@@ -35,12 +35,12 @@ public class TerrainChunk : MonoBehaviour
         return result;
     }
     
-    public void Spawn(Chunk chunk, GameObject grassPrefab, GameObject treePrefab, GameObject ironDepositPrefab)
+    public void Spawn(Chunk chunk, GrassPrefab grassPrefab, GameObject treePrefab, GameObject ironDepositPrefab)
     {
         _chunk = chunk;
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null);
-        var chunkPosition = chunk.position;
+        var chunkPosition = _chunk.position;
         var chunkTransform = transform;
         chunkTransform.position = new Vector3((float)(chunkPosition.x * config.chunkSize), 0, (float)(chunkPosition.y * config.chunkSize));
         chunkTransform.localScale =
@@ -57,9 +57,14 @@ public class TerrainChunk : MonoBehaviour
         var instancedMat = terrainRenderer.material;
         instancedMat.SetTexture(Splat1Property, splat1);
 
+        var grassMaterialInstance = Instantiate(grassPrefab.grass[0].sharedMaterial);
+        grassMaterialInstance.SetTexture(Splat1Property, splat1);
+        var grassBillboardMaterialInstance = Instantiate(grassPrefab.billboard.sharedMaterial);
+        grassBillboardMaterialInstance.SetTexture(Splat1Property, splat1);
         foreach (var grass in chunkData.grass)
         {
             var inst = Instantiate(grassPrefab);
+            inst.Assign(grassMaterialInstance, grassBillboardMaterialInstance);
             inst.transform.localScale = Vector3.one * grass.scale;
             inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
             inst.transform.position = chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y);
