@@ -31,7 +31,7 @@ if not eq ${crate} "bitcraft-mini"
 	exit 0
 end
 
-# Copy stdb proto files
+# Copy spacetimedb proto files
 cd ../..
 
 # Validate assumptions
@@ -84,13 +84,14 @@ cd ../..
 module = canonicalize ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../SpacetimeDB/
 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" ${module}
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release identity init-default 
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
 sleep 3000
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-balance "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" 5000000000
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-balance 5000000000
 sleep 3000
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-default-maximum "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" 1000000000
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-default-maximum 1000000000
 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "initialize" "{}"
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "bitcraftmini" "initialize" "{}"
 '''
 
 [tasks.update-existing-module]
@@ -108,9 +109,10 @@ cd ../..
 module = canonicalize ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../SpacetimeDB/
 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" ${module}
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release identity init-default 
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
 sleep 3
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" "bitcraftmini" "update" "{}"
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call -n "bitcraftmini" "update" "{}"
 '''
 
 [tasks.expand]
