@@ -8,10 +8,7 @@ using Vector3 = UnityEngine.Vector3;
 
 public class TerrainChunk : MonoBehaviour
 {
-    [SerializeField] private GameObject mesh;
     private static readonly int Splat1Property = Shader.PropertyToID("_Splat1");
-
-    private const float _viewDistance = 100;
 
     private SpacetimeDB.Chunk _chunk;
     
@@ -57,17 +54,21 @@ public class TerrainChunk : MonoBehaviour
         var instancedMat = terrainRenderer.material;
         instancedMat.SetTexture(Splat1Property, splat1);
 
-        var grassMaterialInstance = Instantiate(grassPrefab.grass[0].sharedMaterial);
-        grassMaterialInstance.SetTexture(Splat1Property, splat1);
-        var grassBillboardMaterialInstance = Instantiate(grassPrefab.billboard.sharedMaterial);
-        grassBillboardMaterialInstance.SetTexture(Splat1Property, splat1);
-        foreach (var grass in chunkData.grass)
+        if (grassPrefab != null)
         {
-            var inst = Instantiate(grassPrefab);
-            inst.Assign(grassMaterialInstance, grassBillboardMaterialInstance);
-            inst.transform.localScale = Vector3.one * grass.scale;
-            inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
-            inst.transform.position = chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y);
+            var grassMaterialInstance = Instantiate(grassPrefab.grass[0].sharedMaterial);
+            grassMaterialInstance.SetTexture(Splat1Property, splat1);
+            var grassBillboardMaterialInstance = Instantiate(grassPrefab.billboard.sharedMaterial);
+            grassBillboardMaterialInstance.SetTexture(Splat1Property, splat1);
+            foreach (var grass in chunkData.grass)
+            {
+                var inst = Instantiate(grassPrefab);
+                inst.Assign(grassMaterialInstance, grassBillboardMaterialInstance);
+                inst.transform.localScale = Vector3.one * grass.scale;
+                inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
+                inst.transform.position = chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y);
+                inst.transform.SetParent(chunkTransform, true);
+            }
         }
         
         foreach (var tree in chunkData.trees)
@@ -76,34 +77,16 @@ public class TerrainChunk : MonoBehaviour
             inst.transform.localScale = Vector3.one * tree.scale;
             inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
             inst.transform.position = chunkTransform.position + new Vector3(tree.x, 0.0f, tree.y);
+            inst.transform.SetParent(chunkTransform, true);
         }
-        
+
         foreach (var deposit in chunkData.deposits)
         {
             var inst = Instantiate(ironDepositPrefab);
             inst.transform.localScale = Vector3.one * deposit.scale;
             inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
             inst.transform.position = chunkTransform.position + new Vector3(deposit.x, 0.0f, deposit.y);
-        }
-    }
-
-    private void Update()
-    {
-        if (PlayerMovementController.Local == null)
-        {
-            return;
-        }
-        
-        var config = SpacetimeDB.Config.FilterByVersion(0);
-        Debug.Assert(config != null);
-        var halfSize = (float)(config.chunkSize / 2);
-        var shouldShow =
-            (PlayerMovementController.Local.transform.position -
-             (transform.position + new Vector3(halfSize, 0, halfSize))).sqrMagnitude < _viewDistance * _viewDistance;
-
-        if (shouldShow != mesh.activeSelf)
-        {
-            mesh.SetActive(shouldShow);
+            inst.transform.SetParent(chunkTransform, true);
         }
     }
 }

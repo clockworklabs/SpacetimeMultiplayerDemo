@@ -73,13 +73,14 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         // TODO: This part should be automatically generated!
         clientDB.AddTable("PlayerComponent", PlayerComponent.GetTypeDef());
         clientDB.AddTable("TransformComponent", TransformComponent.GetTypeDef());
-        clientDB.AddTable("PlayerAnimationComponent", PlayerAnimationComponent.GetTypeDef());
+        clientDB.AddTable("AnimationComponent", AnimationComponent.GetTypeDef());
         clientDB.AddTable("InventoryComponent", InventoryComponent.GetTypeDef());
         clientDB.AddTable("PlayerLoginComponent", PlayerLoginComponent.GetTypeDef());
         clientDB.AddTable("Config", Config.GetTypeDef());
         clientDB.AddTable("PlayerChatMessage", PlayerChatMessage.GetTypeDef());
         clientDB.AddTable("Chunk", Chunk.GetTypeDef());
         clientDB.AddTable("ChunkData", ChunkData.GetTypeDef());
+        clientDB.AddTable("NpcComponent", NpcComponent.GetTypeDef());
 
         clientTickInterval = 1 / clientTicksPerSecond;
     }
@@ -192,9 +193,28 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 }
 
                 // Send out events
-                foreach (var dbEvent in _dbEvents)
+                var eventCount = _dbEvents.Count;
+                for (int i = 0; i < eventCount; i++)
                 {
-                    tableUpdate?.Invoke(dbEvent.tableName, dbEvent.op, dbEvent.oldValue, dbEvent.newValue);
+                    bool isUpdate = false;
+                    if (i < eventCount - 1)
+                    {
+                        if (_dbEvents[i].op == TableOp.Delete && _dbEvents[i + 1].op == TableOp.Insert)
+                        {
+                            // somewhat hacky: Delete followed by an insert on the same table is considered an update.
+                            isUpdate = _dbEvents[i].tableName.Equals(_dbEvents[i + 1].tableName);
+                        }
+                    }
+                    if (isUpdate)
+                    {
+                        // Merge delete and insert in one update
+                        tableUpdate?.Invoke(_dbEvents[i].tableName, TableOp.Update, _dbEvents[i].oldValue, _dbEvents[i+1].newValue);
+                        i++;
+                    }
+                    else
+                    {
+                        tableUpdate?.Invoke(_dbEvents[i].tableName, _dbEvents[i].op, _dbEvents[i].oldValue, _dbEvents[i].newValue);
+                    }
                 }
 
                 switch (message.TypeCase)

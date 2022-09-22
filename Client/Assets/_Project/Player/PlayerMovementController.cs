@@ -96,7 +96,7 @@ public class PlayerMovementController : MonoBehaviour
 
         if (moving != wasMoving)
         {
-            SpacetimeDB.Reducer.UpdatePlayerAnimation(NetworkPlayer.localPlayerId.Value, moving);
+            SpacetimeDB.Reducer.UpdateAnimation(NetworkPlayer.localPlayerId.Value, moving, 0);
         }
     }
 }

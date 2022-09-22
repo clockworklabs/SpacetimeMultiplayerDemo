@@ -12,7 +12,7 @@
             };
         }
         
-        public static Quaternion ToQuaternion(this SpacetimeDB.StdbQuarternion rotation)
+        public static Quaternion ToQuaternion(this SpacetimeDB.StdbQuaternion rotation)
         {
             return new Quaternion
             {
@@ -33,9 +33,9 @@
             };
         }
 
-        public static SpacetimeDB.StdbQuarternion ToStdb(this Quaternion q)
+        public static SpacetimeDB.StdbQuaternion ToStdb(this Quaternion q)
         {
-            return new SpacetimeDB.StdbQuarternion 
+            return new SpacetimeDB.StdbQuaternion 
             {
                 x = q.x,
                 y = q.y,

@@ -1,24 +1,19 @@
 mod components;
+mod math;
+mod npcs;
 mod tables;
 mod tuples;
-mod math;
 
-use components::{
-    InventoryComponent,
-    PlayerAnimationComponent,
-    TransformComponent,
-    PlayerComponent,
-    PlayerLoginComponent
-};
-use math::{StdbVector3, StdbQuarternion};
+use crate::tables::{Config, PlayerChatMessage};
+use crate::tuples::Pocket;
+use components::{AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent, TransformComponent};
+use math::{StdbQuaternion, StdbVector3};
 use spacetimedb_bindgen::spacetimedb;
 use spacetimedb_bindings::hash::Hash;
 use spacetimedb_bindings::println;
-use crate::tables::{Config, PlayerChatMessage};
-use crate::tuples::Pocket;
 
-mod terrain_generation;
 mod random;
+mod terrain_generation;
 
 // This is in charge of initializing any static global data
 #[spacetimedb(reducer)]
@@ -40,6 +35,9 @@ pub fn initialize(_identity: Hash, _timestamp: u64) {
         chunk_size: 10.0,
         entity_density: 16,
         terrain_seed: 78648326,
+        min_spawn_range: 32.0,
+        max_spawn_range: 48.0,
+        npc_detection_range: 20.0,
     });
 }
 
@@ -131,7 +129,8 @@ pub fn add_item_to_inventory(
     );
 
     // Make sure this identity owns this player
-    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
+    let player =
+        PlayerComponent::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
         println!("This identity doesn't own this player! (allowed for now)");
@@ -174,7 +173,7 @@ pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuarternion) {
+pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion) {
     let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
@@ -186,7 +185,7 @@ pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVec
 }
 
 #[spacetimedb(reducer)]
-pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool) {
+pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool, action: u32) {
     let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
@@ -194,7 +193,14 @@ pub fn update_player_animation(identity: Hash, _timestamp: u64, entity_id: u32, 
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
-    PlayerAnimationComponent::update_entity_id_eq(entity_id, PlayerAnimationComponent { entity_id, moving });
+    AnimationComponent::update_entity_id_eq(
+        entity_id,
+        AnimationComponent {
+            entity_id,
+            moving,
+            action,
+        },
+    );
 }
 
 #[spacetimedb(reducer)]
@@ -203,7 +209,7 @@ pub fn create_new_player(
     timestamp: u64,
     entity_id: u32,
     start_pos: StdbVector3,
-    start_rot: StdbQuarternion,
+    start_rot: StdbQuaternion,
     username: String,
 ) {
     // Make sure this player doesn't already exist

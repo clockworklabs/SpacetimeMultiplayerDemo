@@ -18,6 +18,12 @@ pub struct Config {
     pub terrain_seed: u32,
     // The amount of entities that can be placed on the terrain in each direction
     pub entity_density: u32,
+    // The minimum range from a player or npc a npc can spawn
+    pub min_spawn_range: f32,
+    // The maximum range from a player a npc can spawn or remain spawned
+    pub max_spawn_range: f32,
+    // Range at which the npc will start reacting to the player
+    pub npc_detection_range: f32,
 }
 
 #[spacetimedb(table)]

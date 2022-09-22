@@ -11,7 +11,16 @@ public class UIUsernameChooser : Singleton<UIUsernameChooser>
     [SerializeField] private TMP_InputField _usernameField;
     [SerializeField] private UIErrorText _error;
 
-    public void Show() => _panel.SetActive(true);
+    private bool _initialized = false;
+
+    public void Show()
+    {
+        if (!_initialized)
+        {
+            _initialized = true;
+            _panel.SetActive(true);
+        }
+    }
 
     private void OnEnable()
     {

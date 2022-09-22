@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using SpacetimeDB;
 using UnityEngine;
+using System.Linq;
 using Event = ClientApi.Event;
 using Random = UnityEngine.Random;
 
@@ -12,6 +13,15 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     [SerializeField] private float spawnAreaRadius;
 
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
+    readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
+
+    [System.Serializable]
+    private class NpcData
+	{
+        public string npcType;
+        public Npc prefab;
+	}
+    [SerializeField] private NpcData[] npcPrefabs;
 
     protected void Start()
     {
@@ -43,8 +53,33 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         switch (op)
         {
             case StdbNetworkManager.TableOp.Insert:
+            case StdbNetworkManager.TableOp.Update:
                 switch (tableName)
                 {
+                    case "NpcComponent":
+                        if (newValue.HasValue)
+                        {
+                            var npc = NpcComponent.From(newValue.Value);
+
+                            // check to see if this player already exists
+                            if (!npcs.TryGetValue(npc.entityId, out _))
+                            {
+                                // Create a new npc
+                                var prefabData = npcPrefabs.FirstOrDefault(npcData => npcData.npcType == npc.model);
+                                if (prefabData != null)
+                                {
+                                    var newNpc = Instantiate(prefabData.prefab);
+                                    newNpc.Spawn(npc.entityId);
+                                    npcs[npc.entityId] = newNpc;
+                                }
+                                else
+                                {
+                                    Debug.LogError($"Did not find npc prefab for {npc.model}");
+                                }
+                            }
+                        }
+                        break;
+
                     case "PlayerComponent":
                         if (newValue.HasValue)
                         {
@@ -97,12 +132,12 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
 
                         break;
-                    case "PlayerAnimationComponent":
+                    case "AnimationComponent":
                         if (newValue.HasValue)
                         {
-                            var playerAnimation = PlayerAnimationComponent.From(newValue.Value);
+                            var animation = AnimationComponent.From(newValue.Value);
                             // check to see if this player already exists
-                            if (players.TryGetValue(playerAnimation.entityId, out var networkPlayer))
+                            if (players.TryGetValue(animation.entityId, out var networkPlayer))
                             {
                                 // Is this our player?
                                 if (networkPlayer.IsLocal())
@@ -112,7 +147,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 else
                                 {
                                     networkPlayer.GetComponent<PlayerMovementController>()
-                                        .SetMoving(playerAnimation.moving);
+                                        .SetMoving(animation.moving);
                                 }
                             }
                         }
@@ -165,6 +200,24 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         break;
                 }
 
+                break;
+            case StdbNetworkManager.TableOp.Delete:
+                switch (tableName)
+                {
+                    case "NpcComponent":
+                        if (oldVAlue.HasValue)
+                        {
+                            var npc = NpcComponent.From(oldVAlue.Value);
+
+                            // check to see if this player already exists
+                            if (npcs.TryGetValue(npc.entityId, out var npcModel))
+                            {
+                                Destroy(npcModel.gameObject);
+                                npcs.Remove(npc.entityId);
+                            }
+                        }
+                        break;
+                }
                 break;
         }
     }

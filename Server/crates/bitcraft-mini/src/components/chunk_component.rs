@@ -1,17 +1,17 @@
+use crate::math::remap;
+use crate::math::{clamp, map_to_u8};
+use crate::{random, Config};
 use conv::{ConvUtil, RoundToNegInf};
 use fast_poisson::Poisson2D;
+use noise::NoiseFn;
 use noise::Perlin;
+use noise::Seedable;
 use rand::Rng;
+use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use spacetimedb_bindgen::spacetimedb;
-use rand_chacha::rand_core::SeedableRng;
-use spacetimedb_bindings::Hash;
 use spacetimedb_bindings::hash::hash_bytes;
-use crate::{Config, random};
-use crate::math::{clamp, map_to_u8};
-use crate::math::remap;
-use noise::Seedable;
-use noise::NoiseFn;
+use spacetimedb_bindings::Hash;
 
 #[spacetimedb(tuple)]
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
@@ -99,9 +99,15 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     sand_perlin.set_seed(config.terrain_seed + 2);
 
     fn get_dirt_value(x: f64, y: f64, dirt_perlin: Perlin) -> f32 {
-        let dirt_strength : f64 = 3.0;
+        let dirt_strength: f64 = 3.0;
         let dirt_scale: f64 = 15.0;
-        let dirt_value = remap(dirt_perlin.get([x / dirt_scale, y / dirt_scale]) as f32, -1.0, 1.0, 0.0, 1.0);
+        let dirt_value = remap(
+            dirt_perlin.get([x / dirt_scale, y / dirt_scale]) as f32,
+            -1.0,
+            1.0,
+            0.0,
+            1.0,
+        );
         return clamp(remap(dirt_value, 0.7, 1.0, 0.0, 1.0) * dirt_strength as f32, 0.0, 1.0);
     }
 
@@ -112,7 +118,11 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
 
         let sand_value = sand_perlin.get([x / sand_scale, y / sand_scale]) as f32;
         let sand_reinterpolate = remap(sand_value, -1.0, 1.0, 0.0, 1.0);
-        return clamp(remap(sand_reinterpolate, sand_min, 1.0, 0.0, 1.0) * sand_strength, 0.0, 1.0);
+        return clamp(
+            remap(sand_reinterpolate, sand_min, 1.0, 0.0, 1.0) * sand_strength,
+            0.0,
+            1.0,
+        );
     }
 
     let mut dirt_splat = Vec::<u8>::new();
@@ -120,8 +130,10 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     // The splat maps are laid out in the X direction first
     for y in 0..config.chunk_splat_resolution {
         for x in 0..config.chunk_splat_resolution {
-            let mut splat_world_x = x as f64 * splat_point_size + chunk_pos_x + (splat_point_size / 2.0) + global_noise_offset_x;
-            let mut splat_world_y = y as f64 * splat_point_size + chunk_pos_y + (splat_point_size / 2.0) + global_noise_offset_y;
+            let mut splat_world_x =
+                x as f64 * splat_point_size + chunk_pos_x + (splat_point_size / 2.0) + global_noise_offset_x;
+            let mut splat_world_y =
+                y as f64 * splat_point_size + chunk_pos_y + (splat_point_size / 2.0) + global_noise_offset_y;
 
             // Seamless splat probing
             if x == 0 {
@@ -137,7 +149,11 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
                 splat_world_y = chunk_pos_y + config.chunk_size + global_noise_offset_y;
             }
 
-            dirt_splat.push(map_to_u8(get_dirt_value(splat_world_x, splat_world_y, dirt_perlin), 0.0, 1.0));
+            dirt_splat.push(map_to_u8(
+                get_dirt_value(splat_world_x, splat_world_y, dirt_perlin),
+                0.0,
+                1.0,
+            ));
             sand_splat.push(map_to_u8(0.0, 0.0, 1.0));
         }
     }
@@ -153,7 +169,17 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
         let splat_world_y = (point[1] as f64 + chunk_pos_y) / forest_noise_scale;
 
         let dirt_value = get_dirt_value(splat_world_x, splat_world_y, dirt_perlin);
-        let forest_value = clamp(remap(forest_noise.get([splat_world_x, splat_world_y]) as f32, 0.6, 1.0, 0.0, 1.0) * forest_noise_strength, 0.0, 1.0);
+        let forest_value = clamp(
+            remap(
+                forest_noise.get([splat_world_x, splat_world_y]) as f32,
+                0.6,
+                1.0,
+                0.0,
+                1.0,
+            ) * forest_noise_strength,
+            0.0,
+            1.0,
+        );
         if forest_value - dirt_value > rng.gen_range(0.0..1.0) {
             trees.push(Tree {
                 chunk: chunk_pos,
@@ -165,7 +191,6 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
             tree_idx += 1;
         }
     }
-
 
     let grass_perlin = Perlin::new();
     grass_perlin.set_seed(config.terrain_seed + 4);
@@ -213,14 +238,10 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
 
     ChunkData::insert(ChunkData {
         chunk_id: hash_chunk(chunk_pos),
-        data: encode_chunk_data(vec! {
-            heightmap,
-            dirt_splat,
-            sand_splat,
-        }),
+        data: encode_chunk_data(vec![heightmap, dirt_splat, sand_splat]),
         grass,
         trees,
-        deposits
+        deposits,
     });
 
     Chunk::insert(Chunk {
