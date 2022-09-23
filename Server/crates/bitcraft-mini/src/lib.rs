@@ -9,7 +9,7 @@ use crate::tuples::Pocket;
 use components::{AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent, TransformComponent};
 use math::{StdbQuaternion, StdbVector3};
 use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_bindings::hash::Hash;
+use spacetimedb_lib::hash::Hash;
 use spacetimedb_bindings::println;
 
 mod random;

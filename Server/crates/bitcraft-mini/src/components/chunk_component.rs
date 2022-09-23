@@ -10,8 +10,8 @@ use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_bindings::hash::hash_bytes;
-use spacetimedb_bindings::Hash;
+use spacetimedb_lib::Hash;
+use spacetimedb_lib::hash::hash_bytes;
 
 #[spacetimedb(tuple)]
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
@@ -261,9 +261,9 @@ fn encode_chunk_data(splats: Vec<Vec<u8>>) -> Vec<u8> {
 
 fn hash_chunk(pos: ChunkPosition) -> Hash {
     let mut buff = Vec::<u8>::new();
-    let value = spacetimedb_bindings::TypeValue::I32(pos.x);
+    let value = spacetimedb_lib::TypeValue::I32(pos.x);
     value.encode(&mut buff);
-    let value = spacetimedb_bindings::TypeValue::I32(pos.y);
+    let value = spacetimedb_lib::TypeValue::I32(pos.y);
     value.encode(&mut buff);
     hash_bytes(buff)
 }
