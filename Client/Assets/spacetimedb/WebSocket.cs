@@ -81,7 +81,7 @@ namespace WebSocketDispatch
     public class WebSocket
     {
         // WebSocket buffer for incoming messages
-        private static readonly int MAXMessageSize = 1024 * 1024 * 10; //10 MB
+        private static readonly int MAXMessageSize = 0x2000000; // 32MB
 
         // Connection parameters
         private readonly ConnectOptions _options;
