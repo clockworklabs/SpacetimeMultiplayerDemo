@@ -9,8 +9,8 @@ use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_bindings::hash::hash_bytes;
-//use spacetimedb_bindings::println;
+use spacetimedb_lib::hash::hash_bytes;
+//use spacetimedb_lib::println;
 use std::f32::consts::PI;
 use std::ops::Add;
 
