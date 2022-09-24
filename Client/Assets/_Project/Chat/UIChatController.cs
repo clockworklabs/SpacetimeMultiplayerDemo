@@ -25,10 +25,39 @@ public class UIChatController : Singleton<UIChatController>
             OnChatButtonPress();
         });
         PlayerMovementController.localMovementDisabled.Add(() => EventSystem.current.currentSelectedGameObject == _chatInput.gameObject);
+        Hide();
+        enabled = false;
+        NetworkPlayer.OnLocalPlayerInitialized += () => enabled = true;
     }
 
-    public void Show() => GetComponent<UIFade>().FadeIn();
-    public void Hide() => GetComponent<UIFade>().FadeOut();
+    public void Show()
+    {
+        if (enabled)
+        {
+            GetComponent<UIFade>().FadeIn();
+            CameraController.AddDisabler(GetHashCode());
+        }
+    }
+    public void Hide()
+    {
+        if (enabled)
+        {
+            GetComponent<UIFade>().FadeOut();
+            CameraController.RemoveDisabler(GetHashCode());
+        }
+    }
+
+    public void Toggle()
+	{
+        if (GetComponent<UIFade>().IsShowing())
+        {
+            Hide();
+        }
+        else
+		{
+            Show();
+		}
+    }
 
     // TODO: this redraws the whole scroll layout each time, causing a visible redraw that is ugly
     // TODO: this doesn't seem to work on initial chat load.

@@ -1,3 +1,4 @@
+use crate::components::ResourceComponent;
 use crate::math::remap;
 use crate::math::{clamp, map_to_u8};
 use crate::{random, Config};
@@ -30,6 +31,7 @@ pub struct Grass {
 
 #[spacetimedb(tuple)]
 pub struct Tree {
+    pub entity_id: u32,
     pub chunk: ChunkPosition,
     pub tree_idx: u16,
     pub x: f32,
@@ -39,6 +41,7 @@ pub struct Tree {
 
 #[spacetimedb(tuple)]
 pub struct Deposit {
+    pub entity_id: u32,
     pub chunk: ChunkPosition,
     pub deposit_idx: u16,
     pub x: f32,
@@ -67,6 +70,15 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     spacetimedb::println!("Generating chunk: {:?}", chunk_pos);
     let config = Config::filter_version_eq(0).unwrap();
     random::register();
+
+    let mut resource_entity_id = 0;
+
+    // ToDo: It would be nice if SpacetimeDB could provide us with a sequential ID.
+    // In the meantime, find the highest id in the table.
+    for resource in ResourceComponent::iter() {
+        resource_entity_id = resource_entity_id.max(resource.entity_id);
+    }
+    resource_entity_id += 1;
 
     let mut rng = ChaCha8Rng::seed_from_u64(config.terrain_seed as u64 + chunk_pos.x as u64 + chunk_pos.y as u64);
 
@@ -112,6 +124,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
         return clamp(remap(dirt_value, 0.7, 1.0, 0.0, 1.0) * dirt_strength as f32, 0.0, 1.0);
     }
 
+    /*
     fn get_sand_value(x: f64, y: f64, sand_perlin: Perlin) -> f32 {
         let sand_strength: f32 = 8.0;
         let sand_scale: f64 = 20.0;
@@ -125,6 +138,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
             1.0,
         );
     }
+    */
 
     let mut dirt_splat = Vec::<u8>::new();
     let mut sand_splat = Vec::<u8>::new();
@@ -183,12 +197,24 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
         );
         if forest_value - dirt_value > rng.gen_range(0.0..1.0) {
             trees.push(Tree {
+                entity_id: resource_entity_id,
                 chunk: chunk_pos,
                 tree_idx,
                 x: point[0] as f32,
                 y: point[1] as f32,
                 scale: remap(forest_value as f32, 0.0, 1.0, tree_model_scale[0], tree_model_scale[1]),
             });
+            // insert tree
+            ResourceComponent::insert(ResourceComponent {
+                entity_id: resource_entity_id,
+                health: 10, // a config file would be nice
+                max_health: 10,
+                item_yield_id: 4, // that's some wood log
+                item_yield_quantity: 1,
+                resource_id: 1, // tree
+            });
+
+            resource_entity_id += 1;
             tree_idx += 1;
         }
     }
@@ -226,6 +252,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
         let dirt_value = get_dirt_value(splat_world_x, splat_world_y, dirt_perlin);
         if dirt_value >= 0.95 {
             deposits.push(Deposit {
+                entity_id: resource_entity_id,
                 chunk: chunk_pos,
                 deposit_idx,
                 x: point[0] as f32,
@@ -233,6 +260,16 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
                 scale: rng.gen_range(deposit_model_scale[0]..deposit_model_scale[1]),
             });
 
+            // insert deposit
+            ResourceComponent::insert(ResourceComponent {
+                entity_id: resource_entity_id,
+                health: 5, // a config file would be nice
+                max_health: 5,
+                item_yield_id: 3, // that's some iron ore
+                item_yield_quantity: 1,
+                resource_id: 0, // ore deposit
+            });
+            resource_entity_id += 1;
             deposit_idx += 1;
         }
     }

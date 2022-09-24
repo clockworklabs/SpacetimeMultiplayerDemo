@@ -15,6 +15,8 @@ public class NetworkPlayer : MonoBehaviour
     public static Hash? identity;
     public static string token;
 
+    public static Action OnLocalPlayerInitialized;
+
     private void Awake()
     {
         cameraRig.SetActive(false);
@@ -58,13 +60,14 @@ public class NetworkPlayer : MonoBehaviour
             cameraRig.SetActive(true);
             PlayerMovementController.Local = GetComponent<PlayerMovementController>();
             PlayerInventoryController.Local = GetComponent<PlayerInventoryController>();
+            PlayerAnimator.Local = GetComponentInChildren<PlayerAnimator>();
+
             PlayerInventoryController.Local.Spawn();
 
             // We are now logged in
             Reducer.PlayerUpdateLoginState(true);
-            
-            // Show chat
-            UIChatController.instance.Show();
+
+            OnLocalPlayerInitialized?.Invoke();
         }
         else
         {

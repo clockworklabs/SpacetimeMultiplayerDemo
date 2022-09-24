@@ -11,6 +11,42 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
     private bool _slotsCreated;
     private List<UIInventorySlot> _slots = new List<UIInventorySlot>();
 
+	private void Start()
+	{
+        NetworkPlayer.OnLocalPlayerInitialized += () => enabled = true;
+        enabled = false;
+    }
+
+    public void Show()
+    {
+        if (enabled)
+        {
+            GetComponent<UIFade>().FadeIn();
+            CameraController.AddDisabler(GetHashCode());
+        }
+    }
+
+    public void Hide()
+    {
+        if (enabled)
+        {
+            GetComponent<UIFade>().FadeOut();
+            CameraController.RemoveDisabler(GetHashCode());
+        }
+    }
+
+    public void Toggle()
+    {
+        if (GetComponent<UIFade>().IsShowing())
+        {
+            Hide();
+        }
+        else
+        {
+            Show();
+        }
+    }
+
     public void CreateSlots(int maxSlotCount)
     {
         if (_slotsCreated)

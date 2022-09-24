@@ -13,6 +13,7 @@ public class PlayerMovementController : MonoBehaviour
     private Vector2 movementVec;
     private NetworkPlayer player;
     private bool moving;
+    private bool _interacting;
 
     public static CallbackBool localMovementDisabled = new CallbackBool(CallbackBool.Mode.Or);
     public static CallbackBool rigidBodyDisabled = new CallbackBool(CallbackBool.Mode.Or);
@@ -20,7 +21,7 @@ public class PlayerMovementController : MonoBehaviour
     private static readonly int WalkingProperty = Animator.StringToHash("Walking");
 
     public static PlayerMovementController Local;
-    
+
     protected void Awake()
     {
         body = GetComponent<Rigidbody>();
@@ -36,9 +37,16 @@ public class PlayerMovementController : MonoBehaviour
             var chunk = TerrainController.instance.GetChunk(chunkPosX, chunkPosY);
             return chunk == null;
         });
+
+        GetComponentInChildren<PlayerAnimator>().OnInteractionUpdate += OnInteractionUpdate;
     }
 
-    public Transform GetModelTransform() => modelTransform;
+	private void OnDestroy()
+	{
+        GetComponentInChildren<PlayerAnimator>().OnInteractionUpdate -= OnInteractionUpdate;
+    }
+
+	public Transform GetModelTransform() => modelTransform;
     
     public void SetMove(UnityEngine.Vector3 vec) => movementVec = vec;
 
@@ -50,7 +58,7 @@ public class PlayerMovementController : MonoBehaviour
             body.isKinematic = !body.isKinematic;
         }
         
-        if (!player.IsLocal() || localMovementDisabled.Invoke())
+        if (!player.IsLocal() || localMovementDisabled.Invoke() || !CameraController.instance.GameCameraEnabled)
         {
             return;
         }
@@ -71,12 +79,25 @@ public class PlayerMovementController : MonoBehaviour
         }
 
         this.moving = moving;
-    }
-    
+        anim.SetBool(WalkingProperty, moving);
+	}
+
+	void OnInteractionUpdate(bool interacting)
+	{
+        _interacting = interacting;
+	}
+
     private void Update()
     {
+        if (_interacting || !CameraController.instance.GameCameraEnabled)
+        {
+            moving = false;
+            anim.SetBool(WalkingProperty, false);
+            return;
+        }
+
         anim.SetBool(WalkingProperty, moving);
-        
+
         if (!player.IsLocal() || localMovementDisabled.Invoke() || !NetworkPlayer.localPlayerId.HasValue)
         {
             return;

@@ -38,7 +38,7 @@ public class PlayerInventoryController : MonoBehaviour
         {
             Debug.Log($"Starting item: {item.item.name}, amount: {item.amount}");
             Debug.Assert(NetworkPlayer.localPlayerId != null, "NetworkPlayer._localPlayerId != null");
-            Reducer.AddItemToInventory(NetworkPlayer.localPlayerId.Value, item.item.itemId, (uint)pocketIdx, (int)item.amount);
+            Reducer.AddItemToInventory(NetworkPlayer.localPlayerId.Value, item.item.itemId, pocketIdx, (int)item.amount);
             pocketIdx++;
         }
     }

@@ -19,6 +19,7 @@ public class UIUsernameChooser : Singleton<UIUsernameChooser>
         {
             _initialized = true;
             _panel.SetActive(true);
+            CameraController.AddDisabler(GetHashCode());
         }
     }
 
@@ -37,6 +38,7 @@ public class UIUsernameChooser : Singleton<UIUsernameChooser>
         {
             BitCraftMiniGameManager.instance.CreatePlayer(username);
             _panel.SetActive(false);
+            CameraController.RemoveDisabler(GetHashCode());
         }
         else
         {

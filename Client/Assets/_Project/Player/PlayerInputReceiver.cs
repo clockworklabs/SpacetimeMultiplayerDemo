@@ -8,33 +8,48 @@ public class PlayerInputReceiver : MonoBehaviour
 {
     private bool cameraMouseButtonDown;
     private Vector2 mouseDelta;
-    private Vector2 pointerPosition;
-    private Vector2 lastPointerPosition;
     private float zoomDelta;
 
     void OnToggleInventory(InputValue value)
     {
-        UIInventoryWindow.instance.GetComponent<UIFade>().Toggle();
+        UIInventoryWindow.instance.Toggle();
     }
-    
+
+    void OnToggleChat(InputValue value)
+    {
+        UIChatController.instance.Toggle();
+	}
+
+	void OnActionButton(InputValue value)
+	{
+        if (Reticle.SelectedTarget != null)
+        {
+            if (!PlayerAnimator.Local.Interacting) {
+                var resource = Reticle.SelectedTarget.GetComponent<GameResource>();
+                if (resource == null)
+                {
+                    Debug.LogError("Non-resource gameobject has a Resource collider, or it's missing a GameResource component.");
+                    return;
+                }
+                PlayerAnimator.Local.Interact(resource);
+                SpacetimeDB.Reducer.Extract(NetworkPlayer.localPlayerId.Value, resource.EntityId);
+            }
+        }
+    }
+
+	
     void OnMove(InputValue value)
     {
         if (PlayerMovementController.Local == null)
         {
             return;
         }
-
         PlayerMovementController.Local.SetMove(value.Get<Vector2>());
     }
 
     void OnPointerPosition(InputValue value)
     {
-        pointerPosition = value.Get<Vector2>();
-    }
-
-    void OnCameraMouseButton(InputValue value)
-    {
-        cameraMouseButtonDown = value.isPressed;
+        mouseDelta = value.Get<Vector2>();
     }
 
     void OnZoom(InputValue value)
@@ -48,11 +63,10 @@ public class PlayerInputReceiver : MonoBehaviour
         {
             return;
         }
-        mouseDelta = pointerPosition - lastPointerPosition;
-        lastPointerPosition = pointerPosition;
-        CameraController.instance.SetMouseDelta(cameraMouseButtonDown ? mouseDelta : Vector2.zero);
+        CameraController.instance.SetMouseDelta(mouseDelta);
         CameraController.instance.SetZoomDelta(zoomDelta);
 
         zoomDelta = 0.0f;
+        mouseDelta = Vector2.zero;
     }
 }

@@ -6,7 +6,10 @@ mod tuples;
 
 use crate::tables::{Config, PlayerChatMessage};
 use crate::tuples::Pocket;
-use components::{AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent, TransformComponent};
+use components::{
+    AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent, ResourceComponent,
+    TransformComponent,
+};
 use math::{StdbQuaternion, StdbVector3};
 use spacetimedb::spacetimedb;
 use spacetimedb::Hash;
@@ -117,17 +120,9 @@ pub fn add_item_to_inventory(
     _timestamp: u64,
     entity_id: u32,
     item_id: u32,
-    pocket_idx: u32,
+    pocket_idx: i32, // < 0 to auto assign the first valid index
     item_count: i32,
 ) {
-    // Check to see if this pocket index is bad
-    let config = Config::filter_version_eq(0).unwrap();
-    assert!(
-        pocket_idx < config.max_player_inventory_slots,
-        "This pocket index is invalid: {}",
-        pocket_idx
-    );
-
     // Make sure this identity owns this player
     let player =
         PlayerComponent::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
@@ -139,6 +134,37 @@ pub fn add_item_to_inventory(
 
     let mut inventory =
         InventoryComponent::filter_entity_id_eq(entity_id).expect("This player doesn't have an inventory!");
+
+    // Check to see if this pocket index is bad
+    let config = Config::filter_version_eq(0).unwrap();
+
+    // Change negative pocket index for the first valid pocket index
+    let pocket_idx = if pocket_idx < 0 {
+        let mut idx = u32::MAX;
+        for i in 0..config.max_player_inventory_slots {
+            if let Some(pocket) = inventory.get_pocket(i) {
+                if pocket.item_id == item_id {
+                    idx = i;
+                    break;
+                }
+            } else {
+                idx = i;
+                break;
+            }
+        }
+        if idx >= config.max_player_inventory_slots {
+            panic!("No free slot");
+        }
+        idx
+    } else {
+        pocket_idx as u32
+    };
+
+    assert!(
+        pocket_idx < config.max_player_inventory_slots,
+        "This pocket index is invalid: {}",
+        pocket_idx
+    );
 
     match inventory.get_pocket(pocket_idx) {
         Some(mut pocket) => {
@@ -302,5 +328,38 @@ pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
                 );
             }
         }
+    }
+}
+
+#[spacetimedb(reducer)]
+pub fn extract(identity: Hash, timestamp: u64, entity_id: u32, resource_entity_id: u32) {
+    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist.");
+
+    // Make sure this identity owns this player
+    if player.owner_id != identity {
+        println!("This identity doesn't own this player! (allowed for now)");
+    }
+
+    // ToDo: validate resource distance from player. For now resource position is determined by the chunk so we can't.
+
+    let mut resource = ResourceComponent::filter_entity_id_eq(resource_entity_id).expect("This resource doesn't exist");
+
+    // Attempt to add resources to the player's inventory
+
+    add_item_to_inventory(
+        identity,
+        timestamp,
+        entity_id,
+        resource.item_yield_id.into(),
+        -1,
+        resource.item_yield_quantity.into(),
+    );
+
+    resource.health -= 1;
+
+    if resource.health <= 0 {
+        ResourceComponent::delete_entity_id_eq(resource_entity_id);
+    } else {
+        ResourceComponent::update_entity_id_eq(resource_entity_id, resource);
     }
 }

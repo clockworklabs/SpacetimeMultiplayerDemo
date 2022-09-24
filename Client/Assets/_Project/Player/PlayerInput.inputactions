@@ -24,15 +24,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "CameraMouseButton",
-                    "type": "PassThrough",
-                    "id": "12334e60-901e-45ad-bdc2-6c19f207ea9c",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Zoom",
                     "type": "PassThrough",
                     "id": "4aed5fe3-f93b-4d0d-9be5-87e24b5cef68",
@@ -45,6 +36,24 @@
                     "name": "ToggleInventory",
                     "type": "Button",
                     "id": "834ebed2-2060-4735-9a8f-c5049dd97bac",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleChat",
+                    "type": "Button",
+                    "id": "83ea310e-9f3a-4d1e-91c3-6138de3704bc",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ActionButton",
+                    "type": "Button",
+                    "id": "d13bf7cb-b6c5-4413-ad8b-2268c95c91f9",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
@@ -110,22 +119,11 @@
                 {
                     "name": "",
                     "id": "2db9f478-bcea-457d-9050-4ea42880f695",
-                    "path": "<Mouse>/position",
+                    "path": "<Mouse>/delta",
                     "interactions": "",
                     "processors": "",
                     "groups": "Mouse and Keyboard",
                     "action": "PointerPosition",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "49b7b346-a452-485d-92d4-35731e51eb81",
-                    "path": "<Mouse>/rightButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "CameraMouseButton",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -148,6 +146,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "ToggleInventory",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "255ecdd6-79f4-4149-badd-c132581aefe4",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleChat",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f14e2373-923c-4d2d-b393-c8191df670d5",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ActionButton",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

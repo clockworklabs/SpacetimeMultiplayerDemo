@@ -81,6 +81,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB.AddTable("Chunk", Chunk.GetTypeDef());
         clientDB.AddTable("ChunkData", ChunkData.GetTypeDef());
         clientDB.AddTable("NpcComponent", NpcComponent.GetTypeDef());
+        clientDB.AddTable("ResourceComponent", ResourceComponent.GetTypeDef());
 
         clientTickInterval = 1 / clientTicksPerSecond;
     }

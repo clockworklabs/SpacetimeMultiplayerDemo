@@ -78,6 +78,7 @@ public class TerrainChunk : MonoBehaviour
             inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
             inst.transform.position = chunkTransform.position + new Vector3(tree.x, 0.0f, tree.y);
             inst.transform.SetParent(chunkTransform, true);
+            inst.transform.GetComponent<GameResource>().Init(tree.entityId);
         }
 
         foreach (var deposit in chunkData.deposits)
@@ -87,6 +88,7 @@ public class TerrainChunk : MonoBehaviour
             inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
             inst.transform.position = chunkTransform.position + new Vector3(deposit.x, 0.0f, deposit.y);
             inst.transform.SetParent(chunkTransform, true);
+            inst.transform.GetComponent<GameResource>().Init(deposit.entityId);
         }
     }
 }

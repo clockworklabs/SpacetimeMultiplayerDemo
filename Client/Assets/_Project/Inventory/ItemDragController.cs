@@ -99,7 +99,6 @@ public class ItemDragController : Singleton<ItemDragController>
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, Mouse.current.position.ReadValue(),
                     null, out var canvasPoint);
                 rectTransform!.anchoredPosition = canvasPoint - _dragOffset;
-                Debug.Log($"Position: {canvasPoint}");
                 
                 if (!Mouse.current.leftButton.isPressed)
                 {

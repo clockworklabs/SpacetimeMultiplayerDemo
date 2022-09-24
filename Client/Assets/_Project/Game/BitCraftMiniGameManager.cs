@@ -14,6 +14,18 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
     readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
+    readonly Dictionary<uint, ResourceComponent> resources = new Dictionary<uint, ResourceComponent>();
+
+    public ResourceComponent GetResource(uint entityId)
+    {
+        if (resources.TryGetValue(entityId, out var res))
+        {
+            return res;
+        }
+        return null;
+    }
+
+    public static System.Action<uint> OnResourceUpdated;
 
     [System.Serializable]
     private class NpcData
@@ -146,8 +158,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 }
                                 else
                                 {
-                                    networkPlayer.GetComponent<PlayerMovementController>()
-                                        .SetMoving(animation.moving);
+                                    // ToDo: Animation Component is probably overkill. Movement and Action can trigger the animations.
+                                    networkPlayer.GetComponent<PlayerMovementController>().SetMoving(animation.moving);
                                 }
                             }
                         }
@@ -196,7 +208,14 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             var chunk = Chunk.From(newValue.Value);
                             TerrainController.instance.AddChunk(chunk);
                         }
-
+                        break;
+                    case "ResourceComponent":
+                        if (newValue.HasValue)
+                        {
+                            var resource = ResourceComponent.From(newValue.Value);
+                            resources[resource.entityId] = resource;
+                            OnResourceUpdated?.Invoke(resource.entityId);
+                        }
                         break;
                 }
 
@@ -217,6 +236,15 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             }
                         }
                         break;
+                    case "ResourceComponent":
+                        if (oldVAlue.HasValue)
+                        {
+                            var resource = ResourceComponent.From(oldVAlue.Value);
+                            resources.Remove(resource.entityId);
+                            OnResourceUpdated?.Invoke(resource.entityId);
+                        }
+                        break;
+
                 }
                 break;
         }

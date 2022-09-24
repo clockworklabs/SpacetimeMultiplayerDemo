@@ -15,3 +15,5 @@ MonoBehaviour:
   allAssets:
   - {fileID: 11400000, guid: 0c9fba2ab458d3ec3b7db05dba1f2c6c, type: 2}
   - {fileID: 11400000, guid: 02bd056da32cc1bdcb0db73faf3d67b3, type: 2}
+  - {fileID: 11400000, guid: 84d63e440f7dfc64984e4cec69bf3b3f, type: 2}
+  - {fileID: 11400000, guid: c90e50675647e7f49a0fa81d4eb3bd30, type: 2}
