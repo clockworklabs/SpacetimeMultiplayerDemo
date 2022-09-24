@@ -1,4 +1,4 @@
-use spacetimedb_bindgen::spacetimedb;
+use spacetimedb::spacetimedb;
 
 #[derive(Copy, Clone)]
 #[spacetimedb(table)]

@@ -9,9 +9,10 @@ use noise::Seedable;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_lib::Hash;
-use spacetimedb_lib::hash::hash_bytes;
+use spacetimedb::spacetimedb;
+use spacetimedb::Hash;
+use spacetimedb::hash::hash_bytes;
+use spacetimedb::spacetimedb_lib;
 
 #[spacetimedb(tuple)]
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
@@ -63,7 +64,7 @@ pub struct Chunk {
 }
 
 pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
-    spacetimedb_bindings::println!("Generating chunk: {:?}", chunk_pos);
+    spacetimedb::println!("Generating chunk: {:?}", chunk_pos);
     let config = Config::filter_version_eq(0).unwrap();
     random::register();
 

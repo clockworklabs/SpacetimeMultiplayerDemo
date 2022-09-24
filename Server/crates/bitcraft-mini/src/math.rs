@@ -1,4 +1,4 @@
-use spacetimedb_bindgen::spacetimedb;
+use spacetimedb::spacetimedb;
 use std::ops;
 
 #[derive(Clone, Copy, Debug)]

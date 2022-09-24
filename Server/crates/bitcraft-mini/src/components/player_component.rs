@@ -1,5 +1,5 @@
-use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_lib::Hash;
+use spacetimedb::spacetimedb;
+use spacetimedb::Hash;
 
 #[spacetimedb(table)]
 pub struct PlayerComponent {

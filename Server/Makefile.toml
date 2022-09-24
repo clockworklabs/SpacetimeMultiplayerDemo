@@ -42,7 +42,7 @@ end
 
 mkdir protobuf 
 mkdir cs-src
-cp ../../SpacetimeDB/crates/spacetimedb/protobuf/client_api.proto ./protobuf/client_api.proto
+cp ../../SpacetimeDB/crates/spacetimedb-core/protobuf/client_api.proto ./protobuf/client_api.proto
 
 
 # Build bitcraft mini

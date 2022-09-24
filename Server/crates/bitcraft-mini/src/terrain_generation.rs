@@ -1,5 +1,5 @@
 use crate::{TransformComponent, PlayerComponent, Config};
-use spacetimedb_bindgen::spacetimedb;
+use spacetimedb::spacetimedb;
 use std::collections::BTreeSet;
 use crate::components::chunk_component::{ChunkPosition, generate_chunk};
 use crate::components::chunk_component::Chunk;

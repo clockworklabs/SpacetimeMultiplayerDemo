@@ -1,4 +1,4 @@
-use spacetimedb_bindgen::spacetimedb;
+use spacetimedb::spacetimedb;
 
 #[spacetimedb(table)]
 pub struct PlayerLoginComponent {

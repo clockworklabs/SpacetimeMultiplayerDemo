@@ -2,8 +2,8 @@ use crate::{
     components::{AnimationComponent, NpcComponent, TransformComponent},
     math::{StdbQuaternion, StdbVector3},
 };
-use spacetimedb_bindgen::spacetimedb;
-use spacetimedb_lib::hash::Hash;
+use spacetimedb::spacetimedb;
+use spacetimedb::hash::Hash;
 
 #[spacetimedb(reducer)]
 pub fn move_npc(_identity: Hash, timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion, duration: u64) {

@@ -1,6 +1,6 @@
 use crate::math::StdbQuaternion;
 use crate::math::StdbVector3;
-use spacetimedb_bindgen::spacetimedb;
+use spacetimedb::spacetimedb;
 
 #[spacetimedb(table)]
 pub struct TransformComponent {
