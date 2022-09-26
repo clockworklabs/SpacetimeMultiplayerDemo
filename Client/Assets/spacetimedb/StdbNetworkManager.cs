@@ -150,7 +150,6 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 foreach (var update in subscriptionUpdate.TableUpdates)
                 {
                     var tableName = update.TableName;
-                    var tableId = update.TableId;
                     var table = clientDB.GetTable(tableName);
                     if (table == null)
                     {

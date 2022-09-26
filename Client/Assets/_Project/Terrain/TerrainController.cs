@@ -35,8 +35,12 @@ public class TerrainController : Singleton<TerrainController>
     public void AddChunk(Chunk chunk)
     {
         var terrainChunk = Instantiate(_terrainChunkPrefab);
-        terrainChunk.Spawn(chunk, _enableGrass ? _grassPrefab : null, _treePrefab, _ironDepositPrefab);
-        chunks.Add(terrainChunk);
+        StartCoroutine(terrainChunk.Spawn(chunk, _enableGrass ? _grassPrefab : null, _treePrefab, _ironDepositPrefab));
+    }
+
+    public void ChunkSpawned(TerrainChunk chunk)
+    {
+        chunks.Add(chunk);
     }
 
 	private void Update()
@@ -65,6 +69,7 @@ public class TerrainController : Singleton<TerrainController>
             if (shouldShow != chunk.gameObject.activeInHierarchy)
             {
                 chunk.gameObject.SetActive(shouldShow);
+                chunk.VisibilityUpdated(shouldShow);
             }
         }
     }

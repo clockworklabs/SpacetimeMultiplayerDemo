@@ -229,6 +229,7 @@ namespace SpacetimeDB
 
         public static (TypeValue?, int) Decode(TypeDef def, ByteString bytes)
         {
+            var b = bytes[1];
             var byteArr = bytes.ToByteArray();
             return Decode(def, byteArr, 0, byteArr.Length);
         }

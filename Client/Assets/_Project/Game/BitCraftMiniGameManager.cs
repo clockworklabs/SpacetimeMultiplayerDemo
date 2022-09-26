@@ -16,6 +16,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
     readonly Dictionary<uint, ResourceComponent> resources = new Dictionary<uint, ResourceComponent>();
 
+    public static GameObject FeatureRoot;
+
     public ResourceComponent GetResource(uint entityId)
     {
         if (resources.TryGetValue(entityId, out var res))
@@ -37,6 +39,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
     protected void Start()
     {
+        FeatureRoot = new GameObject("Features");
+
         Application.targetFrameRate = 60;
 
         StdbNetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
@@ -60,7 +64,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.Connect();
     }
 
-    void OnTableUpdate(string tableName, StdbNetworkManager.TableOp op, TypeValue? oldVAlue, TypeValue? newValue)
+    void OnTableUpdate(string tableName, StdbNetworkManager.TableOp op, TypeValue? oldValue, TypeValue? newValue)
     {
         switch (op)
         {
@@ -224,9 +228,9 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 switch (tableName)
                 {
                     case "NpcComponent":
-                        if (oldVAlue.HasValue)
+                        if (oldValue.HasValue)
                         {
-                            var npc = NpcComponent.From(oldVAlue.Value);
+                            var npc = NpcComponent.From(oldValue.Value);
 
                             // check to see if this player already exists
                             if (npcs.TryGetValue(npc.entityId, out var npcModel))
@@ -237,9 +241,9 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
                         break;
                     case "ResourceComponent":
-                        if (oldVAlue.HasValue)
+                        if (oldValue.HasValue)
                         {
-                            var resource = ResourceComponent.From(oldVAlue.Value);
+                            var resource = ResourceComponent.From(oldValue.Value);
                             resources.Remove(resource.entityId);
                             OnResourceUpdated?.Invoke(resource.entityId);
                         }

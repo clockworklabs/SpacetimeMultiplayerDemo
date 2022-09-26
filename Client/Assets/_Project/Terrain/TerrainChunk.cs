@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using SpacetimeDB;
-using UnityEditor;
+using Unity.Collections;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -11,46 +11,67 @@ public class TerrainChunk : MonoBehaviour
     private static readonly int Splat1Property = Shader.PropertyToID("_Splat1");
 
     private SpacetimeDB.Chunk _chunk;
-    
+
     public SpacetimeDB.Chunk GetChunk() => _chunk;
-    
-    byte[] GetDirtSplat(byte[] data)
+
+    private readonly List<Feature> features = new List<Feature>();
+
+    private void OnDestroy()
     {
-        var config = Config.FilterByVersion(0);
-        var result = new byte[config.chunkSplatResolution * config.chunkSplatResolution];
-        Array.Copy(data, config.chunkTerrainResolution * config.chunkTerrainResolution, 
-            result, 0, result.Length);
-        return result;
+        if (!gameObject.scene.isLoaded)
+        {
+            return;
+        }
+
+        foreach (var feature in features)
+        {
+            feature.DestroyFeature();
+        }
+
+        features.Clear();
     }
-    
-    byte[] GetSandSplat(byte[] data)
+
+    public void VisibilityUpdated(bool visible)
     {
-        var config = Config.FilterByVersion(0);
-        var result = new byte[config.chunkSplatResolution * config.chunkSplatResolution];
-        Array.Copy(data, config.chunkTerrainResolution * config.chunkTerrainResolution 
-                         + config.chunkSplatResolution * config.chunkSplatResolution, result, 0, result.Length);
-        return result;
+        foreach (var feature in features)
+        {
+            feature.SetFeatureVisibility(visible);
+        }
     }
-    
-    public void Spawn(Chunk chunk, GrassPrefab grassPrefab, GameObject treePrefab, GameObject ironDepositPrefab)
+
+    public IEnumerator Spawn(Chunk chunk, GrassPrefab grassPrefab, GameObject treePrefab, GameObject ironDepositPrefab)
     {
+        var terrainRenderer = GetComponentInChildren<MeshRenderer>();
+        terrainRenderer.enabled = false;
+        
         _chunk = chunk;
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null);
         var chunkPosition = _chunk.position;
         var chunkTransform = transform;
-        chunkTransform.position = new Vector3((float)(chunkPosition.x * config.chunkSize), 0, (float)(chunkPosition.y * config.chunkSize));
+        chunkTransform.position = new Vector3((float)(chunkPosition.x * config.chunkSize), 0,
+            (float)(chunkPosition.y * config.chunkSize));
         chunkTransform.localScale =
             new Vector3((float)config.chunkSize, (float)config.chunkSize, (float)config.chunkSize);
 
         var chunkData = ChunkData.FilterByChunkId(_chunk.chunkId);
-        var data = chunkData.data.ToArray();
-        var dirtSplat = GetDirtSplat(data);
-        var sandSplat = GetSandSplat(data);
-        var splat1 = TextureUtil.Create(dirtSplat, sandSplat, null, null, (int)config.chunkSplatResolution,
-            (int)config.chunkSplatResolution);
+        Texture2D splat1 = null;
+        var nativeData = new NativeArray<byte>((int)config.chunkSplatResolution * (int)config.chunkSplatResolution * 4, Allocator.Persistent);
+        for (var x = 0; x < chunkData.data.Count; x++)
+        {
+            nativeData[x] = chunkData.data[x];
+        }
+
+        yield return TextureUtil.Create(nativeData, (int)config.chunkSplatResolution, (int)config.chunkTerrainResolution, outputTexture => splat1 = outputTexture);
+        if (splat1 == null)
+        {
+            yield break;
+        }
+
+        nativeData.Dispose();
+
         
-        var terrainRenderer = GetComponentInChildren<MeshRenderer>();
+        terrainRenderer.enabled = true;
         var instancedMat = terrainRenderer.material;
         instancedMat.SetTexture(Splat1Property, splat1);
 
@@ -62,33 +83,31 @@ public class TerrainChunk : MonoBehaviour
             grassBillboardMaterialInstance.SetTexture(Splat1Property, splat1);
             foreach (var grass in chunkData.grass)
             {
-                var inst = Instantiate(grassPrefab);
-                inst.Assign(grassMaterialInstance, grassBillboardMaterialInstance);
-                inst.transform.localScale = Vector3.one * grass.scale;
-                inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
-                inst.transform.position = chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y);
-                inst.transform.SetParent(chunkTransform, true);
+                var feature = Feature.Create(grassPrefab.gameObject, true, true);
+                feature.SetRootPosition(chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y));
+                feature.SetLocalScale(Vector3.one * grass.scale);
+                features.Add(feature);
             }
         }
-        
+
         foreach (var tree in chunkData.trees)
         {
-            var inst = Instantiate(treePrefab);
-            inst.transform.localScale = Vector3.one * tree.scale;
-            inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
-            inst.transform.position = chunkTransform.position + new Vector3(tree.x, 0.0f, tree.y);
-            inst.transform.SetParent(chunkTransform, true);
-            inst.transform.GetComponent<GameResource>().Init(tree.entityId);
+            var feature = Feature.Create(treePrefab, false, true);
+            feature.SetLocalScale(Vector3.one * tree.scale);
+            feature.SetRootPosition(chunkTransform.position + new Vector3(tree.x, 0.0f, tree.y));
+            feature.Model.GetComponent<GameResource>().Init(tree.entityId);
+            features.Add(feature);
         }
 
         foreach (var deposit in chunkData.deposits)
         {
-            var inst = Instantiate(ironDepositPrefab);
-            inst.transform.localScale = Vector3.one * deposit.scale;
-            inst.transform.rotation *= Quaternion.Euler(0.0f, UnityEngine.Random.value * 360.0f, 0.0f);
-            inst.transform.position = chunkTransform.position + new Vector3(deposit.x, 0.0f, deposit.y);
-            inst.transform.SetParent(chunkTransform, true);
-            inst.transform.GetComponent<GameResource>().Init(deposit.entityId);
+            var feature = Feature.Create(ironDepositPrefab, false, true);
+            feature.SetLocalScale(Vector3.one * deposit.scale);
+            feature.SetRootPosition(chunkTransform.position + new Vector3(deposit.x, 0.0f, deposit.y));
+            feature.Model.GetComponent<GameResource>().Init(deposit.entityId);
+            features.Add(feature);
         }
+        
+        TerrainController.instance.ChunkSpawned(this);
     }
 }

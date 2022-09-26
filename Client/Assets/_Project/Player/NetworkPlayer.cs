@@ -68,6 +68,9 @@ public class NetworkPlayer : MonoBehaviour
             Reducer.PlayerUpdateLoginState(true);
 
             OnLocalPlayerInitialized?.Invoke();
+
+            GpuInstancer.instance.cam = cameraRig.GetComponentInChildren<Camera>();
+            GpuInstancer.instance.EnableInstancer();
         }
         else
         {
