@@ -73,6 +73,11 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
         {
             return;
         }
+        // Prevent drag and drop on itself
+        if (sourcePocketIdx.Value == destPocketIdx.Value)
+        {
+            return;
+        }
 
         Debug.Assert(NetworkPlayer.localPlayerId != null, "Local player not set!");
         Reducer.MoveOrSwapInventorySlot(NetworkPlayer.localPlayerId.Value, sourcePocketIdx.Value, destPocketIdx.Value);

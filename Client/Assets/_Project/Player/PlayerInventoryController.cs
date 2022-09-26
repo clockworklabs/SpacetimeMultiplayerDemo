@@ -31,15 +31,25 @@ public class PlayerInventoryController : MonoBehaviour
         
         // Reset the inventory window to default state
         InventoryUpdate(null);
-        
-        // Give starting items
-        var pocketIdx = 0;
-        foreach (var item in startingItems)
+
+        // Give starting items if inventory is empty
+        var inv = InventoryComponent.FilterByEntityId(NetworkPlayer.localPlayerId.Value);
+        bool isEmpty = true;
+        foreach (var p in inv.pockets)
         {
-            Debug.Log($"Starting item: {item.item.name}, amount: {item.amount}");
-            Debug.Assert(NetworkPlayer.localPlayerId != null, "NetworkPlayer._localPlayerId != null");
-            Reducer.AddItemToInventory(NetworkPlayer.localPlayerId.Value, item.item.itemId, pocketIdx, (int)item.amount);
-            pocketIdx++;
+            isEmpty &= p.itemId == 0 || p.itemCount == 0;
+        }
+
+        if (isEmpty)
+        {
+            var pocketIdx = 0;
+            foreach (var item in startingItems)
+            {
+                Debug.Log($"Starting item: {item.item.name}, amount: {item.amount}");
+                Debug.Assert(NetworkPlayer.localPlayerId != null, "NetworkPlayer._localPlayerId != null");
+                Reducer.AddItemToInventory(NetworkPlayer.localPlayerId.Value, item.item.itemId, pocketIdx, (int)item.amount);
+                pocketIdx++;
+            }
         }
     }
     

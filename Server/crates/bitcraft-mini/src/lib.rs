@@ -11,9 +11,9 @@ use components::{
     TransformComponent,
 };
 use math::{StdbQuaternion, StdbVector3};
+use spacetimedb::println;
 use spacetimedb::spacetimedb;
 use spacetimedb::Hash;
-use spacetimedb::println;
 
 mod random;
 mod terrain_generation;
@@ -62,6 +62,11 @@ pub fn move_or_swap_inventory_slot(
     // Check to see if the dest pocket index is bad
     if dest_pocket_idx >= config.max_player_inventory_slots {
         panic!("The dest pocket index is invalid: {}", dest_pocket_idx);
+    }
+
+    if source_pocket_idx == dest_pocket_idx {
+        // Cannot drag and drop on itself
+        return;
     }
 
     // Make sure this identity owns this player
@@ -126,6 +131,7 @@ pub fn add_item_to_inventory(
     // Make sure this identity owns this player
     let player =
         PlayerComponent::filter_entity_id_eq(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
+
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
         println!("This identity doesn't own this player! (allowed for now)");
@@ -166,19 +172,19 @@ pub fn add_item_to_inventory(
         pocket_idx
     );
 
-    match inventory.get_pocket(pocket_idx) {
+    let pocket = match inventory.get_pocket(pocket_idx) {
         Some(mut pocket) => {
             assert_eq!(pocket.item_id, item_id, "Item ID mismatch");
             pocket.item_count += item_count;
+            pocket
         }
-        None => {
-            inventory.set_pocket(Pocket {
-                pocket_idx,
-                item_id,
-                item_count,
-            });
-        }
-    }
+        None => Pocket {
+            pocket_idx,
+            item_id,
+            item_count,
+        },
+    };
+    inventory.set_pocket(pocket);
 
     InventoryComponent::update_entity_id_eq(entity_id, inventory);
     println!("Item {} inserted into inventory {}", item_id, entity_id);
@@ -189,7 +195,6 @@ pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
     let inventory = InventoryComponent::filter_entity_id_eq(entity_id)
         .expect(&format!("Inventory NOT found for entity {}", entity_id));
 
-    println!("Inventory found for entity: {}", entity_id);
     for pocket in inventory.pockets {
         println!(
             "PocketIdx: {} Item: {} Count: {}",

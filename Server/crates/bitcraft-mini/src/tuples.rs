@@ -1,6 +1,6 @@
 use spacetimedb::spacetimedb;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 #[spacetimedb(tuple)]
 pub struct Pocket {
     pub item_id: u32,

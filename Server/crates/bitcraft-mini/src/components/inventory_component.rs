@@ -1,7 +1,8 @@
-use spacetimedb::spacetimedb;
 use crate::tuples::Pocket;
+use spacetimedb::spacetimedb;
 
 #[spacetimedb(table)]
+#[derive(Debug)]
 pub struct InventoryComponent {
     #[unique]
     pub entity_id: u32,
