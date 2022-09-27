@@ -10,10 +10,10 @@ use noise::Seedable;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use spacetimedb::spacetimedb;
-use spacetimedb::Hash;
 use spacetimedb::hash::hash_bytes;
+use spacetimedb::spacetimedb;
 use spacetimedb::spacetimedb_lib;
+use spacetimedb::Hash;
 
 #[spacetimedb(tuple)]
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
@@ -124,24 +124,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
         return clamp(remap(dirt_value, 0.7, 1.0, 0.0, 1.0) * dirt_strength as f32, 0.0, 1.0);
     }
 
-    /*
-    fn get_sand_value(x: f64, y: f64, sand_perlin: Perlin) -> f32 {
-        let sand_strength: f32 = 8.0;
-        let sand_scale: f64 = 20.0;
-        let sand_min: f32 = 0.9;
-
-        let sand_value = sand_perlin.get([x / sand_scale, y / sand_scale]) as f32;
-        let sand_reinterpolate = remap(sand_value, -1.0, 1.0, 0.0, 1.0);
-        return clamp(
-            remap(sand_reinterpolate, sand_min, 1.0, 0.0, 1.0) * sand_strength,
-            0.0,
-            1.0,
-        );
-    }
-    */
-
     let mut dirt_splat = Vec::<u8>::new();
-    let mut sand_splat = Vec::<u8>::new();
     // The splat maps are laid out in the X direction first
     for y in 0..config.chunk_splat_resolution {
         for x in 0..config.chunk_splat_resolution {
@@ -169,7 +152,6 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
                 0.0,
                 1.0,
             ));
-            sand_splat.push(map_to_u8(0.0, 0.0, 1.0));
         }
     }
 
@@ -276,7 +258,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
 
     ChunkData::insert(ChunkData {
         chunk_id: hash_chunk(chunk_pos),
-        data: encode_chunk_data(vec![heightmap, dirt_splat, sand_splat]),
+        data: encode_chunk_data(vec![heightmap, dirt_splat]),
         grass,
         trees,
         deposits,
