@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ClientApi;
 using SpacetimeDB;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class StdbNetworkManager : Singleton<StdbNetworkManager>
 {
@@ -21,24 +24,33 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         public string fn;
         public object[] args;
     }
+    
+    private struct DbEvent
+    {
+        public string tableName;
+        public TableOp op;
+        public object oldValue;
+        public object newValue;
+    }
 
     [SerializeField] private float clientTicksPerSecond = 30.0f;
 
-    public delegate void RowUpdate(string tableName, TableOp op, TypeValue? oldValue, TypeValue? newValue);
+    public delegate void RowUpdate(string tableName, TableOp op, object oldValue, object newValue);
 
     public event Action onConnect;
     public event Action onDisconnect;
     public event Action clientTick;
-    
+
     /// <summary>
     /// Invoked on each row update to each table.
     /// </summary>
     public event RowUpdate tableUpdate;
-    
+
     /// <summary>
     /// Callback is invoked after a transaction or subscription update is received and all updates have been applied.
     /// </summary>
     public event Action onRowUpdateComplete;
+
     /// <summary>
     /// Invoked when an event message is received or at the end of a transaction update.
     /// </summary>
@@ -50,6 +62,8 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
 
     private float? lastClientTick;
     public static float clientTickInterval;
+
+    private Thread messageProcessThread;
 
     protected override void Awake()
     {
@@ -71,19 +85,70 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB = new StdbClientCache();
 
         // TODO: This part should be automatically generated!
-        clientDB.AddTable("PlayerComponent", PlayerComponent.GetTypeDef());
-        clientDB.AddTable("TransformComponent", TransformComponent.GetTypeDef());
-        clientDB.AddTable("AnimationComponent", AnimationComponent.GetTypeDef());
-        clientDB.AddTable("InventoryComponent", InventoryComponent.GetTypeDef());
-        clientDB.AddTable("PlayerLoginComponent", PlayerLoginComponent.GetTypeDef());
-        clientDB.AddTable("Config", Config.GetTypeDef());
-        clientDB.AddTable("PlayerChatMessage", PlayerChatMessage.GetTypeDef());
-        clientDB.AddTable("Chunk", Chunk.GetTypeDef());
-        clientDB.AddTable("ChunkData", ChunkData.GetTypeDef());
-        clientDB.AddTable("NpcComponent", NpcComponent.GetTypeDef());
-        clientDB.AddTable("ResourceComponent", ResourceComponent.GetTypeDef());
+        clientDB.AddTable(nameof(PlayerComponent), PlayerComponent.GetTypeDef(), PlayerComponent.From);
+        clientDB.AddTable(nameof(TransformComponent), TransformComponent.GetTypeDef(), TransformComponent.From);
+        clientDB.AddTable(nameof(AnimationComponent), AnimationComponent.GetTypeDef(), AnimationComponent.From);
+        clientDB.AddTable(nameof(InventoryComponent), InventoryComponent.GetTypeDef(), InventoryComponent.From);
+        clientDB.AddTable(nameof(PlayerLoginComponent), PlayerLoginComponent.GetTypeDef(), PlayerLoginComponent.From);
+        clientDB.AddTable(nameof(Config), Config.GetTypeDef(), Config.From);
+        clientDB.AddTable(nameof(PlayerChatMessage), PlayerChatMessage.GetTypeDef(), PlayerChatMessage.From);
+        clientDB.AddTable(nameof(Chunk), Chunk.GetTypeDef(), Chunk.From);
+        clientDB.AddTable(nameof(ChunkData), ChunkData.GetTypeDef(), ChunkData.From);
+        clientDB.AddTable(nameof(NpcComponent), NpcComponent.GetTypeDef(), NpcComponent.From);
+        clientDB.AddTable(nameof(ResourceComponent), ResourceComponent.GetTypeDef(), ResourceComponent.From);
 
+        messageProcessThread = new Thread(ProcessMessages);
+        messageProcessThread.Start();
         clientTickInterval = 1 / clientTicksPerSecond;
+    }
+
+    private readonly BlockingCollection<byte[]> _messageQueue = new BlockingCollection<byte[]>();
+    private readonly ConcurrentQueue<byte[]> _completedMessages = new ConcurrentQueue<byte[]>();
+
+    void ProcessMessages()
+    {
+        while (true)
+        {
+            var bytes = _messageQueue.Take();
+
+            var message = ClientApi.Message.Parser.ParseFrom(bytes);
+            SubscriptionUpdate subscriptionUpdate = null;
+            switch (message.TypeCase)
+            {
+                case ClientApi.Message.TypeOneofCase.SubscriptionUpdate:
+                    subscriptionUpdate = message.SubscriptionUpdate;
+                    break;
+                case ClientApi.Message.TypeOneofCase.TransactionUpdate:
+                    subscriptionUpdate = message.TransactionUpdate.SubscriptionUpdate;
+                    break;
+            }
+
+            switch (message.TypeCase)
+            {
+                case ClientApi.Message.TypeOneofCase.SubscriptionUpdate:
+                case ClientApi.Message.TypeOneofCase.TransactionUpdate:
+                    // First apply all of the state
+                    System.Diagnostics.Debug.Assert(subscriptionUpdate != null, nameof(subscriptionUpdate) + " != null");
+                    foreach (var update in subscriptionUpdate.TableUpdates)
+                    {
+                        foreach (var row in update.TableRowOperations)
+                        {
+                            var table = clientDB.GetTable(update.TableName);
+                            var typeDef = table.GetSchema();
+                            var (typeValue, _) = TypeValue.Decode(typeDef, row.Row);
+                            if (typeValue.HasValue)
+                            {
+                                // Here we are decoding on our message thread so that by the time we get to the
+                                // main thread the cache is already warm.
+                                table.Decode(row.RowPk.ToByteArray(), typeValue.Value);
+                            }
+                        }
+                    }
+                    break;
+            }
+            
+            _completedMessages.Enqueue(bytes);
+        }
     }
 
     private void OnDestroy()
@@ -110,23 +175,14 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                     Debug.Log("Connection closed gracefully.");
                     return;
                 }
-                
+
                 Debug.LogException(e);
             }
         });
     }
 
-    private struct DbEvent
-    {
-        public string tableName;
-        public TableOp op;
-        public TypeValue? oldValue;
-        public TypeValue? newValue;
-    }
-
-    private readonly List<DbEvent> _dbEvents = new List<DbEvent>();
-
-    private void OnMessageReceived(byte[] bytes)
+    readonly List<DbEvent> _dbEvents = new List<DbEvent>();
+    private void OnMessageProcessComplete(byte[] bytes)
     {
         _dbEvents.Clear();
         var message = ClientApi.Message.Parser.ParseFrom(bytes);
@@ -158,31 +214,33 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
 
                     foreach (var row in update.TableRowOperations)
                     {
+                        var rowPk = row.RowPk.ToByteArray();
+                        
                         switch (row.Op)
                         {
                             case TableRowOperation.Types.OperationType.Delete:
-                                var deletedValue = table.Delete(row.RowPk);
-                                if (deletedValue.HasValue)
+                                var deletedValue = table.Delete(rowPk);
+                                if (deletedValue != null)
                                 {
-                                    _dbEvents.Add(new DbEvent()
+                                    _dbEvents.Add(new DbEvent
                                     {
                                         tableName = tableName,
                                         op = TableOp.Delete,
                                         newValue = null,
-                                        oldValue = deletedValue.Value
+                                        oldValue = table.Decode(rowPk, null),
                                     });
                                 }
 
                                 break;
                             case TableRowOperation.Types.OperationType.Insert:
-                                var insertedValue = table.Insert(row.RowPk, row.Row);
-                                if (insertedValue.HasValue)
+                                var insertedValue = table.Insert(rowPk);
+                                if (insertedValue != null)
                                 {
                                     _dbEvents.Add(new DbEvent
                                     {
                                         tableName = tableName,
                                         op = TableOp.Insert,
-                                        newValue = insertedValue.Value,
+                                        newValue = insertedValue,
                                         oldValue = null
                                     });
                                 }
@@ -205,15 +263,18 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                             isUpdate = _dbEvents[i].tableName.Equals(_dbEvents[i + 1].tableName);
                         }
                     }
+
                     if (isUpdate)
                     {
                         // Merge delete and insert in one update
-                        tableUpdate?.Invoke(_dbEvents[i].tableName, TableOp.Update, _dbEvents[i].oldValue, _dbEvents[i+1].newValue);
+                        tableUpdate?.Invoke(_dbEvents[i].tableName, TableOp.Update, _dbEvents[i].oldValue,
+                            _dbEvents[i + 1].newValue);
                         i++;
                     }
                     else
                     {
-                        tableUpdate?.Invoke(_dbEvents[i].tableName, _dbEvents[i].op, _dbEvents[i].oldValue, _dbEvents[i].newValue);
+                        tableUpdate?.Invoke(_dbEvents[i].tableName, _dbEvents[i].op, _dbEvents[i].oldValue,
+                            _dbEvents[i].newValue);
                     }
                 }
 
@@ -240,6 +301,9 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 break;
         }
     }
+    
+
+    private void OnMessageReceived(byte[] bytes) => _messageQueue.Add(bytes);
 
     private string GetTokenKey()
     {
@@ -272,6 +336,11 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                 lastClientTick = Time.time;
                 clientTick?.Invoke();
             }
+        }
+
+        while (_completedMessages.TryDequeue(out var result))
+        {
+            OnMessageProcessComplete(result);
         }
     }
 }

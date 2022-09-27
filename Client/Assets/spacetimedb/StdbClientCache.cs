@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
+using System.Net.Http.Headers;
 using Google.Protobuf;
 using UnityEngine;
 using ClientApi;
@@ -11,14 +14,20 @@ namespace SpacetimeDB
     {
         public class TableCache
         {
-            private class ByteArrayComparer : IEqualityComparer<byte[]> {
-                public bool Equals(byte[] left, byte[] right) {
-                    if ( left == null || right == null ) {
+            private class ByteArrayComparer : IEqualityComparer<byte[]>
+            {
+                public bool Equals(byte[] left, byte[] right)
+                {
+                    if (left == null || right == null)
+                    {
                         return left == right;
                     }
+
                     return left.SequenceEqual(right);
                 }
-                public int GetHashCode(byte[] key) {
+
+                public int GetHashCode(byte[] key)
+                {
                     if (key == null)
                         throw new ArgumentNullException(nameof(key));
                     return key.Sum(b => b);
@@ -26,34 +35,59 @@ namespace SpacetimeDB
             }
 
             private readonly string name;
-            private readonly TypeDef tableRowDef;
+            private readonly TypeDef rowSchema;
+            
+            // The function to use for decoding a type value
+            private Func<TypeValue, object> decoderFunc;
 
-            public TableCache(string name, TypeDef tableRowDef)
+            // Maps from primary key to type value
+            public readonly Dictionary<byte[], (TypeValue, object)> entries;
+            // Maps from primary key to decoded value
+            public readonly ConcurrentDictionary<byte[], (TypeValue, object)> decodedValues;
+
+            public TableCache(string name, TypeDef rowSchema, Func<TypeValue, object> decoderFunc)
             {
                 this.name = name;
-                this.tableRowDef = tableRowDef;
-                entries = new Dictionary<byte[], TypeValue>(new ByteArrayComparer());
+                this.rowSchema = rowSchema;
+                this.decoderFunc = decoderFunc;
+                entries = new Dictionary<byte[], (TypeValue, object)>();
+                decodedValues = new ConcurrentDictionary<byte[], (TypeValue, object)>(new ByteArrayComparer());
             }
+
+            public (TypeValue?, object) Decode(byte[] pk, TypeValue? value)
+            {
+                if (decodedValues.TryGetValue(pk, out var decoded))
+                {
+                    return decoded;
+                }
+
+                if (!value.HasValue)
+                {
+                    return (null, null);
+                }
+                decoded = (value.Value, decoderFunc(value.Value));
+                decodedValues[pk] = decoded;
+                return decoded;
+            }
+
+            public TypeDef GetSchema() => rowSchema;
 
             /// <summary>
             /// Inserts the value into the table. There can be no existing value with the provided pk.
             /// </summary>
-            /// <param name="pk">The primary key that uniquely identifies this row</param>
-            /// <param name="value">The new value to insert</param>
             /// <returns></returns>
-            public TypeValue? Insert(ByteString pk, ByteString value)
+            public object Insert(byte[] rowPk)
             {
-                var pk_bytes = pk.ToByteArray();
-                if (entries.TryGetValue(pk_bytes, out _))
+                if (entries.TryGetValue(rowPk, out _))
                 {
                     return null;
                 }
 
-                var (newValue, _) = TypeValue.Decode(tableRowDef, value);
-                if (newValue.HasValue)
+                var decodedTuple = Decode(rowPk, null);
+                if (decodedTuple.Item1.HasValue && decodedTuple.Item2 != null)
                 {
-                    entries[pk_bytes] = newValue.Value;
-                    return newValue.Value;
+                    entries[rowPk] = (decodedTuple.Item1.Value, decodedTuple.Item2);
+                    return decodedTuple.Item2;
                 }
 
                 // Read failure
@@ -79,25 +113,21 @@ namespace SpacetimeDB
             /// </summary>
             /// <param name="pk">The primary key that uniquely identifies this row</param>
             /// <returns></returns>
-            public TypeValue? Delete(ByteString pk)
+            public object Delete(byte[] pk)
             {
-                var pk_bytes = pk.ToByteArray();
-                if (entries.TryGetValue(pk_bytes, out var value))
+                if (entries.TryGetValue(pk, out var value))
                 {
-                    entries.Remove(pk_bytes);
+                    entries.Remove(pk);
                     return value;
                 }
 
                 return null;
             }
-
-            // Maps from primary key to value
-            public readonly Dictionary<byte[], TypeValue> entries;
         }
 
-        private readonly Dictionary<string, TableCache> tables = new Dictionary<string, TableCache>();
+        private readonly ConcurrentDictionary<string, TableCache> tables = new ConcurrentDictionary<string, TableCache>();
 
-        public void AddTable(string name, TypeDef tableRowDef)
+        public void AddTable(string name, TypeDef tableRowDef, Func<TypeValue, object> decodeFunc)
         {
             if (tables.TryGetValue(name, out _))
             {
@@ -106,7 +136,19 @@ namespace SpacetimeDB
             }
 
             // Initialize this table
-            tables[name] = new TableCache(name, tableRowDef);
+            tables[name] = new TableCache(name, tableRowDef, decodeFunc);
+        }
+        public IEnumerable<object> GetObjects(string name)
+        {
+            if (!tables.TryGetValue(name, out var table))
+            {
+                yield break;
+            }
+
+            foreach (var entry in table.entries)
+            {
+                yield return entry.Value.Item2;
+            }
         }
 
         public IEnumerable<TypeValue> GetEntries(string name)
@@ -118,34 +160,8 @@ namespace SpacetimeDB
 
             foreach (var entry in table.entries)
             {
-                yield return entry.Value;
+                yield return entry.Value.Item1;
             }
-        }
-
-        /// <summary>
-        /// Updates the given table with the given operation. If an entry is deleted due to this operation, it is returned.
-        /// </summary>
-        /// <param name="name">The name of the table the update is for.</param>
-        /// <param name="op">The operation on the table row</param>
-        /// <returns>The deleted value, if there is one.</returns>
-        public TypeValue? ReceiveUpdate(string name, TableRowOperation op)
-        {
-            if (!tables.TryGetValue(name, out var table))
-            {
-                Debug.LogError($"We don't know that this table is: {name}");
-                return null;
-            }
-
-            switch (op.Op)
-            {
-                case TableRowOperation.Types.OperationType.Delete:
-                    return table.Delete(op.RowPk);
-                case TableRowOperation.Types.OperationType.Insert:
-                    table.Insert(op.RowPk, op.Row);
-                    break;
-            }
-            
-            return null;
         }
 
         public TableCache GetTable(string name)
@@ -154,7 +170,7 @@ namespace SpacetimeDB
             {
                 return table;
             }
-            
+
             Debug.LogError($"We don't know that this table is: {name}");
             return null;
         }
