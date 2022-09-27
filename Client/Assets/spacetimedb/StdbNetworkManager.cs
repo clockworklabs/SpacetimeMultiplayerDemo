@@ -227,7 +227,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
                                         tableName = tableName,
                                         op = TableOp.Delete,
                                         newValue = null,
-                                        oldValue = table.Decode(rowPk, null),
+                                        oldValue = deletedValue,
                                     });
                                 }
 

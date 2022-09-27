@@ -50,7 +50,7 @@ namespace SpacetimeDB
                 this.name = name;
                 this.rowSchema = rowSchema;
                 this.decoderFunc = decoderFunc;
-                entries = new Dictionary<byte[], (TypeValue, object)>();
+                entries = new Dictionary<byte[], (TypeValue, object)>(new ByteArrayComparer());
                 decodedValues = new ConcurrentDictionary<byte[], (TypeValue, object)>(new ByteArrayComparer());
             }
 
@@ -111,14 +111,14 @@ namespace SpacetimeDB
             /// <summary>
             /// Deletes a value from the table.
             /// </summary>
-            /// <param name="pk">The primary key that uniquely identifies this row</param>
+            /// <param name="rowPk">The primary key that uniquely identifies this row</param>
             /// <returns></returns>
-            public object Delete(byte[] pk)
+            public object Delete(byte[] rowPk)
             {
-                if (entries.TryGetValue(pk, out var value))
+                if (entries.TryGetValue(rowPk, out var value))
                 {
-                    entries.Remove(pk);
-                    return value;
+                    entries.Remove(rowPk);
+                    return value.Item2;
                 }
 
                 return null;
