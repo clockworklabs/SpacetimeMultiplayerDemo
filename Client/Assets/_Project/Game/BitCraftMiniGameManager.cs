@@ -230,7 +230,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                     case "NpcComponent":
                         if (oldValue != null)
                         {
-                            var npc = (NpcComponent)newValue;
+                            var npc = (NpcComponent)oldValue;
 
                             // check to see if this player already exists
                             if (npcs.TryGetValue(npc.entityId, out var npcModel))
@@ -243,7 +243,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                     case "ResourceComponent":
                         if (oldValue != null)
                         {
-                            var resource = (ResourceComponent)newValue;
+                            var resource = (ResourceComponent)oldValue;
                             resources.Remove(resource.entityId);
                             OnResourceUpdated?.Invoke(resource.entityId);
                         }
