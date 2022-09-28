@@ -5,5 +5,5 @@ pub struct AnimationComponent {
     #[unique]
     pub entity_id: u32,
     pub moving: bool,
-    pub action: u32,
+    pub action_target_entity_id: u32,
 }

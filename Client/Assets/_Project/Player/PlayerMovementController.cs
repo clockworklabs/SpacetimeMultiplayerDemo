@@ -38,12 +38,12 @@ public class PlayerMovementController : MonoBehaviour
             return chunk == null;
         });
 
-        GetComponentInChildren<PlayerAnimator>().OnInteractionUpdate += OnInteractionUpdate;
+        GetComponentInChildren<PlayerAnimator>(true).OnInteractionUpdate += OnInteractionUpdate;
     }
 
 	private void OnDestroy()
 	{
-        GetComponentInChildren<PlayerAnimator>().OnInteractionUpdate -= OnInteractionUpdate;
+        GetComponentInChildren<PlayerAnimator>(true).OnInteractionUpdate -= OnInteractionUpdate;
     }
 
 	public Transform GetModelTransform() => modelTransform;
@@ -89,7 +89,7 @@ public class PlayerMovementController : MonoBehaviour
 
     private void Update()
     {
-        if (_interacting || !CameraController.instance.GameCameraEnabled)
+        if (_interacting || (this == Local && !CameraController.instance.GameCameraEnabled))
         {
             moving = false;
             anim.SetBool(WalkingProperty, false);

@@ -270,6 +270,23 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     });
 }
 
+pub(crate) fn generate_terrain_stub() {
+    let chunk_pos = ChunkPosition { x: 12345, y: 12345 };
+
+    ChunkData::insert(ChunkData {
+        chunk_id: hash_chunk(chunk_pos),
+        data: vec![],
+        grass: vec![],
+        trees: vec![],
+        deposits: vec![],
+    });
+
+    Chunk::insert(Chunk {
+        chunk_id: hash_chunk(chunk_pos),
+        position: chunk_pos,
+    });
+}
+
 fn encode_chunk_data(splats: Vec<Vec<u8>>) -> Vec<u8> {
     let mut result = Vec::<u8>::new();
     for splat in splats {

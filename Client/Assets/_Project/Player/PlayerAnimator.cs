@@ -46,9 +46,22 @@ public class PlayerAnimator : MonoBehaviour
             _tools[i].SetActive(resourceType == i);
         }
         _target = res;
+	}
+
+	public void SetRemoteAction(uint actionTargetEntityId)
+	{
+        if (!GetComponentInParent<NetworkPlayer>().IsLocal())
+        {
+            var res = BitCraftMiniGameManager.instance.GetResourceModel(actionTargetEntityId);
+            if (res != null)
+            {
+                Interact(res);
+            }
+        }
     }
 
-    public void OnStartAction()
+
+	public void OnStartAction()
     {
         if (_target != null)
         {
@@ -66,6 +79,10 @@ public class PlayerAnimator : MonoBehaviour
     {
         Interact(null);
         OnInteractionUpdate?.Invoke(false);
+        if (GetComponentInParent<NetworkPlayer>().IsLocal())
+        {
+            SpacetimeDB.Reducer.UpdateAnimation(NetworkPlayer.localPlayerId.Value, false, 0);
+        }
     }
 
     IEnumerator FaceTarget()

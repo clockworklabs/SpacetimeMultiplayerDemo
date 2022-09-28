@@ -2,8 +2,8 @@ use crate::{
     components::{AnimationComponent, NpcComponent, TransformComponent},
     math::{StdbQuaternion, StdbVector3},
 };
-use spacetimedb::spacetimedb;
 use spacetimedb::hash::Hash;
+use spacetimedb::spacetimedb;
 
 #[spacetimedb(reducer)]
 pub fn move_npc(_identity: Hash, timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion, duration: u64) {
@@ -23,7 +23,13 @@ pub fn move_npc(_identity: Hash, timestamp: u64, entity_id: u32, pos: StdbVector
 }
 
 #[spacetimedb(reducer)]
-pub fn update_npc_animation(_identity: Hash, _timestamp: u64, entity_id: u32, moving: bool, action: u32) {
+pub fn update_npc_animation(
+    _identity: Hash,
+    _timestamp: u64,
+    entity_id: u32,
+    moving: bool,
+    action_target_entity_id: u32,
+) {
     let _npc = NpcComponent::filter_entity_id_eq(entity_id).expect("This npc doesn't exist.");
 
     /*
@@ -39,7 +45,7 @@ pub fn update_npc_animation(_identity: Hash, _timestamp: u64, entity_id: u32, mo
         AnimationComponent {
             entity_id,
             moving,
-            action,
+            action_target_entity_id,
         },
     );
 }

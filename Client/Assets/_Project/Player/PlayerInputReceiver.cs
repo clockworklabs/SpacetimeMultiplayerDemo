@@ -33,6 +33,7 @@ public class PlayerInputReceiver : MonoBehaviour
                 }
                 PlayerAnimator.Local.Interact(resource);
                 SpacetimeDB.Reducer.Extract(NetworkPlayer.localPlayerId.Value, resource.EntityId);
+                SpacetimeDB.Reducer.UpdateAnimation(NetworkPlayer.localPlayerId.Value, false, resource.EntityId);
             }
         }
     }

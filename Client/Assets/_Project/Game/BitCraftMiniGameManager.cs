@@ -15,10 +15,11 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
     readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
     readonly Dictionary<uint, ResourceComponent> resources = new Dictionary<uint, ResourceComponent>();
+    readonly Dictionary<uint, GameResource> resourcesModels = new Dictionary<uint, GameResource>();
 
     public static GameObject FeatureRoot;
 
-    public ResourceComponent GetResource(uint entityId)
+    public ResourceComponent GetResourceComponent(uint entityId)
     {
         if (resources.TryGetValue(entityId, out var res))
         {
@@ -26,6 +27,28 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         }
         return null;
     }
+
+    public GameResource GetResourceModel(uint entityId)
+    {
+        if (resourcesModels.TryGetValue(entityId, out var res))
+        {
+            return res;
+        }
+        return null;
+    }
+
+    public void AssignResourceModel(uint entityId, GameResource res)
+    {
+        if (res == null)
+        {
+            resourcesModels.Remove(entityId);
+        }
+        else
+        {
+            resourcesModels[entityId] = res;
+        }
+    }
+
 
     public static System.Action<uint> OnResourceUpdated;
 
@@ -50,7 +73,18 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.tableUpdate += OnTableUpdate;
         StdbNetworkManager.instance.onEvent += OnEvent;
 
-        StdbNetworkManager.instance.onRowUpdateComplete += () =>
+        StdbNetworkManager.instance.onRowUpdateComplete += CheckNewPlayer;
+
+        StdbNetworkManager.instance.Connect();
+	}
+
+	void CheckNewPlayer()
+	{
+        var count = StdbNetworkManager.clientDB.GetEntries("Chunk").Count();
+        // skip random table updates that come before the world status update containing the chunks
+        // TODO: This should be handled via on-demand subscription (eg client doesn't receive any subscription by default
+        // until explicitely requesting some.)
+        if (count > 0)
         {
             // If we don't have any data for our player, then we are creating a new one.
             var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value);
@@ -59,9 +93,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 // Show username selection
                 UIUsernameChooser.instance.Show();
             }
+            StdbNetworkManager.instance.onRowUpdateComplete -= CheckNewPlayer;
         };
-
-        StdbNetworkManager.instance.Connect();
     }
 
     void OnTableUpdate(string tableName, StdbNetworkManager.TableOp op, object oldValue, object newValue)
@@ -162,8 +195,8 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 }
                                 else
                                 {
-                                    // ToDo: Animation Component is probably overkill. Movement and Action can trigger the animations.
                                     networkPlayer.GetComponent<PlayerMovementController>().SetMoving(animation.moving);
+                                    networkPlayer.GetComponentInChildren<PlayerAnimator>().SetRemoteAction(animation.actionTargetEntityId);
                                 }
                             }
                         }

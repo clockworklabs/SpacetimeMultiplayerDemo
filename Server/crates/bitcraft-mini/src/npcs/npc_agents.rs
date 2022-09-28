@@ -8,8 +8,8 @@ use crate::{random, Config};
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use spacetimedb::spacetimedb;
 use spacetimedb::hash::hash_bytes;
+use spacetimedb::spacetimedb;
 //use spacetimedb_lib::println;
 use std::f32::consts::PI;
 use std::ops::Add;
@@ -93,7 +93,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
     AnimationComponent::insert(AnimationComponent {
         entity_id,
         moving: false,
-        action: 0,
+        action_target_entity_id: 0,
     });
 }
 

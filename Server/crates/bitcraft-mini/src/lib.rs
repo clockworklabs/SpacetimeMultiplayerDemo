@@ -4,6 +4,7 @@ mod npcs;
 mod tables;
 mod tuples;
 
+use crate::components::chunk_component::generate_terrain_stub;
 use crate::tables::{Config, PlayerChatMessage};
 use crate::tuples::Pocket;
 use components::{
@@ -42,6 +43,12 @@ pub fn initialize(_identity: Hash, _timestamp: u64) {
         max_spawn_range: 48.0,
         npc_detection_range: 20.0,
     });
+
+    // This one terrain chunk is inserted so the client can identify the world state message. The issue we have right now
+    // is that other players or agents can update tables, therefore there is now way to be sure that the first subscription
+    // received by the client is the world state.
+    // TODO: the client should be able to subscribe on demand and the server should make sure no subscription is received until then.
+    generate_terrain_stub();
 }
 
 #[spacetimedb(reducer)]
@@ -216,7 +223,7 @@ pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVec
 }
 
 #[spacetimedb(reducer)]
-pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool, action: u32) {
+pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool, action_target_entity_id: u32) {
     let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
@@ -229,7 +236,7 @@ pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving:
         AnimationComponent {
             entity_id,
             moving,
-            action,
+            action_target_entity_id,
         },
     );
 }

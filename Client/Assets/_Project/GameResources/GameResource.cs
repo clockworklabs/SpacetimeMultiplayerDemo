@@ -7,9 +7,9 @@ public class GameResource : MonoBehaviour
 {
 
 	public uint EntityId { get; private set; }
-	public int Type => BitCraftMiniGameManager.instance.GetResource(EntityId)?.resourceId ?? 0;
-	public int MaxHealth => BitCraftMiniGameManager.instance.GetResource(EntityId)?.maxHealth ?? 0;
-	public int Health => BitCraftMiniGameManager.instance.GetResource(EntityId)?.health ?? 0;
+	public int Type => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.resourceId ?? 0;
+	public int MaxHealth => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.maxHealth ?? 0;
+	public int Health => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.health ?? 0;
 
 	[SerializeField] private GameObject _vfx;
 	[SerializeField] private GameObject _deathVfx;
@@ -19,12 +19,14 @@ public class GameResource : MonoBehaviour
 	public void Init(uint entityId)
 	{
 		EntityId = entityId;
+		BitCraftMiniGameManager.instance.AssignResourceModel(EntityId, this);
 		StartCoroutine(WaitForDespawn());
 	}
 
 	private void OnDestroy()
 	{
 		BitCraftMiniGameManager.OnResourceUpdated -= OnResourceUpdated;
+		BitCraftMiniGameManager.instance.AssignResourceModel(EntityId, null);
 	}
 
 	private void OnResourceUpdated(uint entityId)
