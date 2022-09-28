@@ -85,12 +85,10 @@ module = canonicalize ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 cd ../../SpacetimeDB/
 
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release identity init-default 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
-sleep 3000
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-balance 5000000000
 sleep 3000
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-default-maximum 1000000000
-
+exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
 exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "bitcraftmini" "initialize" "{}"
 '''
 
