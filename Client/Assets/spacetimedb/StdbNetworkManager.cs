@@ -71,7 +71,7 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         var options = new WebSocketDispatch.ConnectOptions
         {
             Url =
-                "ws://localhost:3000/database/subscribe?name=bitcraftmini",
+                "ws://spacetime.spacetimedb.net:3000/database/subscribe?name=bitcraftmini",
 
             //v1.bin.spacetimedb
             //v1.text.spacetimedb
