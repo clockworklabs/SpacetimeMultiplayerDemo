@@ -1,5 +1,5 @@
-use getrandom::Error;
 use getrandom::register_custom_getrandom;
+use getrandom::Error;
 
 // Some application-specific error code
 pub fn fake_random(buf: &mut [u8]) -> Result<(), Error> {

@@ -1,9 +1,9 @@
-use crate::{TransformComponent, PlayerComponent, Config};
+use crate::components::chunk_component::world_pos_to_chunk_pos;
+use crate::components::chunk_component::Chunk;
+use crate::components::chunk_component::{generate_chunk, ChunkPosition};
+use crate::{Config, PlayerComponent, TransformComponent};
 use spacetimedb::spacetimedb;
 use std::collections::BTreeSet;
-use crate::components::chunk_component::{ChunkPosition, generate_chunk};
-use crate::components::chunk_component::Chunk;
-use crate::components::chunk_component::world_pos_to_chunk_pos;
 
 #[spacetimedb(reducer, repeat = 1000ms)]
 pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {

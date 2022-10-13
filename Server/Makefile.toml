@@ -163,3 +163,7 @@ echo "\tupdate-module: Fully rebuilds the bitcraft mini project and updates the 
 echo "\texpand: Used for debugging spacetimedb_bindgen macros (outputs raw macro)"
 echo "\n"
 '''
+
+[tasks.default]
+alias = "help"
+
