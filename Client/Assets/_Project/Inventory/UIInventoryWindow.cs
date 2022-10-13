@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using SpacetimeDB;
 using UnityEngine;
 
-public class UIInventoryWindow : Singleton<UIInventoryWindow>
+public abstract class UIInventoryWindow : MonoBehaviour
 {
     [SerializeField] private UIInventorySlot _slotPrefab;
     [SerializeField] private RectTransform _slotsHierarchy;
@@ -11,13 +11,20 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
     private bool _slotsCreated;
     private List<UIInventorySlot> _slots = new List<UIInventorySlot>();
 
-	private void Start()
+    public uint InventoryEntityId { get; set; }
+
+    protected abstract void CallReducer(uint playerEntityId, UIInventorySlot source, UIInventorySlot dest);
+
+    protected virtual void Start()
 	{
-        NetworkPlayer.OnLocalPlayerInitialized += () => enabled = true;
         enabled = false;
     }
 
-    public void Show()
+    protected virtual void OnDestroy()
+	{
+	}
+
+	public void Show()
     {
         if (enabled)
         {
@@ -47,7 +54,7 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
         }
     }
 
-    public void CreateSlots(int maxSlotCount)
+    public void CreateSlots(int maxSlotCount, bool locked)
     {
         if (_slotsCreated)
         {
@@ -60,13 +67,23 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
         for (var x = 0; x < maxSlotCount; x++)
         {
             var slot = Instantiate(_slotPrefab, _slotsHierarchy);
-            slot.Configure((uint)x, DragDropCompleted);
+            slot.Configure((uint)x, DragDropCompleted, this, locked);
             _slots.Add(slot);
         }
     }
 
     void DragDropCompleted(UIInventorySlot source, UIInventorySlot dest)
     {
+        if (dest.Owner != this)
+        {
+            return;
+        }
+
+        if (dest.Locked)
+        {
+            return;
+        }
+
         var sourcePocketIdx = source.GetPocketIdx();
         var destPocketIdx = dest.GetPocketIdx();
         if (!sourcePocketIdx.HasValue || !destPocketIdx.HasValue)
@@ -74,16 +91,16 @@ public class UIInventoryWindow : Singleton<UIInventoryWindow>
             return;
         }
         // Prevent drag and drop on itself
-        if (sourcePocketIdx.Value == destPocketIdx.Value)
+        if (dest.Owner == source.Owner && sourcePocketIdx.Value == destPocketIdx.Value)
         {
             return;
         }
 
         Debug.Assert(NetworkPlayer.localPlayerId != null, "Local player not set!");
-        Reducer.MoveOrSwapInventorySlot(NetworkPlayer.localPlayerId.Value, sourcePocketIdx.Value, destPocketIdx.Value);
-    }
+        CallReducer(NetworkPlayer.localPlayerId.Value, source, dest);
+	}
 
-    public UIInventorySlot GetSlot(int idx)
+	public UIInventorySlot GetSlot(int idx)
     {
         Debug.Assert(idx >= 0 && idx < _slots.Count, $"Invalid slot idx: {idx}");
         return _slots[idx];

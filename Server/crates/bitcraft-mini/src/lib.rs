@@ -2,14 +2,16 @@ mod components;
 mod math;
 mod npcs;
 mod tables;
+mod trade_session;
 mod tuples;
 
 use crate::components::chunk_component::generate_terrain_stub;
 use crate::tables::{Config, PlayerChatMessage};
+use crate::trade_session::cancel_trade_session_with_participant;
 use crate::tuples::Pocket;
 use components::{
-    AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent, ResourceComponent,
-    TransformComponent,
+    ActiveTradeComponent, AnimationComponent, InventoryComponent, PlayerComponent, PlayerLoginComponent,
+    ResourceComponent, TradeSessionComponent, TransformComponent,
 };
 use math::{StdbQuaternion, StdbVector3};
 use spacetimedb::println;
@@ -34,6 +36,7 @@ pub fn initialize(_identity: Hash, _timestamp: u64) {
     Config::insert(Config {
         version: 0,
         max_player_inventory_slots: 30,
+        trading_slots: 18,
         chunk_terrain_resolution: 16,
         chunk_splat_resolution: 128,
         chunk_size: 10.0,
@@ -55,7 +58,8 @@ pub fn initialize(_identity: Hash, _timestamp: u64) {
 pub fn move_or_swap_inventory_slot(
     identity: Hash,
     _timestamp: u64,
-    entity_id: u32,
+    player_entity_id: u32,
+    inventory_entity_id: u32,
     source_pocket_idx: u32,
     dest_pocket_idx: u32,
 ) {
@@ -77,14 +81,34 @@ pub fn move_or_swap_inventory_slot(
     }
 
     // Make sure this identity owns this player
-    let player = PlayerComponent::filter_entity_id_eq(entity_id).expect("This player doesn't exist!");
+    let player = PlayerComponent::filter_entity_id_eq(player_entity_id).expect("This player doesn't exist!");
     if player.owner_id != identity {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
         panic!("This identity doesn't own this player! (allowed for now)");
     }
 
+    if inventory_entity_id != player_entity_id {
+        // Make sure the player is allowed to modify this inventory
+        let mut valid = false;
+
+        // Is it part of a trade involving the player?
+        if let Some(active_trade) = ActiveTradeComponent::filter_entity_id_eq(player_entity_id) {
+            if let Some(session) = TradeSessionComponent::filter_entity_id_eq(active_trade.trade_session_entity_id) {
+                valid |= session.initiator_entity_id == player_entity_id;
+                valid |= session.acceptor_entity_id == player_entity_id;
+            }
+        }
+
+        // ToDo: external storages, etc.
+
+        // We did all the checks for external inventory update.
+        if !valid {
+            panic!("This player is not allowed to modify that inventory");
+        }
+    }
+
     let mut inventory =
-        InventoryComponent::filter_entity_id_eq(entity_id).expect("This player doesn't have an inventory!");
+        InventoryComponent::filter_entity_id_eq(inventory_entity_id).expect("This inventory doesn't exist!");
 
     let mut source_pocket = inventory
         .get_pocket(source_pocket_idx)
@@ -97,7 +121,7 @@ pub fn move_or_swap_inventory_slot(
         inventory.delete_pocket(source_pocket_idx);
         source_pocket.pocket_idx = dest_pocket_idx;
         inventory.set_pocket(source_pocket);
-        InventoryComponent::update_entity_id_eq(entity_id, inventory);
+        InventoryComponent::update_entity_id_eq(inventory_entity_id, inventory);
         println!("Source pocket moved to dest pocket.");
         return;
     }
@@ -109,7 +133,7 @@ pub fn move_or_swap_inventory_slot(
         dest_pocket.item_count += source_pocket.item_count;
         inventory.delete_pocket(source_pocket_idx);
         inventory.set_pocket(dest_pocket);
-        InventoryComponent::update_entity_id_eq(entity_id, inventory);
+        InventoryComponent::update_entity_id_eq(inventory_entity_id, inventory);
         println!("Source pocket moved into dest pocket (same item)");
         return;
     }
@@ -120,7 +144,7 @@ pub fn move_or_swap_inventory_slot(
     source_pocket.pocket_idx = dest_pocket_idx;
     inventory.set_pocket(source_pocket);
     inventory.set_pocket(dest_pocket);
-    InventoryComponent::update_entity_id_eq(entity_id, inventory);
+    InventoryComponent::update_entity_id_eq(inventory_entity_id, inventory);
     println!("Pockets swapped (different items)");
 }
 
@@ -148,50 +172,13 @@ pub fn add_item_to_inventory(
     let mut inventory =
         InventoryComponent::filter_entity_id_eq(entity_id).expect("This player doesn't have an inventory!");
 
-    // Check to see if this pocket index is bad
-    let config = Config::filter_version_eq(0).unwrap();
-
-    // Change negative pocket index for the first valid pocket index
-    let pocket_idx = if pocket_idx < 0 {
-        let mut idx = u32::MAX;
-        for i in 0..config.max_player_inventory_slots {
-            if let Some(pocket) = inventory.get_pocket(i) {
-                if pocket.item_id == item_id {
-                    idx = i;
-                    break;
-                }
-            } else {
-                idx = i;
-                break;
-            }
-        }
-        if idx >= config.max_player_inventory_slots {
-            panic!("No free slot");
-        }
-        idx
-    } else {
-        pocket_idx as u32
-    };
-
-    assert!(
-        pocket_idx < config.max_player_inventory_slots,
-        "This pocket index is invalid: {}",
-        pocket_idx
-    );
-
-    let pocket = match inventory.get_pocket(pocket_idx) {
-        Some(mut pocket) => {
-            assert_eq!(pocket.item_id, item_id, "Item ID mismatch");
-            pocket.item_count += item_count;
-            pocket
-        }
-        None => Pocket {
-            pocket_idx,
-            item_id,
-            item_count,
-        },
-    };
-    inventory.set_pocket(pocket);
+    if !inventory.add(
+        item_id,
+        item_count,
+        if pocket_idx < 0 { None } else { Some(pocket_idx as u32) },
+    ) {
+        panic!("Failed to add items to inventory");
+    }
 
     InventoryComponent::update_entity_id_eq(entity_id, inventory);
     println!("Item {} inserted into inventory {}", item_id, entity_id);
@@ -298,13 +285,20 @@ pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: boo
             "Player is already set to this login state: {}",
             logged_in
         );
+        let player_entity_id = player.entity_id;
+
+        if !logged_in {
+            cancel_trade_session_with_participant(player_entity_id);
+        }
+
         PlayerLoginComponent::update_entity_id_eq(
-            player.entity_id,
+            player_entity_id,
             PlayerLoginComponent {
-                entity_id: player.entity_id,
+                entity_id: player_entity_id,
                 logged_in,
             },
         );
+
         return;
     }
 
@@ -331,10 +325,14 @@ pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
         if let Some(login_state) = PlayerLoginComponent::filter_entity_id_eq(player.entity_id) {
             if login_state.logged_in {
                 println!("User has disconnected without signing out.");
+                let player_entity_id = player.entity_id;
+
+                cancel_trade_session_with_participant(player_entity_id);
+
                 PlayerLoginComponent::update_entity_id_eq(
-                    player.entity_id,
+                    player_entity_id,
                     PlayerLoginComponent {
-                        entity_id: player.entity_id,
+                        entity_id: player_entity_id,
                         logged_in: false,
                     },
                 );

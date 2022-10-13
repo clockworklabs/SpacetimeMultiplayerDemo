@@ -17,6 +17,8 @@ public class NetworkPlayer : MonoBehaviour
 
     public static Action OnLocalPlayerInitialized;
 
+    public uint EntityId => _playerId.Value;
+
     private void Awake()
     {
         cameraRig.SetActive(false);
@@ -60,9 +62,14 @@ public class NetworkPlayer : MonoBehaviour
             cameraRig.SetActive(true);
             PlayerMovementController.Local = GetComponent<PlayerMovementController>();
             PlayerInventoryController.Local = GetComponent<PlayerInventoryController>();
-            PlayerAnimator.Local = GetComponentInChildren<PlayerAnimator>();
+            PlayerAnimator.Local = GetComponentInChildren<PlayerAnimator>(true);
 
             PlayerInventoryController.Local.Spawn();
+            TradeSessionController.Local.Spawn();
+
+            // refresh player inventory
+            var inventory = InventoryComponent.FilterByEntityId(playerId);
+            PlayerInventoryController.Local.InventoryUpdate(inventory);
 
             // We are now logged in
             Reducer.PlayerUpdateLoginState(true);

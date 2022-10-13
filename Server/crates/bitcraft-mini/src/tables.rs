@@ -9,6 +9,8 @@ pub struct Config {
 
     // Maximum amount of pockets the player can hold
     pub max_player_inventory_slots: u32,
+    // Maximum amount of pockets the player can offer in a trade
+    pub trading_slots: u32,
     // Terrain points in each direction per chunk
     pub chunk_terrain_resolution: u32,
     // Image resolution of the splats

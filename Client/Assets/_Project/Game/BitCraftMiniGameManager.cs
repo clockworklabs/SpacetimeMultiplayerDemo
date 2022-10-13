@@ -196,7 +196,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 else
                                 {
                                     networkPlayer.GetComponent<PlayerMovementController>().SetMoving(animation.moving);
-                                    networkPlayer.GetComponentInChildren<PlayerAnimator>().SetRemoteAction(animation.actionTargetEntityId);
+                                    networkPlayer.GetComponentInChildren<PlayerAnimator>(true).SetRemoteAction(animation.actionTargetEntityId);
                                 }
                             }
                         }
@@ -212,10 +212,13 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 // Is this our player?
                                 if (networkPlayer.IsLocal())
                                 {
-                                    networkPlayer.GetComponent<PlayerInventoryController>()
-                                        .InventoryUpdate(entityInventory);
+                                    PlayerInventoryController.Local.InventoryUpdate(entityInventory);
                                 }
-                            }
+                            } 
+                            else // attempt to update the trade session inventories
+							{
+                                TradeSessionController.Local.InventoryUpdate(entityInventory);
+							}
                         }
 
                         break;
@@ -254,6 +257,31 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                             OnResourceUpdated?.Invoke(resource.entityId);
                         }
                         break;
+
+                    case "TradeSessionComponent":
+                        if (newValue != null)
+                        {
+                            var session = (TradeSessionComponent)newValue;
+                            if (NetworkPlayer.localPlayerId.HasValue)
+                            {
+                                var localId = NetworkPlayer.localPlayerId.Value;
+                                if (session.acceptorEntityId == localId || session.initiatorEntityId == localId)
+                                {
+                                    var local = session.acceptorEntityId == localId ? session.acceptorOfferInventoryEntityId : session.initiatorOfferInventoryEntityId;
+                                    var remote = session.acceptorEntityId == localId ? session.initiatorOfferInventoryEntityId : session.acceptorOfferInventoryEntityId;
+
+                                    if (op == StdbNetworkManager.TableOp.Insert)
+                                    {
+                                        TradeSessionController.Local.Initiate(session.entityId, local, remote);
+                                    }
+                                    else
+                                    {
+                                        TradeSessionController.Local.UpdateSession(session.entityId);
+                                    }
+                                }
+                            }
+                        }
+                        break;
                 }
 
                 break;
@@ -282,6 +310,17 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                         }
                         break;
 
+                    case "TradeSessionComponent":
+                        if (oldValue != null)
+                        {
+                            var session = (TradeSessionComponent)oldValue;
+                            var localId = NetworkPlayer.localPlayerId.Value;
+                            if (session.acceptorEntityId == localId || session.initiatorEntityId == localId)
+                            {
+                                TradeSessionController.Local.Terminate(session.approvedByInitiator && session.approvedByAcceptor);
+                            }
+                        }
+                        break;
                 }
                 break;
         }

@@ -16,14 +16,23 @@ public class UIInventorySlot : MonoBehaviour, IPointerDownHandler
 
     private bool _displaying;
     private uint? _pocketIdx;
+    private bool _locked;
+
+    public UIInventoryWindow Owner => _owner;
+    public bool Locked => _locked;
+    public uint Index => _pocketIdx.Value;
 
     private Action<UIInventorySlot, UIInventorySlot> _callback;
 
-    public void Configure(uint? pocketIdx, Action<UIInventorySlot, UIInventorySlot> callback)
+    private UIInventoryWindow _owner;
+
+    public void Configure(uint? pocketIdx, Action<UIInventorySlot, UIInventorySlot> callback, UIInventoryWindow owner, bool locked = false)
     {
         ItemDragController.instance.AddDropTarget(this);
         _callback = callback;
         _pocketIdx = pocketIdx;
+        _owner = owner;
+        _locked = locked;
     }
 
     public void Display(ItemAsset item, int quantity)

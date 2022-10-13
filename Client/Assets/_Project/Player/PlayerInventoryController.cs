@@ -27,8 +27,8 @@ public class PlayerInventoryController : MonoBehaviour
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null, "Server config missing!");
         _maxInventorySlots = (int)config.maxPlayerInventorySlots;
-        UIInventoryWindow.instance.CreateSlots(_maxInventorySlots);
-        
+        UIPlayerInventoryWindow.instance.CreateSlots(_maxInventorySlots, false);
+        UIPlayerInventoryWindow.instance.InventoryEntityId = NetworkPlayer.localPlayerId.Value;
         // Reset the inventory window to default state
         InventoryUpdate(null);
 
@@ -71,7 +71,7 @@ public class PlayerInventoryController : MonoBehaviour
 
         for (var x = 0; x < _maxInventorySlots; x++)
         {
-            var slot = UIInventoryWindow.instance.GetSlot(x);
+            var slot = UIPlayerInventoryWindow.instance.GetSlot(x);
             if (_pockets.TryGetValue((uint)x, out var pocket))
             {
                 slot.Display(pocket);

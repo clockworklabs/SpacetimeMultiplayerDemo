@@ -12,7 +12,7 @@ public class PlayerInputReceiver : MonoBehaviour
 
     void OnToggleInventory(InputValue value)
     {
-        UIInventoryWindow.instance.Toggle();
+        UIPlayerInventoryWindow.instance.Toggle();
     }
 
     void OnToggleChat(InputValue value)
@@ -25,17 +25,22 @@ public class PlayerInputReceiver : MonoBehaviour
         if (Reticle.SelectedTarget != null)
         {
             if (!PlayerAnimator.Local.Interacting) {
+
                 var resource = Reticle.SelectedTarget.GetComponent<GameResource>();
-                if (resource == null)
+                if (resource != null)
                 {
-                    Debug.LogError("Non-resource gameobject has a Resource collider, or it's missing a GameResource component.");
+                    PlayerAnimator.Local.Interact(resource);
+                    SpacetimeDB.Reducer.Extract(NetworkPlayer.localPlayerId.Value, resource.EntityId);
+                    SpacetimeDB.Reducer.UpdateAnimation(NetworkPlayer.localPlayerId.Value, false, resource.EntityId);
                     return;
                 }
-                PlayerAnimator.Local.Interact(resource);
-                SpacetimeDB.Reducer.Extract(NetworkPlayer.localPlayerId.Value, resource.EntityId);
-                SpacetimeDB.Reducer.UpdateAnimation(NetworkPlayer.localPlayerId.Value, false, resource.EntityId);
-            }
-        }
+                var player = Reticle.SelectedTarget.GetComponent<NetworkPlayer>();
+				if (player != null)
+				{
+                    SpacetimeDB.Reducer.InitiateTradeSession(NetworkPlayer.localPlayerId.Value, player.EntityId);
+				}
+			}
+		}
     }
 
 	

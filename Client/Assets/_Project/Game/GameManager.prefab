@@ -43,6 +43,7 @@ GameObject:
   - component: {fileID: 609108669033260355}
   - component: {fileID: 609108669033260353}
   - component: {fileID: 609108669033260358}
+  - component: {fileID: 4953638919173003133}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -125,4 +126,17 @@ MonoBehaviour:
   _grassPrefab: {fileID: -4050493188470775884, guid: 535ec76783ea9094aa70c41a8902b402, type: 3}
   _treePrefab: {fileID: 2737571065352445621, guid: 808fe5fd574a5164c9306c59855dc993, type: 3}
   _ironDepositPrefab: {fileID: 7685275626274994537, guid: 07b8dfa24111040d1bc21c863dbfd9fb, type: 3}
+  _viewDistance: 100
   _enableGrass: 0
+--- !u!114 &4953638919173003133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 609108669033260349}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8af419418c5946147bfc5407fad15de7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

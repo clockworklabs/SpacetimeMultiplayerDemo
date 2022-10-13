@@ -1,5 +1,6 @@
 ﻿using UnityEngine.UI;
 using UnityEngine;
+using System.Linq;
 
 public class Reticle : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class Reticle : MonoBehaviour
 
 	private void Start()
 	{
-		_detectionLayer = 1 << LayerMask.NameToLayer("Resource");
+		_detectionLayer = (1 << LayerMask.NameToLayer("Resource")) + (1 << LayerMask.NameToLayer("Default"));
 		NetworkPlayer.OnLocalPlayerInitialized += OnPlayerInitialized;
 		gameObject.SetActive(false);
 	}
@@ -38,14 +39,34 @@ public class Reticle : MonoBehaviour
 		if (CameraController.instance.GameCameraEnabled)
 		{
 			Ray r = new Ray(_camera.transform.position, _camera.transform.forward);
-			if (Physics.Raycast(r, out var raycastHit, 100f,  _detectionLayer))
+			var hits = Physics.RaycastAll(r, 100f, _detectionLayer);
+			var sortedHits = hits.OrderBy(h => h.distance);
+			foreach (var raycastHit in hits)
 			{
 				var delta = raycastHit.collider.transform.position - _localPlayer.transform.position;
 				delta.y = 0f;
 				if (delta.sqrMagnitude < _detectionRange * _detectionRange)
 				{
-					_reticle.color = _selectedColor;
-					SelectedTarget = raycastHit.collider.transform.parent.gameObject;
+					var target = raycastHit.collider.transform.parent.gameObject;
+					var player = target.GetComponent<NetworkPlayer>();
+
+					// Skip self
+					if (player?.EntityId == NetworkPlayer.localPlayerId.Value)
+					{
+						continue;
+					}
+
+					bool valid = player != null || target.GetComponent<GameResource>() != null;
+					if (valid)
+					{
+						_reticle.color = _selectedColor;
+						SelectedTarget = target;
+					}
+					else
+					{
+						_reticle.color = _idleColor;
+						SelectedTarget = null;
+					}
 					return;
 				}
 			}

@@ -96,6 +96,8 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB.AddTable(nameof(ChunkData), ChunkData.GetTypeDef(), ChunkData.From);
         clientDB.AddTable(nameof(NpcComponent), NpcComponent.GetTypeDef(), NpcComponent.From);
         clientDB.AddTable(nameof(ResourceComponent), ResourceComponent.GetTypeDef(), ResourceComponent.From);
+        clientDB.AddTable(nameof(TradeSessionComponent), TradeSessionComponent.GetTypeDef(), TradeSessionComponent.From);
+        clientDB.AddTable(nameof(ActiveTradeComponent), ActiveTradeComponent.GetTypeDef(), ActiveTradeComponent.From); // hmm, we don't really need this one on the client...
 
         messageProcessThread = new Thread(ProcessMessages);
         messageProcessThread.Start();
