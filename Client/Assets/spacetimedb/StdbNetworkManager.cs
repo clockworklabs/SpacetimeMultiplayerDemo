@@ -85,19 +85,19 @@ public class StdbNetworkManager : Singleton<StdbNetworkManager>
         clientDB = new StdbClientCache();
 
         // TODO: This part should be automatically generated!
-        clientDB.AddTable(nameof(PlayerComponent), PlayerComponent.GetTypeDef(), PlayerComponent.From);
-        clientDB.AddTable(nameof(TransformComponent), TransformComponent.GetTypeDef(), TransformComponent.From);
-        clientDB.AddTable(nameof(AnimationComponent), AnimationComponent.GetTypeDef(), AnimationComponent.From);
-        clientDB.AddTable(nameof(InventoryComponent), InventoryComponent.GetTypeDef(), InventoryComponent.From);
-        clientDB.AddTable(nameof(PlayerLoginComponent), PlayerLoginComponent.GetTypeDef(), PlayerLoginComponent.From);
-        clientDB.AddTable(nameof(Config), Config.GetTypeDef(), Config.From);
-        clientDB.AddTable(nameof(PlayerChatMessage), PlayerChatMessage.GetTypeDef(), PlayerChatMessage.From);
-        clientDB.AddTable(nameof(Chunk), Chunk.GetTypeDef(), Chunk.From);
-        clientDB.AddTable(nameof(ChunkData), ChunkData.GetTypeDef(), ChunkData.From);
-        clientDB.AddTable(nameof(NpcComponent), NpcComponent.GetTypeDef(), NpcComponent.From);
-        clientDB.AddTable(nameof(ResourceComponent), ResourceComponent.GetTypeDef(), ResourceComponent.From);
-        clientDB.AddTable(nameof(TradeSessionComponent), TradeSessionComponent.GetTypeDef(), TradeSessionComponent.From);
-        clientDB.AddTable(nameof(ActiveTradeComponent), ActiveTradeComponent.GetTypeDef(), ActiveTradeComponent.From); // hmm, we don't really need this one on the client...
+        clientDB.AddTable(nameof(PlayerComponent), PlayerComponent.GetTypeDef(), x => (PlayerComponent)x);
+        clientDB.AddTable(nameof(TransformComponent), TransformComponent.GetTypeDef(), x => (TransformComponent)x);
+        clientDB.AddTable(nameof(AnimationComponent), AnimationComponent.GetTypeDef(), x => (AnimationComponent)x);
+        clientDB.AddTable(nameof(InventoryComponent), InventoryComponent.GetTypeDef(), x => (InventoryComponent)x);
+        clientDB.AddTable(nameof(PlayerLoginComponent), PlayerLoginComponent.GetTypeDef(), x => (PlayerLoginComponent)x);
+        clientDB.AddTable(nameof(Config), Config.GetTypeDef(), x => (Config)x);
+        clientDB.AddTable(nameof(PlayerChatMessage), PlayerChatMessage.GetTypeDef(), x => (PlayerChatMessage)x);
+        clientDB.AddTable(nameof(Chunk), Chunk.GetTypeDef(), x => (Chunk)x);
+        clientDB.AddTable(nameof(ChunkData), ChunkData.GetTypeDef(), x => (ChunkData)x);
+        clientDB.AddTable(nameof(NpcComponent), NpcComponent.GetTypeDef(), x => (NpcComponent)x);
+        clientDB.AddTable(nameof(ResourceComponent), ResourceComponent.GetTypeDef(), x => (ResourceComponent)x);
+        clientDB.AddTable(nameof(TradeSessionComponent), TradeSessionComponent.GetTypeDef(), x => (TradeSessionComponent)x);
+        clientDB.AddTable(nameof(ActiveTradeComponent), ActiveTradeComponent.GetTypeDef(), x => (ActiveTradeComponent)x); // hmm, we don't really need this one on the client...
 
         messageProcessThread = new Thread(ProcessMessages);
         messageProcessThread.Start();

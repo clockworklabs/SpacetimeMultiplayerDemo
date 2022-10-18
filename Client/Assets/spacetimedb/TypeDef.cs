@@ -31,6 +31,7 @@ namespace SpacetimeDB
             F64,
             String,
             Bytes,
+            Hash,
             Unit,
         }
 
@@ -145,6 +146,8 @@ namespace SpacetimeDB
                     case TypeDef.Def.F32:
                     case TypeDef.Def.F64:
                         throw new InvalidOperationException("Cannot hash on floats");
+                    case TypeDef.Def.Hash:
+                        return (int)(obj.hash.GetHashCode() ^ 0x8595a70b);
                     case TypeDef.Def.I8:
                         return (int)(obj.signed ^ 0x6bac6c4e);
                     case TypeDef.Def.I16:
@@ -204,6 +207,7 @@ namespace SpacetimeDB
         private long signed;
         private string str;
         private byte[] bytes;
+        private Hash hash;
         private bool b;
 
         private float f32;
@@ -307,6 +311,12 @@ namespace SpacetimeDB
                         Array.Copy(arr, offset + 2, value.bytes, 0, byteLength);
                         read += byteLength + 2;
                         break;
+                    case TypeDef.Def.Hash:
+                        byte[] hashVal = new byte[Hash.SIZE];
+                        Array.Copy(arr, offset, hashVal, 0, Hash.SIZE);
+                        read += Hash.SIZE;
+                        value.hash = Hash.From(hashVal);
+                        break;
                     case TypeDef.Def.Tuple:
                         return ReadTuple(def, arr, offset, length);
                     case TypeDef.Def.Vec:
@@ -399,6 +409,8 @@ namespace SpacetimeDB
                     if (bytes == null)
                         throw new InvalidOperationException("byte array is null!");
                     return bytes;
+                case TypeDef.Def.Hash:
+                    return hash;
                 case TypeDef.Def.F32:
                     return f32;
                 case TypeDef.Def.F64:
@@ -410,6 +422,11 @@ namespace SpacetimeDB
             }
 
             throw new InvalidOperationException($"Type not supported yet! {def}");
+        }
+
+        public object GetValue(TypeDef def)
+        {
+            return GetValue(def.Type);
         }
 
         public static TypeValue GetTuple(TypeDef def, TypeValue[] tupleValues)
@@ -433,15 +450,22 @@ namespace SpacetimeDB
 
     public struct Hash : IEquatable<Hash>
     {
-        public byte[] bytes;
+        private byte[] bytes;
+
+        public static int SIZE = 32;
+
+        public byte[] Bytes => bytes;
 
         public static TypeDef GetTypeDef()
         {
-            return TypeDef.BuiltInType(TypeDef.Def.Bytes);
+            return TypeDef.BuiltInType(TypeDef.Def.Hash);
         }
+
+        public static explicit operator Hash(TypeValue v) => (Hash)v.GetValue(GetTypeDef());
 
         public static Hash From(byte[] bytes)
         {
+            // TODO: should we validate length here?
             return new Hash
             {
                 bytes = bytes,
@@ -451,6 +475,22 @@ namespace SpacetimeDB
         public bool Equals(Hash other)
         {
             return bytes.SequenceEqual(other.bytes);
+        }
+
+        public override bool Equals(object o) {
+            return o is Hash other && Equals(other);
+        }
+
+        public static bool operator ==(Hash a, Hash b) => a.Equals(b);
+        public static bool operator !=(Hash a, Hash b) => !a.Equals(b);
+
+        public override int GetHashCode() {
+            if (bytes == null)
+            {
+                throw new InvalidOperationException("Cannot hash on null bytes.");
+            }
+
+            return bytes.GetHashCode();
         }
     }
 }

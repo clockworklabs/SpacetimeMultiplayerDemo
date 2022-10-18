@@ -57,7 +57,7 @@ public class TerrainChunk : MonoBehaviour
         var chunkData = ChunkData.FilterByChunkId(_chunk.chunkId);
         Texture2D splat1 = null;
         var nativeData = new NativeArray<byte>((int)config.chunkSplatResolution * (int)config.chunkSplatResolution * 4, Allocator.Persistent);
-        for (var x = 0; x < chunkData.data.Count; x++)
+        for (var x = 0; x < chunkData.data.Length; x++)
         {
             nativeData[x] = chunkData.data[x];
         }

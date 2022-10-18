@@ -1,6 +1,5 @@
 [workspace]
-members = ["crates/bitcraft-mini", "crates/bitcraft-mini-expand"]
-# members = ["crates/bitcraft-mini"]
+members = ["crates/bitcraft-mini"]
 default-members = ["crates/bitcraft-mini"]
 
 [profile.release]

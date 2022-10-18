@@ -1,160 +1,124 @@
-[env]
-CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
-
-[tasks.wasm]
-command = "rustup"
-args = [ "target", "add", "wasm32-unknown-unknown" ]
-
-[tasks.clean-proto]
-script_runner = "@duckscript"
-script = '''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
-end
-
-# Clear protobuf and language files
-rm protobuf/*.proto
-rm -r cs-src/*
+env_scripts = [
 '''
+#!@duckscript
+workspace_root = get_env CARGO_MAKE_WORKSPACE_WORKING_DIRECTORY
+set_env WORKSPACE_ROOT ${workspace_root}
 
-[tasks.csharp-export]
-dependencies = ["wasm"]
-script_runner = "@duckscript"
-script='''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
+fn <scope> get_or_set_default
+	val = get_env ${1}
+	if ${val}
+	else
+		val = canonicalize ${2}
+		set_env ${1} ${val}
+	end
+	return ${val}
 end
-
-# Copy spacetimedb proto files
-cd ../..
-
+stdb_dir = get_or_set_default SPACETIME_DIR ${workspace_root}/../../SpacetimeDB
 # Validate assumptions
-if not is_dir ../../SpacetimeDB
+if not is_dir ${stdb_dir}
 	echo "SpacetimeDB could not be found. It should exist in the same directory as BitCraftMini."
+	echo "Set SPACETIME_DIR if it's somewhere else"
 	exit 1
 end
 
-mkdir protobuf 
-mkdir cs-src
-cp ../../SpacetimeDB/crates/spacetimedb-core/protobuf/client_api.proto ./protobuf/client_api.proto
-
-
-# Build bitcraft mini
-exec --fail-on-error cargo clean
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true build --target wasm32-unknown-unknown --release --package bitcraft-mini
-
-# Export the protobuf
-protobuf_files = glob_array ./protobuf/*.proto
-for file in ${protobuf_files}
-	proto_file_name = basename ${file}
-	exec --fail-on-error protoc --proto_path=./protobuf --csharp_out=./cs-src ${proto_file_name}
-end
-release protobuf_files 
-
-# Copy everything that was generated into the the client repo
-rm -r ../Client/Assets/_Project/autogen
-mkdir ../Client/Assets/_Project/autogen
-
-csharp_files = glob_array ./cs-src/*.cs
-for file in ${csharp_files}
-	csharp_filename = basename ${file}
-	cp "${file}" "../Client/Assets/_Project/autogen/${csharp_filename}"
-end
-release csharp_files
+stdb_bin = canonicalize ${stdb_dir}/target/release
+set_env SPACETIME_CLI ${stdb_bin}/spacetime
+set_env SPACETIME_BG ${stdb_bin}/cargo-spacetime #spacetime-bindgen
+get_or_set_default CLIENT_AUTOGEN_DIR ${workspace_root}/../Client/Assets/_Project/autogen
+get_or_set_default WASM_MODULE ${workspace_root}/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 '''
+]
 
-[tasks.upload-module]
+[config]
+skip_core_tasks = true
+default_to_workspace = false
+
+[tasks.build-spacetime]
+cwd = "${SPACETIME_DIR}"
+command = "cargo"
+args = ["build", "--release", "-p", "spacetimedb-cli"]
+
+[tasks.build-bindgen]
+cwd = "${SPACETIME_DIR}"
+command = "cargo"
+args = ["build", "--release", "-p", "cargo-spacetime"]
+
+[tasks.wasm-target]
+command = "rustup"
+args = [ "target", "add", "wasm32-unknown-unknown" ]
+
+[tasks.build]
+dependencies = ["wasm-target"]
+command = "cargo"
+args = [ "build", "--release", "-p", "bitcraft-mini" ]
+
+[tasks.gen-proto]
 script_runner = "@duckscript"
 script='''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
-end
+mkdir protobuf
+cp ${SPACETIME_DIR}/crates/spacetimedb-core/protobuf/client_api.proto ./protobuf/client_api.proto
 
-cd ../..
+# Export the protobuf
+cd protobuf
+protobuf_files = glob_array *.proto
+cd ..
+protos = array_join ${protobuf_files} " "
+release protobuf_files
+
+exec --fail-on-error protoc --proto_path=./protobuf --csharp_out=${CLIENT_AUTOGEN_DIR} %{protos}
+
+rm -r protobuf
+'''
+
+[tasks.gen-bindings]
+dependencies = ["build", "build-bindgen"]
+command = "${SPACETIME_BG}"
+args = ["gen-bindings", "${WASM_MODULE}", "-o${CLIENT_AUTOGEN_DIR}"]
+
+[tasks.gen-all]
+run_task = { name = ["gen-bindings", "gen-proto"], parallel = true }
+
+[tasks.upload-module]
+dependencies = ["build", "build-spacetime"]
+script_runner = "@duckscript"
+script='''
+alias spacetime exec --fail-on-error ${SPACETIME_CLI}
 # Update the running module
-module = canonicalize ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
-cd ../../SpacetimeDB/
-
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release identity init-default 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release energy set-balance 5000000000000
+spacetime identity init-default 
+spacetime energy set-balance 5000000000000
+spacetime init -f -n "bitcraftmini" ${WASM_MODULE}
 sleep 3000
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call "bitcraftmini" "initialize" "{}"
+spacetime call "bitcraftmini" "initialize" "{}"
 '''
 
 [tasks.update-existing-module]
+dependencies = ["build", "build-spacetime"]
 script_runner = "@duckscript"
 script='''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
-end
-
-cd ../..
+alias spacetime exec --fail-on-error ${SPACETIME_CLI}
 # Update the running module
-module = canonicalize ./target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
-cd ../../SpacetimeDB/
-
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release identity init-default 
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release init -f -n "bitcraftmini" ${module}
-sleep 3
-exec --fail-on-error cargo --config net.git-fetch-with-cli=true run --release call -n "bitcraftmini" "update" "{}"
+spacetime identity init-default 
+spacetime init -f -n "bitcraftmini" ${WASM_MODULE}
+sleep 3000
+spacetime call -n "bitcraftmini" "update" "{}"
 '''
 
 [tasks.expand]
-script_runner = "@duckscript"
-script='''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
-end
-
-exec --fail-on-error cargo --config "net.git-fetch-with-cli=true" install cargo-expand
-
-cd ../..
-rm -r ./crates/bitcraft-mini-expand/src
-mkdir ./crates/bitcraft-mini-expand/src
-touch ./crates/bitcraft-mini-expand/src/lib.rs
-
-exec --fail-on-error cargo clean
-set_env PROC_MACRO_DEBUG 1
-output = exec cargo build
-stdout = set ${output.stdout}
-writefile ./crates/bitcraft-mini-expand/src/lib.rs ${stdout}
-'''
+command = "cargo"
+args = ["expand", "-p", "bitcraft-mini"]
 
 [tasks.init-module]
-dependencies = ["wasm", "clean-proto", "csharp-export", "upload-module"]
+dependencies = ["gen-bindings", "upload-module"]
 
 [tasks.fast-init-module]
-dependencies = ["wasm", "upload-module"]
+dependencies = ["upload-module"]
 
 [tasks.update-module]
-dependencies = ["wasm", "update-exisitng-module"]
+dependencies = ["update-existing-module"]
 
 [tasks.help]
 script_runner = "@duckscript"
 script='''
-# Only run this for the bitcraft-mini crate
-crate_dir = pwd
-crate = basename ${crate_dir}
-if not eq ${crate} "bitcraft-mini" 
-	exit 0
-end
-
 echo "\n\nCommands: "
 echo "\tinit-module: Fully rebuilds the bitcraft mini project and initializes a new module."
 echo "\tfast-init-module: Only builds changed files and does not export any new C# files."
