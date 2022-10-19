@@ -22,4 +22,4 @@ rand_chacha = "0.3.1"
 getrandom = { version = "0.2", features = ["custom"] }
 
 # These will be replaced with crates on crates.io eventually
-spacetimedb = { path = "../../../../SpacetimeDB/crates/spacetimedb-bindings", version = "0.1.0" }
+spacetimedb = { path = "../../../../SpacetimeDB/crates/spacetimedb-bindings", version = "0.2" }
