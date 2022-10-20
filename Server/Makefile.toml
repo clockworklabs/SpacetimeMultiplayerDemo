@@ -23,7 +23,6 @@ end
 
 stdb_bin = canonicalize ${stdb_dir}/target/release
 set_env SPACETIME_CLI ${stdb_bin}/spacetime
-set_env SPACETIME_BG ${stdb_bin}/cargo-spacetime #spacetime-bindgen
 get_or_set_default CLIENT_AUTOGEN_DIR ${workspace_root}/../Client/Assets/_Project/autogen
 get_or_set_default WASM_MODULE ${workspace_root}/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
 '''
@@ -37,11 +36,6 @@ default_to_workspace = false
 cwd = "${SPACETIME_DIR}"
 command = "cargo"
 args = ["build", "--release", "-p", "spacetimedb-cli"]
-
-[tasks.build-bindgen]
-cwd = "${SPACETIME_DIR}"
-command = "cargo"
-args = ["build", "--release", "-p", "cargo-spacetime"]
 
 [tasks.wasm-target]
 command = "rustup"
@@ -71,8 +65,8 @@ rm -r protobuf
 '''
 
 [tasks.gen-bindings]
-dependencies = ["build", "build-bindgen"]
-command = "${SPACETIME_BG}"
+dependencies = ["build", "build-spacetime"]
+command = "${SPACETIME_CLI}"
 args = ["gen-bindings", "${WASM_MODULE}", "-o${CLIENT_AUTOGEN_DIR}"]
 
 [tasks.gen-all]
