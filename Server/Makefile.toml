@@ -30,7 +30,6 @@ get_or_set_default WASM_MODULE ${workspace_root}/target/wasm32-unknown-unknown/r
 
 [config]
 skip_core_tasks = true
-default_to_workspace = false
 
 [tasks.build-spacetime]
 cwd = "${SPACETIME_DIR}"
