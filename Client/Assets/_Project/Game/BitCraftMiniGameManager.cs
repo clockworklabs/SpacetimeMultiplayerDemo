@@ -73,9 +73,13 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         StdbNetworkManager.instance.tableUpdate += OnTableUpdate;
         StdbNetworkManager.instance.onEvent += OnEvent;
 
+        StdbNetworkManager.instance.onIdentityReceived += (identity) => {
+            NetworkPlayer.identity = identity;
+        };
+
         StdbNetworkManager.instance.onRowUpdateComplete += CheckNewPlayer;
 
-        StdbNetworkManager.instance.Connect();
+        StdbNetworkManager.instance.Connect("localhost:3000", "bitcraftmini");
 	}
 
 	void CheckNewPlayer()

@@ -66,20 +66,18 @@ rm -r protobuf
 [tasks.gen-bindings]
 dependencies = ["build", "build-spacetime"]
 command = "${SPACETIME_CLI}"
-args = ["gen-bindings", "${WASM_MODULE}", "-o${CLIENT_AUTOGEN_DIR}"]
+args = ["generate", "--lang=csharp", "--out-dir=${CLIENT_AUTOGEN_DIR}"]
 
 [tasks.gen-all]
 run_task = { name = ["gen-bindings", "gen-proto"], parallel = true }
 
-[tasks.upload-module]
+[tasks.publish-module]
 dependencies = ["build", "build-spacetime"]
 script_runner = "@duckscript"
 script='''
 alias spacetime exec --fail-on-error ${SPACETIME_CLI}
 # Update the running module
-spacetime identity init-default 
-spacetime energy set-balance 5000000000000
-spacetime init -f -n "bitcraftmini" ${WASM_MODULE}
+spacetime publish "bitcraftmini" --clear-database
 sleep 3000
 spacetime call "bitcraftmini" "initialize" "{}"
 '''
@@ -90,10 +88,7 @@ script_runner = "@duckscript"
 script='''
 alias spacetime exec --fail-on-error ${SPACETIME_CLI}
 # Update the running module
-spacetime identity init-default 
-spacetime init -f -n "bitcraftmini" ${WASM_MODULE}
-sleep 3000
-spacetime call -n "bitcraftmini" "update" "{}"
+spacetime publish "bitcraftmini"
 '''
 
 [tasks.expand]
@@ -101,10 +96,10 @@ command = "cargo"
 args = ["expand", "-p", "bitcraft-mini"]
 
 [tasks.init-module]
-dependencies = ["gen-bindings", "upload-module"]
+dependencies = ["gen-bindings", "publish-module"]
 
 [tasks.fast-init-module]
-dependencies = ["upload-module"]
+dependencies = ["publish-module"]
 
 [tasks.update-module]
 dependencies = ["update-existing-module"]
