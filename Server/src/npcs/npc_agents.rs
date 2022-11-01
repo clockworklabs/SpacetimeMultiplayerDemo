@@ -19,7 +19,7 @@ use super::update_npc_animation;
 
 #[spacetimedb(reducer, repeat = 5000ms)]
 pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
-    let config = Config::filter_version_eq(0);
+    let config = Config::filter_by_version(0);
     if let None = config {
         return;
     }
@@ -42,7 +42,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
     let index = rng.gen_range(0..logged_in_players.len()) as usize;
     let player_entity_id = logged_in_players[index];
 
-    let mut spawn_pos = TransformComponent::filter_entity_id_eq(player_entity_id).unwrap().pos;
+    let mut spawn_pos = TransformComponent::filter_by_entity_id(player_entity_id).unwrap().pos;
 
     let range = rng.gen_range(config.min_spawn_range..config.max_spawn_range);
     let rad = rng.gen_range(-PI..PI);
@@ -53,7 +53,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
     // Make sure the position is not within (min_radius) distance of another player
     for player in PlayerLoginComponent::iter() {
         if player.logged_in {
-            let transform = TransformComponent::filter_entity_id_eq(player.entity_id).unwrap();
+            let transform = TransformComponent::filter_by_entity_id(player.entity_id).unwrap();
             let dist = transform.pos.sq_distance(&spawn_pos);
             if dist < min_sq_radius {
                 return;
@@ -63,7 +63,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
 
     // Make sure the position is not within (min_radius) distance of another npc
     for npc in NpcComponent::iter() {
-        let transform = TransformComponent::filter_entity_id_eq(npc.entity_id).unwrap();
+        let transform = TransformComponent::filter_by_entity_id(npc.entity_id).unwrap();
         let dist = transform.pos.sq_distance(&spawn_pos);
         if dist < min_sq_radius {
             return;
@@ -76,7 +76,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
     let entity_id = timestamp as u32;
 
     // Make sure this npc doesn't already exist
-    if NpcComponent::filter_entity_id_eq(entity_id).is_some() {
+    if NpcComponent::filter_by_entity_id(entity_id).is_some() {
         panic!("A npc with this entity_id already exists: {}", entity_id);
     }
 
@@ -99,7 +99,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
 
 #[spacetimedb(reducer, repeat = 15000ms)]
 pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
-    let config = Config::filter_version_eq(0);
+    let config = Config::filter_by_version(0);
     if let None = config {
         return;
     }
@@ -111,10 +111,10 @@ pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
     // Make sure the position is within (min_radius) distance of a player
     for npc in NpcComponent::iter() {
         let mut within_range = false;
-        let npc_transform = TransformComponent::filter_entity_id_eq(npc.entity_id).unwrap();
+        let npc_transform = TransformComponent::filter_by_entity_id(npc.entity_id).unwrap();
         for player in PlayerLoginComponent::iter() {
             // Keep logged out players for this check so the NPC will still be there when you relog.
-            let player_transform = TransformComponent::filter_entity_id_eq(player.entity_id).unwrap();
+            let player_transform = TransformComponent::filter_by_entity_id(player.entity_id).unwrap();
             within_range |= npc_transform.pos.sq_distance(&player_transform.pos) <= min_sq_radius;
         }
         if !within_range {
@@ -123,15 +123,15 @@ pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
     }
 
     for entity_id in despawn_array {
-        NpcComponent::delete_entity_id_eq(entity_id);
-        TransformComponent::delete_entity_id_eq(entity_id);
-        AnimationComponent::delete_entity_id_eq(entity_id);
+        NpcComponent::delete_by_entity_id(entity_id);
+        TransformComponent::delete_by_entity_id(entity_id);
+        AnimationComponent::delete_by_entity_id(entity_id);
     }
 }
 
 #[spacetimedb(reducer, repeat = 100ms)]
 pub(crate) fn move_npcs(timestamp: u64, _delta_time: u64) {
-    let config = Config::filter_version_eq(0);
+    let config = Config::filter_by_version(0);
     if let None = config {
         return;
     }
@@ -144,19 +144,19 @@ pub(crate) fn move_npcs(timestamp: u64, _delta_time: u64) {
     let npc_entity_ids: Vec<u32> = NpcComponent::iter().map(|npc| npc.entity_id).collect();
 
     for npc_entity_id in npc_entity_ids {
-        let npc = NpcComponent::filter_entity_id_eq(npc_entity_id).unwrap();
+        let npc = NpcComponent::filter_by_entity_id(npc_entity_id).unwrap();
         if npc.next_action > timestamp {
             continue;
         }
 
-        let npc_transform = TransformComponent::filter_entity_id_eq(npc_entity_id).unwrap();
+        let npc_transform = TransformComponent::filter_by_entity_id(npc_entity_id).unwrap();
         let mut vector = StdbVector3 { x: 0.0, y: 0.0, z: 0.0 };
 
         // Calculate threat level under the form of a vector
         for player in PlayerLoginComponent::iter() {
             if player.logged_in {
                 // Keep logged out players for this check so the NPC will still be there when you relog.
-                let player_transform = TransformComponent::filter_entity_id_eq(player.entity_id).unwrap();
+                let player_transform = TransformComponent::filter_by_entity_id(player.entity_id).unwrap();
                 let delta = npc_transform.pos - player_transform.pos;
                 let len = (detection_range - delta.length()).max(0.0);
                 if len > 0.0 {
@@ -196,13 +196,13 @@ pub(crate) fn move_npcs(timestamp: u64, _delta_time: u64) {
                 );
                 update_npc_animation(hash_bytes(vec![0]), timestamp, npc_entity_id, true, 0);
             } else {
-                let npc_animation = AnimationComponent::filter_entity_id_eq(npc_entity_id).unwrap();
+                let npc_animation = AnimationComponent::filter_by_entity_id(npc_entity_id).unwrap();
                 if npc_animation.moving {
                     update_npc_animation(hash_bytes(vec![0]), timestamp, npc_entity_id, false, 0);
                 }
-                let mut npc = NpcComponent::filter_entity_id_eq(npc_entity_id).unwrap();
+                let mut npc = NpcComponent::filter_by_entity_id(npc_entity_id).unwrap();
                 npc.next_action = timestamp + rng.gen_range(100000..300000);
-                NpcComponent::update_entity_id_eq(npc_entity_id, npc);
+                NpcComponent::update_by_entity_id(npc_entity_id, npc);
             }
         }
     }

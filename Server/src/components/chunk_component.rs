@@ -68,7 +68,7 @@ pub struct Chunk {
 
 pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     spacetimedb::println!("Generating chunk: {:?}", chunk_pos);
-    let config = Config::filter_version_eq(0).unwrap();
+    let config = Config::filter_by_version(0).unwrap();
     random::register();
 
     let mut resource_entity_id = 0;

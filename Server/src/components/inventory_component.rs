@@ -46,7 +46,7 @@ impl InventoryComponent {
 
     pub fn add(&mut self, item_id: u32, item_count: i32, index: Option<u32>) -> bool {
         // Check to see if this pocket index is bad
-        let config = Config::filter_version_eq(0).unwrap();
+        let config = Config::filter_by_version(0).unwrap();
 
         // Change empty pocket index for the first EMPTY pocket index
         let pocket_idx = if index.is_none() {

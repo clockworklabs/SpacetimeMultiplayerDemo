@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 #[spacetimedb(reducer, repeat = 1000ms)]
 pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
     let max_chunks_per_call = 20;
-    let config = Config::filter_version_eq(0);
+    let config = Config::filter_by_version(0);
     if let None = config {
         return;
     }
@@ -17,7 +17,7 @@ pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
     let spawn_radius = 8;
 
     for player in PlayerComponent::iter() {
-        let transform = TransformComponent::filter_entity_id_eq(player.entity_id).unwrap();
+        let transform = TransformComponent::filter_by_entity_id(player.entity_id).unwrap();
         let player_chunk_position =
             world_pos_to_chunk_pos(transform.pos.x as f64, transform.pos.z as f64, config.chunk_size);
 
