@@ -21,7 +21,7 @@ if not is_dir ${stdb_dir}
 	exit 1
 end
 
-stdb_bin = canonicalize ${stdb_dir}/target/release
+stdb_bin = canonicalize ${stdb_dir}/target/debug
 set_env SPACETIME_CLI ${stdb_bin}/spacetime
 get_or_set_default CLIENT_AUTOGEN_DIR ${workspace_root}/../Client/Assets/_Project/autogen
 get_or_set_default WASM_MODULE ${workspace_root}/target/wasm32-unknown-unknown/release/bitcraft_mini.wasm
@@ -34,7 +34,7 @@ skip_core_tasks = true
 [tasks.build-spacetime]
 cwd = "${SPACETIME_DIR}"
 command = "cargo"
-args = ["build", "--release", "-p", "spacetimedb-cli"]
+args = ["build", "-p", "spacetimedb-cli"]
 
 [tasks.wasm-target]
 command = "rustup"
@@ -63,13 +63,13 @@ exec --fail-on-error protoc --proto_path=./protobuf --csharp_out=${CLIENT_AUTOGE
 rm -r protobuf
 '''
 
-[tasks.gen-bindings]
+[tasks.generate]
 dependencies = ["build", "build-spacetime"]
 command = "${SPACETIME_CLI}"
 args = ["generate", "--lang=csharp", "--out-dir=${CLIENT_AUTOGEN_DIR}"]
 
 [tasks.gen-all]
-run_task = { name = ["gen-bindings", "gen-proto"], parallel = true }
+run_task = { name = ["generate", "gen-proto"], parallel = true }
 
 [tasks.publish-module]
 dependencies = ["build", "build-spacetime"]
@@ -96,7 +96,7 @@ command = "cargo"
 args = ["expand", "-p", "bitcraft-mini"]
 
 [tasks.init-module]
-dependencies = ["gen-bindings", "publish-module"]
+dependencies = ["generate", "publish-module"]
 
 [tasks.fast-init-module]
 dependencies = ["publish-module"]
