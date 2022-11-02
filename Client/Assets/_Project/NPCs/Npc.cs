@@ -16,13 +16,13 @@ public class Npc : MonoBehaviour
 
     private void Awake()
     {
-        StdbNetworkManager.instance.clientTick += GameTick;
+        BitCraftMiniGameManager.instance.messageSendTick += GameTick;
         // We can't realistically call OnEvent and de-jsonify the events in real-time for every animation or position update for the npcs
     }
 
 	private void OnDestroy()
     {
-        StdbNetworkManager.instance.clientTick -= GameTick;
+        BitCraftMiniGameManager.instance.messageSendTick -= GameTick;
     }
     
     public void Spawn(uint entityId)

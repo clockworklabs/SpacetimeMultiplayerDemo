@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using Event = ClientApi.Event;
 using Random = UnityEngine.Random;
+using System;
 
 public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 {
@@ -16,6 +17,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
     readonly Dictionary<uint, ResourceComponent> resources = new Dictionary<uint, ResourceComponent>();
     readonly Dictionary<uint, GameResource> resourcesModels = new Dictionary<uint, GameResource>();
+
+    private float? lastMessageSendTick;
+    public static float messageSendTickInterval;
+    public event Action messageSendTick;
 
     public static GameObject FeatureRoot;
 
@@ -49,7 +54,6 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         }
     }
 
-
     public static System.Action<uint> OnResourceUpdated;
 
     [System.Serializable]
@@ -66,25 +70,40 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
         Application.targetFrameRate = 60;
 
-        StdbNetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
+        NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
 
-        StdbNetworkManager.instance.onDisconnect += () => { };
+        NetworkManager.instance.onDisconnect += (closeStatus, error) => { };
 
-        StdbNetworkManager.instance.tableUpdate += OnTableUpdate;
-        StdbNetworkManager.instance.onEvent += OnEvent;
+        NetworkManager.instance.tableUpdate += OnTableUpdate;
+        NetworkManager.instance.onEvent += OnEvent;
 
-        StdbNetworkManager.instance.onIdentityReceived += (identity) => {
+        NetworkManager.instance.onIdentityReceived += (identity) => {
             NetworkPlayer.identity = identity;
         };
 
-        StdbNetworkManager.instance.onRowUpdateComplete += CheckNewPlayer;
+        NetworkManager.instance.onRowUpdateComplete += CheckNewPlayer;
 
-        StdbNetworkManager.instance.Connect("localhost:3000", "bitcraftmini");
+        NetworkManager.instance.Connect("localhost:3000", "bitcraftmini");
 	}
+
+    void Update() {
+        if (!lastMessageSendTick.HasValue)
+        {
+            lastMessageSendTick = Time.time;
+        }
+        else
+        {
+            if (Time.time - lastMessageSendTick > messageSendTickInterval)
+            {
+                lastMessageSendTick = Time.time;
+                messageSendTick?.Invoke();
+            }
+        }
+    }
 
 	void CheckNewPlayer()
 	{
-        var count = StdbNetworkManager.clientDB.GetEntries("Chunk").Count();
+        var count = NetworkManager.clientDB.GetEntries("Chunk").Count();
         // skip random table updates that come before the world status update containing the chunks
         // TODO: This should be handled via on-demand subscription (eg client doesn't receive any subscription by default
         // until explicitely requesting some.)
@@ -97,16 +116,16 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 // Show username selection
                 UIUsernameChooser.instance.Show();
             }
-            StdbNetworkManager.instance.onRowUpdateComplete -= CheckNewPlayer;
+            NetworkManager.instance.onRowUpdateComplete -= CheckNewPlayer;
         };
     }
 
-    void OnTableUpdate(string tableName, StdbNetworkManager.TableOp op, object oldValue, object newValue)
+    void OnTableUpdate(string tableName, NetworkManager.TableOp op, object oldValue, object newValue)
     {
         switch (op)
         {
-            case StdbNetworkManager.TableOp.Insert:
-            case StdbNetworkManager.TableOp.Update:
+            case NetworkManager.TableOp.Insert:
+            case NetworkManager.TableOp.Update:
                 switch (tableName)
                 {
                     case "NpcComponent":
@@ -274,7 +293,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                     var local = session.acceptorEntityId == localId ? session.acceptorOfferInventoryEntityId : session.initiatorOfferInventoryEntityId;
                                     var remote = session.acceptorEntityId == localId ? session.initiatorOfferInventoryEntityId : session.acceptorOfferInventoryEntityId;
 
-                                    if (op == StdbNetworkManager.TableOp.Insert)
+                                    if (op == NetworkManager.TableOp.Insert)
                                     {
                                         TradeSessionController.Local.Initiate(session.entityId, local, remote);
                                     }
@@ -289,7 +308,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 }
 
                 break;
-            case StdbNetworkManager.TableOp.Delete:
+            case NetworkManager.TableOp.Delete:
                 switch (tableName)
                 {
                     case "NpcComponent":

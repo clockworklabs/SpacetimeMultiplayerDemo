@@ -22,7 +22,7 @@ public class NetworkPlayer : MonoBehaviour
     private void Awake()
     {
         cameraRig.SetActive(false);
-        StdbNetworkManager.instance.clientTick += GameTick;
+        BitCraftMiniGameManager.instance.messageSendTick += GameTick;
     }
 
     public void LoginStateChanged()
