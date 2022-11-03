@@ -19,10 +19,15 @@ public class NetworkPlayer : MonoBehaviour
 
     public uint EntityId => _playerId.Value;
 
+    public Vector3 targetPosition;
+    public Quaternion targetRotation;
+
     private void Awake()
     {
         cameraRig.SetActive(false);
         BitCraftMiniGameManager.instance.messageSendTick += GameTick;
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
     }
 
     public void LoginStateChanged()
@@ -97,6 +102,11 @@ public class NetworkPlayer : MonoBehaviour
         }
     }
 
+    public void SetTargetTransform(Vector3 position, Quaternion rotation) {
+        targetPosition = position;
+        targetRotation = rotation;
+    }
+
     public bool IsLocal() => localPlayerId.HasValue && localPlayerId.Value == _playerId;
 
     private UnityEngine.Vector3? lastUpdatePosition;
@@ -119,6 +129,13 @@ public class NetworkPlayer : MonoBehaviour
             Reducer.MovePlayer(localPlayerId.Value, ourPos.ToStdb(), ourRot.ToStdb());
             lastUpdatePosition = ourPos;
             lastUpdateRotation = ourRot;
+        }
+    }
+
+    void Update() {
+        if (!IsLocal()) {
+            transform.position = Vector3.Lerp(targetPosition, transform.position, 0.5f);
+            transform.rotation = Quaternion.Lerp(targetRotation, transform.rotation, 0.5f);
         }
     }
 }

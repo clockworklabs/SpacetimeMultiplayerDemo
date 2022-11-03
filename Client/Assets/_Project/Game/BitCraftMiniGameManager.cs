@@ -83,7 +83,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
         NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
 
-        NetworkManager.instance.Connect("localhost:3000", "bitcraftmini");
+        NetworkManager.instance.Connect("spacetime.spacetimedb.net:3000", "bitcraftmini");
 	}
 
     void Update() {
@@ -197,8 +197,10 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                                 }
                                 else
                                 {
-                                    networkPlayer.transform.position = entityTransform.pos.ToVector3();
-                                    networkPlayer.transform.rotation = entityTransform.rot.ToQuaternion();
+                                    networkPlayer.SetTargetTransform(
+                                        entityTransform.pos.ToVector3(),
+                                        entityTransform.rot.ToQuaternion()
+                                    );
                                 }
                             }
                         }
