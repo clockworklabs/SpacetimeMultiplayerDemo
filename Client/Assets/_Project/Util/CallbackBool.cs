@@ -41,6 +41,7 @@ public class CallbackBool
             {
                 Mode.And => value && callback.Invoke(),
                 Mode.Or => value || callback.Invoke(),
+                _ => throw new ArgumentOutOfRangeException()
             };
         }
 

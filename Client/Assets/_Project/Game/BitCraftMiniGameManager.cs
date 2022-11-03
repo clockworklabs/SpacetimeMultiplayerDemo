@@ -71,8 +71,14 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         Application.targetFrameRate = 60;
 
         NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
-
-        NetworkManager.instance.onDisconnect += (closeStatus, error) => { };
+        NetworkManager.instance.onConnectError += a =>
+        {
+            Debug.LogError($"Connection error: " + (a.HasValue ? a.Value.ToString() : "Null"));
+        };
+        NetworkManager.instance.onDisconnect += (closeStatus, error) =>
+        {
+            Debug.Log("Disconnected.");
+        };
 
         NetworkManager.instance.onRowUpdate += OnRowUpdate;
         NetworkManager.instance.onEvent += OnEvent;
