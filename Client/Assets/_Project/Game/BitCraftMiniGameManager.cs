@@ -74,14 +74,14 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
         NetworkManager.instance.onDisconnect += (closeStatus, error) => { };
 
-        NetworkManager.instance.tableUpdate += OnTableUpdate;
+        NetworkManager.instance.onRowUpdate += OnRowUpdate;
         NetworkManager.instance.onEvent += OnEvent;
 
         NetworkManager.instance.onIdentityReceived += (identity) => {
             NetworkPlayer.identity = identity;
         };
 
-        NetworkManager.instance.onRowUpdateComplete += CheckNewPlayer;
+        NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
 
         NetworkManager.instance.Connect("localhost:3000", "bitcraftmini");
 	}
@@ -116,11 +116,11 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
                 // Show username selection
                 UIUsernameChooser.instance.Show();
             }
-            NetworkManager.instance.onRowUpdateComplete -= CheckNewPlayer;
+            NetworkManager.instance.onTransactionComplete -= CheckNewPlayer;
         };
     }
 
-    void OnTableUpdate(string tableName, NetworkManager.TableOp op, object oldValue, object newValue)
+    void OnRowUpdate(string tableName, NetworkManager.TableOp op, object oldValue, object newValue)
     {
         switch (op)
         {
