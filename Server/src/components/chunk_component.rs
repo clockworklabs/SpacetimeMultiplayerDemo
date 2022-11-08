@@ -100,11 +100,13 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     let splat_point_size = config.chunk_size as f64 / config.chunk_splat_resolution as f64;
 
     // For now heightmap is just flat
+    let mut total = 0;
     for _ in 0..config.chunk_terrain_resolution {
         for _ in 0..config.chunk_terrain_resolution {
-            heightmap.push(0);
+            total += 1;
         }
     }
+    heightmap.resize(total, 0);
 
     let dirt_perlin = Perlin::new();
     dirt_perlin.set_seed(config.terrain_seed + 1);
@@ -121,7 +123,7 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
             0.0,
             1.0,
         );
-        return clamp(remap(dirt_value, 0.7, 1.0, 0.0, 1.0) * dirt_strength as f32, 0.0, 1.0);
+        clamp(remap(dirt_value, 0.7, 1.0, 0.0, 1.0) * dirt_strength as f32, 0.0, 1.0)
     }
 
     let mut dirt_splat = Vec::<u8>::new();
@@ -293,7 +295,7 @@ fn encode_chunk_data(splats: Vec<Vec<u8>>) -> Vec<u8> {
         result.extend_from_slice(splat.as_slice());
     }
 
-    return result;
+    result
 }
 
 fn hash_chunk(pos: ChunkPosition) -> Hash {

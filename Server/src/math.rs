@@ -36,19 +36,17 @@ impl StdbVector3 {
     #[inline]
     pub fn normalized(self) -> StdbVector3 {
         let len = self.length();
-        let ret = StdbVector3::new(self.x / len, self.y / len, self.z / len);
-
-        return ret;
+        StdbVector3::new(self.x / len, self.y / len, self.z / len)
     }
 
     #[inline]
     pub fn length(&self) -> f32 {
-        return (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
     #[inline]
     pub fn length_sq(&self) -> f32 {
-        return self.x * self.x + self.y * self.y + self.z * self.z;
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     #[inline]
@@ -67,7 +65,7 @@ impl StdbVector3 {
 
     #[inline]
     pub fn dot(&self, rhs: StdbVector3) -> f32 {
-        return self.x * rhs.x + self.y * rhs.y + self.z * rhs.z;
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
 
@@ -225,18 +223,18 @@ pub(crate) fn remap(value: f32, old_min: f32, old_max: f32, new_min: f32, new_ma
 
     let mut value = (value - old_min) / (old_max - old_min);
     value = (value * (new_max - new_min)) + new_min;
-    return clamp(value, new_min, new_max);
+    clamp(value, new_min, new_max)
 }
 
 #[inline]
 pub(crate) fn map_to_u8(value: f32, min_value: f32, max_value: f32) -> u8 {
     let mut value = value - min_value;
-    value = value / max_value;
-    return if value < 0.0 {
+    value /= max_value;
+    if value < 0.0 {
         0
     } else if value > u8::MAX as f32 {
         u8::MAX
     } else {
         ((value * u8::MAX as f32).round() + 0.1) as u8
-    };
+    }
 }

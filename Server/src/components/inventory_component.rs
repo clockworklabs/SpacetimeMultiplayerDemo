@@ -18,7 +18,7 @@ impl InventoryComponent {
             }
         }
 
-        return None;
+        None
     }
 
     pub fn set_pocket(&mut self, pocket: Pocket) {
@@ -49,7 +49,9 @@ impl InventoryComponent {
         let config = Config::filter_by_version(0).unwrap();
 
         // Change empty pocket index for the first EMPTY pocket index
-        let pocket_idx = if index.is_none() {
+        let pocket_idx = if let Some(idx) = index {
+            idx
+        } else {
             let mut idx = u32::MAX;
             for i in 0..config.max_player_inventory_slots {
                 if self.get_pocket(i).is_none() {
@@ -61,8 +63,6 @@ impl InventoryComponent {
                 return false;
             }
             idx
-        } else {
-            index.unwrap()
         };
 
         if pocket_idx >= config.max_player_inventory_slots {
@@ -91,7 +91,7 @@ impl InventoryComponent {
         } else {
             self.set_pocket(pocket);
         }
-        return true;
+        true
     }
 
     pub fn can_hold(&self, items: &Vec<(u32, i32)>) -> bool {

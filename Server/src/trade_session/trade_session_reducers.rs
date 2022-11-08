@@ -96,8 +96,7 @@ pub fn add_to_trade(
 
     // Retrieve and update trade session
     let mut session = TradeSessionComponent::filter_by_entity_id(active_session.trade_session_entity_id)
-        .expect("This trade session no longer exists.")
-        .clone();
+        .expect("This trade session no longer exists.");
 
     let offer_inventory_entity_id = if session.initiator_entity_id == participant_entity_id {
         session.initiator_offer_inventory_entity_id
@@ -151,8 +150,7 @@ pub fn remove_from_trade(
 
     // Retrieve and update trade session
     let mut session = TradeSessionComponent::filter_by_entity_id(active_session.trade_session_entity_id)
-        .expect("This trade session no longer exists.")
-        .clone();
+        .expect("This trade session no longer exists.");
 
     let offer_inventory_entity_id = if session.initiator_entity_id == participant_entity_id {
         session.initiator_offer_inventory_entity_id

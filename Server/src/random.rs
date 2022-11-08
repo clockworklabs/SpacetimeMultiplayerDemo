@@ -2,6 +2,7 @@ use getrandom::register_custom_getrandom;
 use getrandom::Error;
 
 // Some application-specific error code
+#[allow(clippy::needless_range_loop)]
 pub fn fake_random(buf: &mut [u8]) -> Result<(), Error> {
     for i in 0..buf.len() {
         let start = match i % 4 {

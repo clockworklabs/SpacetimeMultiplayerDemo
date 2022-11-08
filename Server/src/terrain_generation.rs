@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
     let max_chunks_per_call = 20;
     let config = Config::filter_by_version(0);
-    if let None = config {
+    if config.is_none() {
         return;
     }
     let config = config.unwrap();
@@ -28,7 +28,7 @@ pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
                     y: player_chunk_position.y + y,
                 };
 
-                if let None = chunk_positions.get(&pos) {
+                if chunk_positions.get(&pos).is_none() {
                     chunk_positions.insert(pos);
                 }
             }
@@ -39,12 +39,10 @@ pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
         chunk_positions.remove(&chunk.position);
     }
 
-    let mut idx = 0;
-    for chunk_pos in chunk_positions {
+    for (idx, chunk_pos) in chunk_positions.into_iter().enumerate() {
         if idx >= max_chunks_per_call {
             return;
         }
         generate_chunk(chunk_pos);
-        idx += 1;
     }
 }

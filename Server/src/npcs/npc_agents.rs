@@ -20,7 +20,7 @@ use super::update_npc_animation;
 #[spacetimedb(reducer, repeat = 5000ms)]
 pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
     let config = Config::filter_by_version(0);
-    if let None = config {
+    if config.is_none() {
         return;
     }
     let config = config.unwrap();
@@ -100,7 +100,7 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
 #[spacetimedb(reducer, repeat = 15000ms)]
 pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
     let config = Config::filter_by_version(0);
-    if let None = config {
+    if config.is_none() {
         return;
     }
     let config = config.unwrap();
@@ -132,7 +132,7 @@ pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
 #[spacetimedb(reducer, repeat = 100ms)]
 pub(crate) fn move_npcs(timestamp: u64, _delta_time: u64) {
     let config = Config::filter_by_version(0);
-    if let None = config {
+    if config.is_none() {
         return;
     }
     let config = config.unwrap();

@@ -117,7 +117,7 @@ pub fn move_or_swap_inventory_slot(
     let dest_pocket = inventory.get_pocket(dest_pocket_idx);
 
     // If we don't have a dest pocket, then just do a direct move
-    if let None = dest_pocket {
+    if dest_pocket.is_none() {
         inventory.delete_pocket(source_pocket_idx);
         source_pocket.pocket_idx = dest_pocket_idx;
         inventory.set_pocket(source_pocket);
@@ -187,7 +187,7 @@ pub fn add_item_to_inventory(
 #[spacetimedb(reducer)]
 pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
     let inventory = InventoryComponent::filter_by_entity_id(entity_id)
-        .expect(&format!("Inventory NOT found for entity {}", entity_id));
+        .unwrap_or_else(|| panic!("Inventory NOT found for entity {}", entity_id));
 
     for pocket in inventory.pockets {
         println!(
@@ -367,6 +367,7 @@ pub fn extract(identity: Hash, timestamp: u64, entity_id: u32, resource_entity_i
 
     resource.health -= 1;
 
+    //TODO: Is this a bug? `health` is unsigned so this cmp is non-sense.
     if resource.health <= 0 {
         ResourceComponent::delete_by_entity_id(resource_entity_id);
     } else {
