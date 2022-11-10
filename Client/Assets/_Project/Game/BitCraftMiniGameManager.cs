@@ -8,10 +8,19 @@ using System;
 
 public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 {
+    [System.Serializable]
+    private class NpcData
+    {
+        public string npcType;
+        public Npc prefab;
+    }
+    
     [SerializeField] private NetworkPlayer playerPrefab;
     [SerializeField] private GameObject preSpawnCamera;
-
+    [SerializeField, Tooltip("The rate at which we are sending frequent updates on the client (in messages per second)")]
+    private float clientSendRate;
     [SerializeField] private float spawnAreaRadius;
+    [SerializeField] private NpcData[] npcPrefabs;
 
     readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
     readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
@@ -19,56 +28,18 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     readonly Dictionary<uint, GameResource> resourcesModels = new Dictionary<uint, GameResource>();
 
     private float? lastMessageSendTick;
-    public static float messageSendTickInterval;
+    private float clientSendMessageInterval;
     public event Action messageSendTick;
+    public static Action<uint> OnResourceUpdated;
 
     public static GameObject FeatureRoot;
-
-    public ResourceComponent GetResourceComponent(uint entityId)
-    {
-        if (resources.TryGetValue(entityId, out var res))
-        {
-            return res;
-        }
-        return null;
-    }
-
-    public GameResource GetResourceModel(uint entityId)
-    {
-        if (resourcesModels.TryGetValue(entityId, out var res))
-        {
-            return res;
-        }
-        return null;
-    }
-
-    public void AssignResourceModel(uint entityId, GameResource res)
-    {
-        if (res == null)
-        {
-            resourcesModels.Remove(entityId);
-        }
-        else
-        {
-            resourcesModels[entityId] = res;
-        }
-    }
-
-    public static System.Action<uint> OnResourceUpdated;
-
-    [System.Serializable]
-    private class NpcData
-	{
-        public string npcType;
-        public Npc prefab;
-	}
-    [SerializeField] private NpcData[] npcPrefabs;
-
+    
     protected void Start()
     {
         FeatureRoot = new GameObject("Features");
 
         Application.targetFrameRate = 60;
+        clientSendMessageInterval = 1.0f / clientSendRate;
 
         NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
         NetworkManager.instance.onConnectError += a =>
@@ -99,7 +70,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         }
         else
         {
-            if (Time.time - lastMessageSendTick > messageSendTickInterval)
+            if (Time.time - lastMessageSendTick > clientSendMessageInterval)
             {
                 lastMessageSendTick = Time.time;
                 messageSendTick?.Invoke();
@@ -395,5 +366,35 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     public void LocalPlayerCreated()
     {
         preSpawnCamera.SetActive(false);
+    }
+    
+    public ResourceComponent GetResourceComponent(uint entityId)
+    {
+        if (resources.TryGetValue(entityId, out var res))
+        {
+            return res;
+        }
+        return null;
+    }
+
+    public GameResource GetResourceModel(uint entityId)
+    {
+        if (resourcesModels.TryGetValue(entityId, out var res))
+        {
+            return res;
+        }
+        return null;
+    }
+
+    public void AssignResourceModel(uint entityId, GameResource res)
+    {
+        if (res == null)
+        {
+            resourcesModels.Remove(entityId);
+        }
+        else
+        {
+            resourcesModels[entityId] = res;
+        }
     }
 }
