@@ -79,20 +79,16 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 	void CheckNewPlayer()
 	{
         var count = NetworkManager.clientDB.GetEntries("Chunk").Count();
-        // skip random table updates that come before the world status update containing the chunks
         // TODO: This should be handled via on-demand subscription (eg client doesn't receive any subscription by default
         // until explicitely requesting some.)
-        if (count > 0)
+        // If we don't have any data for our player, then we are creating a new one.
+        var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value);
+        if (!NetworkPlayer.localPlayerId.HasValue || player == null)
         {
-            // If we don't have any data for our player, then we are creating a new one.
-            var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value);
-            if (!NetworkPlayer.localPlayerId.HasValue || player == null)
-            {
-                // Show username selection
-                UIUsernameChooser.instance.Show();
-            }
-            NetworkManager.instance.onTransactionComplete -= CheckNewPlayer;
-        };
+            // Show username selection
+            UIUsernameChooser.instance.Show();
+        }
+        NetworkManager.instance.onTransactionComplete -= CheckNewPlayer;
     }
 
     void OnRowUpdate(string tableName, NetworkManager.TableOp op, object oldValue, object newValue)
