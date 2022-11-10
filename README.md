@@ -35,7 +35,15 @@ Publish finished successfully.
 Created new database with address: c91c17ecdcea8a05302be2bad9dd59b3
 ```
 
-You should also now generate the client files:
+In the BitCraftMini module we have a function called `initialize()`. This function should be called immediately after publishing the module to spacetimedb. This function is in charge of generating some initial settings that are required for the server to operate. You can call this function like so:
+
+```bash 
+spacetime call "bitcraftmini" "initialize" "[]"
+```
+
+Here we are telling spacetime to invoke the `initialize()` function on our module "bitcraftmini". If the function had some arguments, we would json encode them and put them into the "[]". Since `initialize()` requires no parameters, we just leave it empty.
+
+After you have called `initialize()` on the spacetime module you should generate the client files:
 
 ```bash
 spacetime generate --out-dir ../Client/Assets/_Project/autogen --lang=cs
