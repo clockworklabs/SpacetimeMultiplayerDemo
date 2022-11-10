@@ -28,7 +28,6 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
     readonly Dictionary<uint, GameResource> resourcesModels = new Dictionary<uint, GameResource>();
 
     private float? lastMessageSendTick;
-    private float clientSendMessageInterval;
     public event Action messageSendTick;
     public static Action<uint> OnResourceUpdated;
 
@@ -39,7 +38,6 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         FeatureRoot = new GameObject("Features");
 
         Application.targetFrameRate = 60;
-        clientSendMessageInterval = 1.0f / clientSendRate;
 
         NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
         NetworkManager.instance.onConnectError += a =>
@@ -70,7 +68,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
         }
         else
         {
-            if (Time.time - lastMessageSendTick > clientSendMessageInterval)
+            if (clientSendRate > 0 && Time.time - lastMessageSendTick > 1.0f / clientSendRate)
             {
                 lastMessageSendTick = Time.time;
                 messageSendTick?.Invoke();

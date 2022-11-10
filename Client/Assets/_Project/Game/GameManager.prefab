@@ -78,7 +78,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: afbc59781ed95141abe2453be650b4bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clientTicksPerSecond: 30
 --- !u!114 &609108669033260355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93,6 +92,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 7979707959555921424, guid: 412d89e4212abfc489869de4e240a1db, type: 3}
   preSpawnCamera: {fileID: 0}
+  clientSendRate: 30
   spawnAreaRadius: 15
   npcPrefabs:
   - npcType: Rabbit
