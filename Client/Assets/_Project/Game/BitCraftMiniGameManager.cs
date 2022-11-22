@@ -58,7 +58,7 @@ public class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager>
 
         NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
 
-        NetworkManager.instance.Connect("spacetime.spacetimedb.net:3000", "bitcraftmini");
+        NetworkManager.instance.Connect("partner.spacetimedb.net:3000", "bitcraftmini");
 	}
 
     void Update() {
