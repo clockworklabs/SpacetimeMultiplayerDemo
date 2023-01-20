@@ -22,28 +22,20 @@ Once you have cargo installed, you can compile and publish the module with these
 
 ```bash
 cd BitCraftMini/Server
-spacetime publish
+spacetime publish --clear-database
 ```
 
 `spacetime publish` will output an address where your module has been deployed to. You will want to copy/save this address because you will need it in step 3. Here is an example of what it should look like:
 
 ```
-$ spacetime publish
+$ spacetime publish --clear-database
 info: component 'rust-std' for target 'wasm32-unknown-unknown' is up to date
     Finished release [optimized] target(s) in 0.03s
 Publish finished successfully.
 Created new database with address: c91c17ecdcea8a05302be2bad9dd59b3
 ```
 
-In the BitCraftMini module we have a function called `initialize()`. This function should be called immediately after publishing the module to spacetimedb. This function is in charge of generating some initial settings that are required for the server to operate. You can call this function like so:
-
-```bash 
-spacetime call "bitcraftmini" "initialize" "[]"
-```
-
-Here we are telling spacetime to invoke the `initialize()` function on our module "bitcraftmini". If the function had some arguments, we would json encode them and put them into the "[]". Since `initialize()` requires no parameters, we just leave it empty.
-
-After you have called `initialize()` on the spacetime module you should generate the client files:
+Once you have published your module, you can generate the client files required to connect to your module:
 
 ```bash
 spacetime generate --out-dir ../Client/Assets/_Project/autogen --lang=cs
@@ -68,46 +60,45 @@ Now that you have published the module to a new address, we will need to put thi
 Inside of BitCraftMiniGameManager.cs, you should see a `Start()` function similar to this:
 
 ```cs
-protected void Start() 
-{       
-        FeatureRoot = new GameObject("Features");
+protected void Start()
+{
+    FeatureRoot = new GameObject("Features");
 
-        Application.targetFrameRate = 60;
-        clientSendMessageInterval = 1.0f / clientSendRate;
+    Application.targetFrameRate = 60;
 
-        NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
-        NetworkManager.instance.onConnectError += a => 
-        {
-                Debug.LogError($"Connection error: " + (a.HasValue ? a.Value.ToString() : "Null"));
-        };      
-        NetworkManager.instance.onDisconnect += (closeStatus, error) =>
-        {
-                Debug.Log("Disconnected.");
-        };      
+    NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
+    NetworkManager.instance.onConnectError += a =>
+    {
+        Debug.LogError($"Connection error: " + (a.HasValue ? a.Value.ToString() : "Null"));
+    };
+    NetworkManager.instance.onDisconnect += (closeStatus, error) =>
+    {
+        Debug.Log("Disconnected.");
+    };
 
-        NetworkManager.instance.onRowUpdate += OnRowUpdate;
-        NetworkManager.instance.onEvent += OnEvent;
+    NetworkManager.instance.onRowUpdate += OnRowUpdate;
+    NetworkManager.instance.onEvent += OnEvent;
 
-        NetworkManager.instance.onIdentityReceived += (identity) => {
-                NetworkPlayer.identity = identity;
-        };
+    NetworkManager.instance.onIdentityReceived += (identity) => {
+        NetworkPlayer.identity = identity;
+    };
 
-        NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
+    NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
 
-        NetworkManager.instance.Connect("spacetime.spacetimedb.net:3000", "bitcraftmini");
+    NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "bitcraftmini");
 }
 ```
 
 The last line is the one we want to change. We want to take our address and change from this:
 
 ```cs
-	NetworkManager.instance.Connect("spacetime.spacetimedb.net:3000", "bitcraftmini");
+	NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "bitcraftmini");
 ```
 
 to this:
 
 ```cs
-	NetworkManager.instance.Connect("spacetime.spacetimedb.net:3000", "c91c17ecdcea8a05302be2bad9dd59b3");
+	NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "c91c17ecdcea8a05302be2bad9dd59b3");
 ```
 
 Instead of putting `c91c17ecdcea8a05302be2bad9dd59b3`, you should use your own address that you generated in step 2.
@@ -122,7 +113,7 @@ You should now be able to enter play mode and walk around! You can mine some roc
 If you want to make further updates to the module, make sure to use this publish command instead:
 
 ```bash
-spacetime publish c91c17ecdcea8a05302be2bad9dd59b3
+spacetime publish c91c17ecdcea8a05302be2bad9dd59b3 --clear-database
 ``` 
 
 Where `c91c17ecdcea8a05302be2bad9dd59b3` is your own address. If you do this instead then you won't have to change the address inside of `BitCraftMiniGameManager.cs`
