@@ -141,7 +141,7 @@ namespace SpacetimeDB
 
         public async Task Connect(string auth, string host, string nameOrAddress)
         {
-            var url = new Uri($"ws://{host}/database/subscribe?name_or_address={nameOrAddress}");
+            var url = new Uri($"wss://{host}/database/subscribe?name_or_address={nameOrAddress}");
             Ws.Options.AddSubProtocol(_options.Protocol);
 
             var source = new CancellationTokenSource(10000);

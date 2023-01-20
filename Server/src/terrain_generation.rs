@@ -3,10 +3,12 @@ use crate::components::chunk_component::Chunk;
 use crate::components::chunk_component::{generate_chunk, ChunkPosition};
 use crate::{Config, PlayerComponent, TransformComponent};
 use spacetimedb::spacetimedb;
+use spacetimedb::ReducerContext;
+use spacetimedb::Timestamp;
 use std::collections::BTreeSet;
 
 #[spacetimedb(reducer, repeat = 1000ms)]
-pub(crate) fn check_chunks_for_all_players(_timestamp: u64, _delta_time: u64) {
+pub(crate) fn check_chunks_for_all_players(_ctx: ReducerContext, _prev_time: Timestamp) {
     let max_chunks_per_call = 20;
     let config = Config::filter_by_version(0);
     if config.is_none() {

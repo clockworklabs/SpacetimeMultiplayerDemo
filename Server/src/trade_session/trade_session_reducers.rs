@@ -1,11 +1,15 @@
 use crate::components::{ActiveTradeComponent, InventoryComponent, PlayerComponent, TradeSessionComponent};
 use crate::tuples::Pocket;
-use spacetimedb::hash::Hash;
-use spacetimedb::println;
-use spacetimedb::spacetimedb;
+
+use spacetimedb::{spacetimedb, Timestamp};
+use spacetimedb::{println, ReducerContext};
 
 #[spacetimedb(reducer)]
-pub fn initiate_trade_session(identity: Hash, timestamp: u64, initiator_entity_id: u32, acceptor_entity_id: u32) {
+pub fn initiate_trade_session(
+    ctx: ReducerContext,
+    initiator_entity_id: u32,
+    acceptor_entity_id: u32,
+) -> Result<(), String> {
     println!(
         "Attempting trade session between {} and {}",
         initiator_entity_id, acceptor_entity_id
@@ -18,21 +22,26 @@ pub fn initiate_trade_session(identity: Hash, timestamp: u64, initiator_entity_i
 
     if ActiveTradeComponent::filter_by_entity_id(initiator_entity_id).is_some() {
         println!("Trade initiator is already in a trading session.");
-        return;
+        return Ok(());
     }
 
     if ActiveTradeComponent::filter_by_entity_id(acceptor_entity_id).is_some() {
         println!("Trade acceptor is already in a trading session.");
-        return;
+        return Ok(());
     }
 
     // Make sure this identity owns this player
-    if initiator.owner_id != identity {
-        println!("This identity doesn't own this player! (allowed for now)");
+    if initiator.owner_id != ctx.sender {
+        return Err(format!("This identity doesn't own this player! (allowed for now)"));
     }
 
     // ToDo: We definitely need a way to get unique ids in sequential tables.
-    let trade_session_entity_id = timestamp as u32;
+    let trade_session_entity_id = ctx
+        .timestamp
+        .duration_since(Timestamp::UNIX_EPOCH)
+        .ok()
+        .unwrap()
+        .as_millis() as u32;
     let initiator_offer_inventory_entity_id = trade_session_entity_id + 1;
     let acceptor_offer_inventory_entity_id = trade_session_entity_id + 2;
 
@@ -73,20 +82,21 @@ pub fn initiate_trade_session(identity: Hash, timestamp: u64, initiator_entity_i
         pockets: Vec::<Pocket>::new(),
     };
     InventoryComponent::insert(acceptor_offer);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
 pub fn add_to_trade(
-    identity: Hash,
-    _timestamp: u64,
+    ctx: ReducerContext,
     participant_entity_id: u32,
     source_pocket_id: u32,
     dest_pocket_id: u32,
-) {
+) -> Result<(), String> {
     let participant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
-    if participant.owner_id != identity {
+    if participant.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
@@ -116,7 +126,7 @@ pub fn add_to_trade(
         .get_pocket(source_pocket_id)
         .expect("Traded items do not exist");
     if !player_inventory.add(pocket.item_id, -pocket.item_count, Some(source_pocket_id)) {
-        panic!("Failed to remove item from player inventory");
+        return Err(format!("Failed to remove item from player inventory"));
     }
     InventoryComponent::update_by_entity_id(participant_entity_id, player_inventory);
 
@@ -124,23 +134,24 @@ pub fn add_to_trade(
     let mut offer_inventory =
         InventoryComponent::filter_by_entity_id(offer_inventory_entity_id).expect("Trade session has no such offer");
     if !offer_inventory.add(pocket.item_id, pocket.item_count, Some(dest_pocket_id)) {
-        panic!("Failed to add item to trade window");
+        return Err(format!("Failed to add item to trade window"));
     }
     InventoryComponent::update_by_entity_id(offer_inventory_entity_id, offer_inventory);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
 pub fn remove_from_trade(
-    identity: Hash,
-    _timestamp: u64,
+    ctx: ReducerContext,
     participant_entity_id: u32,
     source_pocket_id: u32,
     dest_pocket_id: u32,
-) {
+) -> Result<(), String> {
     let participant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
-    if participant.owner_id != identity {
+    if participant.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
@@ -170,7 +181,7 @@ pub fn remove_from_trade(
         .get_pocket(source_pocket_id)
         .expect("Traded items do not exist");
     if !offer_inventory.add(pocket.item_id, -pocket.item_count, Some(source_pocket_id)) {
-        panic!("Failed to remove item from trade inventory");
+        return Err(format!("Failed to remove item from trade inventory"));
     }
     InventoryComponent::update_by_entity_id(offer_inventory_entity_id, offer_inventory);
 
@@ -178,17 +189,19 @@ pub fn remove_from_trade(
     let mut player_inventory =
         InventoryComponent::filter_by_entity_id(participant_entity_id).expect("Player has no inventory.");
     if !player_inventory.add(pocket.item_id, pocket.item_count, Some(dest_pocket_id)) {
-        panic!("Failed to add item to player inventory");
+        return Err(format!("Failed to add item to player inventory"));
     }
     InventoryComponent::update_by_entity_id(participant_entity_id, player_inventory);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn toggle_accept_trade(identity: Hash, _timestamp: u64, participant_entity_id: u32) {
+pub fn toggle_accept_trade(ctx: ReducerContext, participant_entity_id: u32) -> Result<(), String> {
     let participant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
-    if participant.owner_id != identity {
+    if participant.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
@@ -205,7 +218,9 @@ pub fn toggle_accept_trade(identity: Hash, _timestamp: u64, participant_entity_i
     } else if session.initiator_entity_id == participant_entity_id {
         session.approved_by_initiator = !session.approved_by_initiator;
     } else {
-        panic!("This player is not part of the trade session. How is this possible?");
+        return Err(format!(
+            "This player is not part of the trade session. How is this possible?"
+        ));
     }
     let close_session = session.approved_by_acceptor && session.approved_by_initiator;
     TradeSessionComponent::update_by_entity_id(active_session.trade_session_entity_id, session);
@@ -214,18 +229,22 @@ pub fn toggle_accept_trade(identity: Hash, _timestamp: u64, participant_entity_i
     if close_session {
         close_trade_session(active_session.trade_session_entity_id, true);
     }
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn refuse_trade(identity: Hash, _timestamp: u64, participant_entity_id: u32) {
+pub fn refuse_trade(ctx: ReducerContext, participant_entity_id: u32) -> Result<(), String> {
     let partipant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
-    if partipant.owner_id != identity {
+    if partipant.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
     cancel_trade_session_with_participant(participant_entity_id);
+
+    Ok(())
 }
 
 pub fn cancel_trade_session_with_participant(participant_entity_id: u32) {

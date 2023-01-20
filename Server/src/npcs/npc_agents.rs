@@ -1,3 +1,5 @@
+use super::move_npc;
+use super::update_npc_animation;
 use crate::components::AnimationComponent;
 use crate::components::NpcComponent;
 use crate::components::PlayerLoginComponent;
@@ -8,22 +10,26 @@ use crate::{random, Config};
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use spacetimedb::hash::hash_bytes;
-use spacetimedb::spacetimedb;
-//use spacetimedb_lib::println;
+use spacetimedb::Timestamp;
+use spacetimedb::{hash::hash_bytes, spacetimedb, ReducerContext};
 use std::f32::consts::PI;
 use std::ops::Add;
 
-use super::move_npc;
-use super::update_npc_animation;
-
 #[spacetimedb(reducer, repeat = 5000ms)]
-pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
+pub(crate) fn spawn_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
+    println!("spawn_npcs");
+
     let config = Config::filter_by_version(0);
     if config.is_none() {
         return;
     }
     let config = config.unwrap();
+    let timestamp = ctx
+        .timestamp
+        .duration_since(Timestamp::UNIX_EPOCH)
+        .ok()
+        .unwrap()
+        .as_millis() as u64;
     random::register();
     let mut rng = ChaCha8Rng::seed_from_u64(timestamp);
 
@@ -98,7 +104,9 @@ pub(crate) fn spawn_npcs(timestamp: u64, _delta_time: u64) {
 }
 
 #[spacetimedb(reducer, repeat = 15000ms)]
-pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
+pub(crate) fn despawn_npcs(_ctx: ReducerContext, _prev_time: Timestamp) {
+    println!("despawn_npcs");
+
     let config = Config::filter_by_version(0);
     if config.is_none() {
         return;
@@ -130,13 +138,22 @@ pub(crate) fn despawn_npcs(_timestamp: u64, _delta_time: u64) {
 }
 
 #[spacetimedb(reducer, repeat = 100ms)]
-pub(crate) fn move_npcs(timestamp: u64, _delta_time: u64) {
+pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
+    println!("move_npcs");
+
     let config = Config::filter_by_version(0);
     if config.is_none() {
         return;
     }
     let config = config.unwrap();
     let detection_range = config.npc_detection_range;
+
+    let timestamp = ctx
+        .timestamp
+        .duration_since(Timestamp::UNIX_EPOCH)
+        .ok()
+        .unwrap()
+        .as_millis() as u64;
 
     random::register();
     let mut rng = ChaCha8Rng::seed_from_u64(timestamp);

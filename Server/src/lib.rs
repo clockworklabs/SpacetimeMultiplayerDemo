@@ -6,7 +6,9 @@ mod trade_session;
 mod tuples;
 
 use crate::components::chunk_component::generate_terrain_stub;
+use crate::npcs::{despawn_npcs, move_npcs, spawn_npcs};
 use crate::tables::{Config, PlayerChatMessage};
+use crate::terrain_generation::check_chunks_for_all_players;
 use crate::trade_session::cancel_trade_session_with_participant;
 use crate::tuples::Pocket;
 use components::{
@@ -14,16 +16,16 @@ use components::{
     ResourceComponent, TradeSessionComponent, TransformComponent,
 };
 use math::{StdbQuaternion, StdbVector3};
-use spacetimedb::println;
-use spacetimedb::spacetimedb;
-use spacetimedb::Hash;
+
+use spacetimedb::{println, ReducerContext};
+use spacetimedb::{spacetimedb, Timestamp};
 
 mod random;
 mod terrain_generation;
 
 // This is in charge of initializing any static global data
-#[spacetimedb(reducer)]
-pub fn initialize(_identity: Hash, _timestamp: u64) {
+#[spacetimedb(init)]
+pub fn init() {
     // TODO(cloutiertyler): Validate that the identity is the authorized
     // identity. (i.e. the one who initialized this database)
 
@@ -52,39 +54,43 @@ pub fn initialize(_identity: Hash, _timestamp: u64) {
     // received by the client is the world state.
     // TODO: the client should be able to subscribe on demand and the server should make sure no subscription is received until then.
     generate_terrain_stub();
+
+    spacetimedb::schedule!("1000ms", check_chunks_for_all_players(_, Timestamp::now()));
+    spacetimedb::schedule!("5000ms", spawn_npcs(_, Timestamp::now()));
+    spacetimedb::schedule!("15000ms", despawn_npcs(_, Timestamp::now()));
+    spacetimedb::schedule!("100ms", move_npcs(_, Timestamp::now()));
 }
 
 #[spacetimedb(reducer)]
 pub fn move_or_swap_inventory_slot(
-    identity: Hash,
-    _timestamp: u64,
+    ctx: ReducerContext,
     player_entity_id: u32,
     inventory_entity_id: u32,
     source_pocket_idx: u32,
     dest_pocket_idx: u32,
-) {
+) -> Result<(), String> {
     let config = Config::filter_by_version(0).expect("Config exists.");
 
     // Check to see if the source pocket index is bad
     if source_pocket_idx >= config.max_player_inventory_slots {
-        panic!("The source pocket index is invalid: {}", source_pocket_idx);
+        return Err(format!("The source pocket index is invalid: {}", source_pocket_idx));
     }
 
     // Check to see if the dest pocket index is bad
     if dest_pocket_idx >= config.max_player_inventory_slots {
-        panic!("The dest pocket index is invalid: {}", dest_pocket_idx);
+        return Err(format!("The dest pocket index is invalid: {}", dest_pocket_idx));
     }
 
     if source_pocket_idx == dest_pocket_idx {
         // Cannot drag and drop on itself
-        return;
+        return Ok(());
     }
 
     // Make sure this identity owns this player
     let player = PlayerComponent::filter_by_entity_id(player_entity_id).expect("This player doesn't exist!");
-    if player.owner_id != identity {
+    if player.owner_id != ctx.sender {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
-        panic!("This identity doesn't own this player! (allowed for now)");
+        return Err(format!("This identity doesn't own this player! (allowed for now)"));
     }
 
     if inventory_entity_id != player_entity_id {
@@ -103,7 +109,7 @@ pub fn move_or_swap_inventory_slot(
 
         // We did all the checks for external inventory update.
         if !valid {
-            panic!("This player is not allowed to modify that inventory");
+            return Err(format!("This player is not allowed to modify that inventory"));
         }
     }
 
@@ -123,7 +129,8 @@ pub fn move_or_swap_inventory_slot(
         inventory.set_pocket(source_pocket);
         InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
         println!("Source pocket moved to dest pocket.");
-        return;
+
+        return Ok(());
     }
 
     // If we have a dest and source pocket then we have to see if we can stack onto the dest
@@ -135,7 +142,8 @@ pub fn move_or_swap_inventory_slot(
         inventory.set_pocket(dest_pocket);
         InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
         println!("Source pocket moved into dest pocket (same item)");
-        return;
+
+        return Ok(());
     }
 
     inventory.delete_pocket(source_pocket_idx);
@@ -146,24 +154,25 @@ pub fn move_or_swap_inventory_slot(
     inventory.set_pocket(dest_pocket);
     InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
     println!("Pockets swapped (different items)");
+
+    Ok(())
 }
 
 /// This adds or removes items from an inventory slot. you can pass a negative item count in order
 /// to remove items.
 #[spacetimedb(reducer)]
 pub fn add_item_to_inventory(
-    identity: Hash,
-    _timestamp: u64,
+    ctx: ReducerContext,
     entity_id: u32,
     item_id: u32,
     pocket_idx: i32, // < 0 to auto assign the first valid index
     item_count: i32,
-) {
+) -> Result<(), String> {
     // Make sure this identity owns this player
     let player =
         PlayerComponent::filter_by_entity_id(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
 
-    if player.owner_id != identity {
+    if player.owner_id != ctx.sender {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
         println!("This identity doesn't own this player! (allowed for now)");
         // return;
@@ -182,10 +191,12 @@ pub fn add_item_to_inventory(
 
     InventoryComponent::update_by_entity_id(entity_id, inventory);
     println!("Item {} inserted into inventory {}", item_id, entity_id);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
+pub fn dump_inventory(_ctx: ReducerContext, entity_id: u32) -> Result<(), String> {
     let inventory = InventoryComponent::filter_by_entity_id(entity_id)
         .unwrap_or_else(|| panic!("Inventory NOT found for entity {}", entity_id));
 
@@ -195,26 +206,35 @@ pub fn dump_inventory(_identity: Hash, _timestamp: u64, entity_id: u32) {
             pocket.pocket_idx, pocket.item_id, pocket.item_count
         );
     }
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(identity: Hash, _timestamp: u64, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion) {
+pub fn move_player(ctx: ReducerContext, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
-    if player.owner_id != identity {
+    if player.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
     TransformComponent::update_by_entity_id(entity_id, TransformComponent { entity_id, pos, rot });
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving: bool, action_target_entity_id: u32) {
+pub fn update_animation(
+    ctx: ReducerContext,
+    entity_id: u32,
+    moving: bool,
+    action_target_entity_id: u32,
+) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
-    if player.owner_id != identity {
+    if player.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
@@ -226,27 +246,35 @@ pub fn update_animation(identity: Hash, _timestamp: u64, entity_id: u32, moving:
             action_target_entity_id,
         },
     );
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
 pub fn create_new_player(
-    identity: Hash,
-    timestamp: u64,
+    ctx: ReducerContext,
     entity_id: u32,
     start_pos: StdbVector3,
     start_rot: StdbQuaternion,
     username: String,
-) {
+) -> Result<(), String> {
     // Make sure this player doesn't already exist
     if PlayerComponent::filter_by_entity_id(entity_id).is_some() {
-        panic!("A player with this entity_id already exists: {}", entity_id);
+        return Err(format!("A player with this entity_id already exists: {}", entity_id));
     }
     println!("Creating player with this ID: {}", entity_id);
+    let creation_time = ctx
+        .timestamp
+        .duration_since(Timestamp::UNIX_EPOCH)
+        .ok()
+        .unwrap()
+        .as_millis() as u64;
+
     PlayerComponent::insert(PlayerComponent {
         entity_id,
-        owner_id: identity,
+        owner_id: ctx.sender,
         username,
-        creation_time: timestamp,
+        creation_time,
     });
     InventoryComponent::insert(InventoryComponent {
         entity_id,
@@ -262,22 +290,33 @@ pub fn create_new_player(
         entity_id
     );
     println!("Player created: {}", entity_id);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn player_chat(_identity: Hash, timestamp: u64, player_id: u32, message: String) {
+pub fn player_chat(ctx: ReducerContext, player_id: u32, message: String) -> Result<(), String> {
+    let msg_time = ctx
+        .timestamp
+        .duration_since(Timestamp::UNIX_EPOCH)
+        .ok()
+        .unwrap()
+        .as_millis() as u64;
+
     let chat = PlayerChatMessage {
         player_id,
-        msg_time: timestamp,
+        msg_time,
         message,
     };
 
     PlayerChatMessage::insert(chat);
+
+    Ok(())
 }
 
 #[spacetimedb(reducer)]
-pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: bool) {
-    let player = PlayerComponent::filter_by_owner_id(identity).expect("You cannot sign in without a player!");
+pub fn player_update_login_state(ctx: ReducerContext, logged_in: bool) -> Result<(), String> {
+    let player = PlayerComponent::filter_by_owner_id(ctx.sender).expect("You cannot sign in without a player!");
 
     if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(player.entity_id) {
         assert!(
@@ -299,7 +338,7 @@ pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: boo
             },
         );
 
-        return;
+        return Ok(());
     }
 
     println!("Player set login state to: {}", logged_in);
@@ -307,11 +346,13 @@ pub fn player_update_login_state(identity: Hash, _timestamp: u64, logged_in: boo
         entity_id: player.entity_id,
         logged_in,
     });
+
+    Ok(())
 }
 
 #[spacetimedb(connect)]
-pub fn identity_connected(identity: Hash, _timestamp: u64) {
-    let player = PlayerComponent::filter_by_owner_id(identity);
+pub fn identity_connected(ctx: ReducerContext) {
+    let player = PlayerComponent::filter_by_owner_id(ctx.sender);
     if let Some(player) = player {
         println!("Player {} has returned.", player.entity_id);
     } else {
@@ -320,8 +361,8 @@ pub fn identity_connected(identity: Hash, _timestamp: u64) {
 }
 
 #[spacetimedb(disconnect)]
-pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
-    if let Some(player) = PlayerComponent::filter_by_owner_id(identity) {
+pub fn identity_disconnected(ctx: ReducerContext) {
+    if let Some(player) = PlayerComponent::filter_by_owner_id(ctx.sender) {
         if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(player.entity_id) {
             if login_state.logged_in {
                 println!("User has disconnected without signing out.");
@@ -342,11 +383,11 @@ pub fn identity_disconnected(identity: Hash, _timestamp: u64) {
 }
 
 #[spacetimedb(reducer)]
-pub fn extract(identity: Hash, timestamp: u64, entity_id: u32, resource_entity_id: u32) {
+pub fn extract(ctx: ReducerContext, entity_id: u32, resource_entity_id: u32) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
-    if player.owner_id != identity {
+    if player.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
@@ -355,15 +396,7 @@ pub fn extract(identity: Hash, timestamp: u64, entity_id: u32, resource_entity_i
     let mut resource = ResourceComponent::filter_by_entity_id(resource_entity_id).expect("This resource doesn't exist");
 
     // Attempt to add resources to the player's inventory
-
-    add_item_to_inventory(
-        identity,
-        timestamp,
-        entity_id,
-        resource.item_yield_id.into(),
-        -1,
-        resource.item_yield_quantity.into(),
-    );
+    add_item_to_inventory(ctx, entity_id, resource.item_yield_id.into(), -1, resource.item_yield_quantity.into())?; 
 
     resource.health -= 1;
 
@@ -373,4 +406,6 @@ pub fn extract(identity: Hash, timestamp: u64, entity_id: u32, resource_entity_i
     } else {
         ResourceComponent::update_by_entity_id(resource_entity_id, resource);
     }
+
+    Ok(())
 }
