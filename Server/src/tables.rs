@@ -28,9 +28,20 @@ pub struct Config {
     pub npc_detection_range: f32,
 }
 
+#[derive(Copy, Clone)]
+#[spacetimedb(table)]
+pub struct ServerGlobals {
+    #[unique]
+    // always 0
+    pub version: u32,
+
+    // these are used for resources and trade sessions
+    pub entity_id_counter: u64,
+}
+
 #[spacetimedb(table)]
 pub struct PlayerChatMessage {
-    pub player_id: u32,
+    pub player_id: u64,
     pub msg_time: u64,
     pub message: String,
 }

@@ -6,7 +6,7 @@ using UnityEngine;
 public class GameResource : MonoBehaviour
 {
 
-	public uint EntityId { get; private set; }
+	public ulong EntityId { get; private set; }
 	public int Type => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.resourceId ?? 0;
 	public int MaxHealth => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.maxHealth ?? 0;
 	public int Health => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.health ?? 0;
@@ -16,7 +16,7 @@ public class GameResource : MonoBehaviour
 
 	private bool _flagForDeath;
 
-	public void Init(uint entityId)
+	public void Init(ulong entityId)
 	{
 		EntityId = entityId;
 		BitCraftMiniGameManager.instance.AssignResourceModel(EntityId, this);
@@ -29,7 +29,7 @@ public class GameResource : MonoBehaviour
 		BitCraftMiniGameManager.instance.AssignResourceModel(EntityId, null);
 	}
 
-	private void OnResourceUpdated(uint entityId)
+	private void OnResourceUpdated(ulong entityId)
 	{
 		if (entityId == EntityId)
 		{

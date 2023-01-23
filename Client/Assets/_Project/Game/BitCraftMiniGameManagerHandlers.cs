@@ -45,7 +45,7 @@ public partial class BitCraftMiniGameManager
 
     }
 
-    void OnCreateNewPlayerEvent(ClientApi.Event.Types.Status status, Hash identity, uint entityId, StdbVector3 startPos, StdbQuaternion startRot, string username)
+    void OnCreateNewPlayerEvent(ClientApi.Event.Types.Status status, Hash identity, StdbVector3 startPos, StdbQuaternion startRot, string username)
     {
         if (identity == NetworkPlayer.identity)
         {

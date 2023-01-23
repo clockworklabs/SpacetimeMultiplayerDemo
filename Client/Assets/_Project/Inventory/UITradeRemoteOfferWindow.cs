@@ -20,7 +20,7 @@ public class UITradeRemoteOfferWindow : UIInventoryWindow
         instance = null;
     }
 
-    protected override void CallReducer(uint playerEntityId, UIInventorySlot source, UIInventorySlot dest)
+    protected override void CallReducer(ulong playerEntityId, UIInventorySlot source, UIInventorySlot dest)
     {
         Debug.LogError("These slots should be locked. This should never happen.");
     }

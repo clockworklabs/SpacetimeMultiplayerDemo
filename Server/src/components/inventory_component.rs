@@ -6,7 +6,7 @@ use spacetimedb::spacetimedb;
 #[derive(Debug, Clone)]
 pub struct InventoryComponent {
     #[unique]
-    pub entity_id: u32,
+    pub entity_id: u64,
     pub pockets: Vec<Pocket>,
 }
 

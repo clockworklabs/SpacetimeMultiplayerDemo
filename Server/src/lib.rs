@@ -1,4 +1,5 @@
 mod components;
+mod helpers;
 mod math;
 mod npcs;
 mod tables;
@@ -7,7 +8,7 @@ mod tuples;
 
 use crate::components::chunk_component::generate_terrain_stub;
 use crate::npcs::{despawn_npcs, move_npcs, spawn_npcs};
-use crate::tables::{Config, PlayerChatMessage};
+use crate::tables::{Config, PlayerChatMessage, ServerGlobals};
 use crate::terrain_generation::check_chunks_for_all_players;
 use crate::trade_session::cancel_trade_session_with_participant;
 use crate::tuples::Pocket;
@@ -49,6 +50,11 @@ pub fn init() {
         npc_detection_range: 20.0,
     });
 
+    ServerGlobals::insert(ServerGlobals {
+        version: 0,
+        entity_id_counter: 0,
+    });
+
     // This one terrain chunk is inserted so the client can identify the world state message. The issue we have right now
     // is that other players or agents can update tables, therefore there is now way to be sure that the first subscription
     // received by the client is the world state.
@@ -64,8 +70,8 @@ pub fn init() {
 #[spacetimedb(reducer)]
 pub fn move_or_swap_inventory_slot(
     ctx: ReducerContext,
-    player_entity_id: u32,
-    inventory_entity_id: u32,
+    player_entity_id: u64,
+    inventory_entity_id: u64,
     source_pocket_idx: u32,
     dest_pocket_idx: u32,
 ) -> Result<(), String> {
@@ -163,7 +169,7 @@ pub fn move_or_swap_inventory_slot(
 #[spacetimedb(reducer)]
 pub fn add_item_to_inventory(
     ctx: ReducerContext,
-    entity_id: u32,
+    entity_id: u64,
     item_id: u32,
     pocket_idx: i32, // < 0 to auto assign the first valid index
     item_count: i32,
@@ -196,7 +202,7 @@ pub fn add_item_to_inventory(
 }
 
 #[spacetimedb(reducer)]
-pub fn dump_inventory(_ctx: ReducerContext, entity_id: u32) -> Result<(), String> {
+pub fn dump_inventory(_ctx: ReducerContext, entity_id: u64) -> Result<(), String> {
     let inventory = InventoryComponent::filter_by_entity_id(entity_id)
         .unwrap_or_else(|| panic!("Inventory NOT found for entity {}", entity_id));
 
@@ -211,7 +217,7 @@ pub fn dump_inventory(_ctx: ReducerContext, entity_id: u32) -> Result<(), String
 }
 
 #[spacetimedb(reducer)]
-pub fn move_player(ctx: ReducerContext, entity_id: u32, pos: StdbVector3, rot: StdbQuaternion) -> Result<(), String> {
+pub fn move_player(ctx: ReducerContext, entity_id: u64, pos: StdbVector3, rot: StdbQuaternion) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
@@ -227,9 +233,9 @@ pub fn move_player(ctx: ReducerContext, entity_id: u32, pos: StdbVector3, rot: S
 #[spacetimedb(reducer)]
 pub fn update_animation(
     ctx: ReducerContext,
-    entity_id: u32,
+    entity_id: u64,
     moving: bool,
-    action_target_entity_id: u32,
+    action_target_entity_id: u64,
 ) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist!");
 
@@ -253,15 +259,12 @@ pub fn update_animation(
 #[spacetimedb(reducer)]
 pub fn create_new_player(
     ctx: ReducerContext,
-    entity_id: u32,
     start_pos: StdbVector3,
     start_rot: StdbQuaternion,
     username: String,
 ) -> Result<(), String> {
-    // Make sure this player doesn't already exist
-    if PlayerComponent::filter_by_entity_id(entity_id).is_some() {
-        return Err(format!("A player with this entity_id already exists: {}", entity_id));
-    }
+    let entity_id = helpers::next_entity_id();
+
     println!("Creating player with this ID: {}", entity_id);
     let creation_time = ctx
         .timestamp
@@ -295,7 +298,7 @@ pub fn create_new_player(
 }
 
 #[spacetimedb(reducer)]
-pub fn player_chat(ctx: ReducerContext, player_id: u32, message: String) -> Result<(), String> {
+pub fn player_chat(ctx: ReducerContext, player_id: u64, message: String) -> Result<(), String> {
     let msg_time = ctx
         .timestamp
         .duration_since(Timestamp::UNIX_EPOCH)
@@ -383,7 +386,7 @@ pub fn identity_disconnected(ctx: ReducerContext) {
 }
 
 #[spacetimedb(reducer)]
-pub fn extract(ctx: ReducerContext, entity_id: u32, resource_entity_id: u32) -> Result<(), String> {
+pub fn extract(ctx: ReducerContext, entity_id: u64, resource_entity_id: u64) -> Result<(), String> {
     let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
@@ -396,7 +399,13 @@ pub fn extract(ctx: ReducerContext, entity_id: u32, resource_entity_id: u32) -> 
     let mut resource = ResourceComponent::filter_by_entity_id(resource_entity_id).expect("This resource doesn't exist");
 
     // Attempt to add resources to the player's inventory
-    add_item_to_inventory(ctx, entity_id, resource.item_yield_id.into(), -1, resource.item_yield_quantity.into())?; 
+    add_item_to_inventory(
+        ctx,
+        entity_id,
+        resource.item_yield_id.into(),
+        -1,
+        resource.item_yield_quantity.into(),
+    )?;
 
     resource.health -= 1;
 

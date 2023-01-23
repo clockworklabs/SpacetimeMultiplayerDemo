@@ -14,22 +14,26 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
         public string npcType;
         public Npc prefab;
     }
-    
+
+    [SerializeField] private string moduleAddress = "bitcraftmini";
+    [SerializeField] private string hostName = "spacetimedb.com/spacetimedb";
+    [SerializeField] private bool sslEnabled = true;    
+
     [SerializeField] private NetworkPlayer playerPrefab;
     [SerializeField] private GameObject preSpawnCamera;
     [SerializeField, Tooltip("The rate at which we are sending frequent updates on the client (in messages per second)")]
     private float clientSendRate;
     [SerializeField] private float spawnAreaRadius;
-    [SerializeField] private NpcData[] npcPrefabs;
+    [SerializeField] private NpcData[] npcPrefabs;    
 
-    readonly Dictionary<uint, NetworkPlayer> players = new Dictionary<uint, NetworkPlayer>();
-    readonly Dictionary<uint, Npc> npcs = new Dictionary<uint, Npc>();
-    readonly Dictionary<uint, ResourceComponent> resources = new Dictionary<uint, ResourceComponent>();
-    readonly Dictionary<uint, GameResource> resourcesModels = new Dictionary<uint, GameResource>();
+    readonly Dictionary<ulong, NetworkPlayer> players = new Dictionary<ulong, NetworkPlayer>();
+    readonly Dictionary<ulong, Npc> npcs = new Dictionary<ulong, Npc>();
+    readonly Dictionary<ulong, ResourceComponent> resources = new Dictionary<ulong, ResourceComponent>();
+    readonly Dictionary<ulong, GameResource> resourcesModels = new Dictionary<ulong, GameResource>();
 
     private float? lastMessageSendTick;
     public event Action messageSendTick;
-    public static Action<uint> OnResourceUpdated;
+    public static Action<ulong> OnResourceUpdated;
 
     public static GameObject FeatureRoot;
     
@@ -58,7 +62,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
         // register row update and reducer event handlers
         RegisterHandlers();
 
-        NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "bitcraftmini");
+        NetworkManager.instance.Connect(hostName, moduleAddress, sslEnabled);
     }
 
     void Update() {
@@ -93,12 +97,11 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
 
     public void CreatePlayer(string username)
     {
-        var newPlayerId = (uint)(Random.value * uint.MaxValue);
         var spawnPosition = Random.insideUnitSphere * spawnAreaRadius;
         spawnPosition.y = 0.0f;
 
         Debug.Log("Sending request for new player.");
-        Reducer.CreateNewPlayer(newPlayerId, spawnPosition.ToStdb(), Quaternion.identity.ToStdb(), username);
+        Reducer.CreateNewPlayer(spawnPosition.ToStdb(), Quaternion.identity.ToStdb(), username);
     }
 
     public void LocalPlayerCreated()
@@ -106,7 +109,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
         preSpawnCamera.SetActive(false);
     }
     
-    public ResourceComponent GetResourceComponent(uint entityId)
+    public ResourceComponent GetResourceComponent(ulong entityId)
     {
         if (resources.TryGetValue(entityId, out var res))
         {
@@ -115,7 +118,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
         return null;
     }
 
-    public GameResource GetResourceModel(uint entityId)
+    public GameResource GetResourceModel(ulong entityId)
     {
         if (resourcesModels.TryGetValue(entityId, out var res))
         {
@@ -124,7 +127,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
         return null;
     }
 
-    public void AssignResourceModel(uint entityId, GameResource res)
+    public void AssignResourceModel(ulong entityId, GameResource res)
     {
         if (res == null)
         {

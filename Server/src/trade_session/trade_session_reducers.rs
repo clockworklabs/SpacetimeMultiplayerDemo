@@ -1,14 +1,14 @@
 use crate::components::{ActiveTradeComponent, InventoryComponent, PlayerComponent, TradeSessionComponent};
+use crate::helpers;
 use crate::tuples::Pocket;
 
-use spacetimedb::{spacetimedb, Timestamp};
-use spacetimedb::{println, ReducerContext};
+use spacetimedb::{println, spacetimedb, ReducerContext};
 
 #[spacetimedb(reducer)]
 pub fn initiate_trade_session(
     ctx: ReducerContext,
-    initiator_entity_id: u32,
-    acceptor_entity_id: u32,
+    initiator_entity_id: u64,
+    acceptor_entity_id: u64,
 ) -> Result<(), String> {
     println!(
         "Attempting trade session between {} and {}",
@@ -36,14 +36,9 @@ pub fn initiate_trade_session(
     }
 
     // ToDo: We definitely need a way to get unique ids in sequential tables.
-    let trade_session_entity_id = ctx
-        .timestamp
-        .duration_since(Timestamp::UNIX_EPOCH)
-        .ok()
-        .unwrap()
-        .as_millis() as u32;
-    let initiator_offer_inventory_entity_id = trade_session_entity_id + 1;
-    let acceptor_offer_inventory_entity_id = trade_session_entity_id + 2;
+    let trade_session_entity_id = helpers::next_entity_id();
+    let initiator_offer_inventory_entity_id = helpers::next_entity_id();
+    let acceptor_offer_inventory_entity_id = helpers::next_entity_id();
 
     // Create trade session
     let trade_session = TradeSessionComponent {
@@ -89,7 +84,7 @@ pub fn initiate_trade_session(
 #[spacetimedb(reducer)]
 pub fn add_to_trade(
     ctx: ReducerContext,
-    participant_entity_id: u32,
+    participant_entity_id: u64,
     source_pocket_id: u32,
     dest_pocket_id: u32,
 ) -> Result<(), String> {
@@ -144,7 +139,7 @@ pub fn add_to_trade(
 #[spacetimedb(reducer)]
 pub fn remove_from_trade(
     ctx: ReducerContext,
-    participant_entity_id: u32,
+    participant_entity_id: u64,
     source_pocket_id: u32,
     dest_pocket_id: u32,
 ) -> Result<(), String> {
@@ -197,7 +192,7 @@ pub fn remove_from_trade(
 }
 
 #[spacetimedb(reducer)]
-pub fn toggle_accept_trade(ctx: ReducerContext, participant_entity_id: u32) -> Result<(), String> {
+pub fn toggle_accept_trade(ctx: ReducerContext, participant_entity_id: u64) -> Result<(), String> {
     let participant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
@@ -234,7 +229,7 @@ pub fn toggle_accept_trade(ctx: ReducerContext, participant_entity_id: u32) -> R
 }
 
 #[spacetimedb(reducer)]
-pub fn refuse_trade(ctx: ReducerContext, participant_entity_id: u32) -> Result<(), String> {
+pub fn refuse_trade(ctx: ReducerContext, participant_entity_id: u64) -> Result<(), String> {
     let partipant = PlayerComponent::filter_by_entity_id(participant_entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
@@ -247,14 +242,14 @@ pub fn refuse_trade(ctx: ReducerContext, participant_entity_id: u32) -> Result<(
     Ok(())
 }
 
-pub fn cancel_trade_session_with_participant(participant_entity_id: u32) {
+pub fn cancel_trade_session_with_participant(participant_entity_id: u64) {
     // Retrieve active trade session entity_id
     if let Some(active_session) = ActiveTradeComponent::filter_by_entity_id(participant_entity_id) {
         close_trade_session(active_session.trade_session_entity_id, false);
     }
 }
 
-pub fn close_trade_session(session_entity_id: u32, success: bool) {
+pub fn close_trade_session(session_entity_id: u64, success: bool) {
     let session = TradeSessionComponent::filter_by_entity_id(session_entity_id).unwrap();
 
     let can_trade = if success {

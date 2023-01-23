@@ -71,7 +71,7 @@ public class UIChatController : Singleton<UIChatController>
         Canvas.ForceUpdateCanvases();
     }
     
-    public void OnChatMessageReceived(uint playerId, String message)
+    public void OnChatMessageReceived(ulong playerId, String message)
     {
         var player = PlayerComponent.FilterByEntityId(playerId);
         if (player != null)

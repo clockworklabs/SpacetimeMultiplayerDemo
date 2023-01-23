@@ -21,7 +21,7 @@ public class UITradeLocalOfferWindow : UIInventoryWindow
         instance = null;
     }
 
-    protected override void CallReducer(uint playerEntityId, UIInventorySlot source, UIInventorySlot dest)
+    protected override void CallReducer(ulong playerEntityId, UIInventorySlot source, UIInventorySlot dest)
     {
         if (source.Owner == this)
         {

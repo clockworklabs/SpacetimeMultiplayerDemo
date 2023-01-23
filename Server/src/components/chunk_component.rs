@@ -1,7 +1,7 @@
 use crate::components::ResourceComponent;
 use crate::math::remap;
 use crate::math::{clamp, map_to_u8};
-use crate::{random, Config};
+use crate::{helpers, random, Config};
 use conv::{ConvUtil, RoundToNegInf};
 use fast_poisson::Poisson2D;
 use noise::NoiseFn;
@@ -31,7 +31,7 @@ pub struct Grass {
 
 #[spacetimedb(tuple)]
 pub struct Tree {
-    pub entity_id: u32,
+    pub entity_id: u64,
     pub chunk: ChunkPosition,
     pub tree_idx: u16,
     pub x: f32,
@@ -41,7 +41,7 @@ pub struct Tree {
 
 #[spacetimedb(tuple)]
 pub struct Deposit {
-    pub entity_id: u32,
+    pub entity_id: u64,
     pub chunk: ChunkPosition,
     pub deposit_idx: u16,
     pub x: f32,
@@ -70,15 +70,6 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     spacetimedb::println!("Generating chunk: {:?}", chunk_pos);
     let config = Config::filter_by_version(0).unwrap();
     random::register();
-
-    let mut resource_entity_id = 0;
-
-    // ToDo: It would be nice if SpacetimeDB could provide us with a sequential ID.
-    // In the meantime, find the highest id in the table.
-    for resource in ResourceComponent::iter() {
-        resource_entity_id = resource_entity_id.max(resource.entity_id);
-    }
-    resource_entity_id += 1;
 
     let mut rng = ChaCha8Rng::seed_from_u64(config.terrain_seed as u64 + chunk_pos.x as u64 + chunk_pos.y as u64);
 
@@ -180,6 +171,8 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
             1.0,
         );
         if forest_value - dirt_value > rng.gen_range(0.0..1.0) {
+            let resource_entity_id = helpers::next_entity_id();
+
             trees.push(Tree {
                 entity_id: resource_entity_id,
                 chunk: chunk_pos,
@@ -198,7 +191,6 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
                 resource_id: 1, // tree
             });
 
-            resource_entity_id += 1;
             tree_idx += 1;
         }
     }
@@ -235,6 +227,8 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
 
         let dirt_value = get_dirt_value(splat_world_x, splat_world_y, dirt_perlin);
         if dirt_value >= 0.95 {
+            let resource_entity_id = helpers::next_entity_id();
+
             deposits.push(Deposit {
                 entity_id: resource_entity_id,
                 chunk: chunk_pos,
@@ -253,7 +247,6 @@ pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
                 item_yield_quantity: 1,
                 resource_id: 0, // ore deposit
             });
-            resource_entity_id += 1;
             deposit_idx += 1;
         }
     }

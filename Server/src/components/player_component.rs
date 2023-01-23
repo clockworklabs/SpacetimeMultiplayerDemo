@@ -4,7 +4,7 @@ use spacetimedb::Hash;
 #[spacetimedb(table)]
 pub struct PlayerComponent {
     #[unique]
-    pub entity_id: u32,
+    pub entity_id: u64,
     #[unique]
     pub owner_id: Hash,
     #[unique]

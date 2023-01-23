@@ -10,14 +10,14 @@ public class NetworkPlayer : MonoBehaviour
     [SerializeField] private GameObject cameraRig;
     [SerializeField] private GameObject[] disableWhileOffline;
 
-    private uint? _playerId;
-    public static uint? localPlayerId;
+    private ulong? _playerId;
+    public static ulong? localPlayerId;
     public static Hash? identity;
     public static string token;
 
     public static Action OnLocalPlayerInitialized;
 
-    public uint EntityId => _playerId.Value;
+    public ulong EntityId => _playerId.Value;
 
     public Vector3 targetPosition;
     public Quaternion targetRotation;
@@ -57,7 +57,7 @@ public class NetworkPlayer : MonoBehaviour
         }
     }
 
-    public void Spawn(uint playerId)
+    public void Spawn(ulong playerId)
     {
         _playerId = playerId;
         if (IsLocal())

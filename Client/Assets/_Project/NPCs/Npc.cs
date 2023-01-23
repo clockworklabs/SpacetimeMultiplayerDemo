@@ -6,7 +6,7 @@ public class Npc : MonoBehaviour
 {
     [SerializeField] private Animator _animator;
 
-    private uint? _entityId;
+    private ulong? _entityId;
     private Vector3 _targetPosition;
     private Quaternion _targetRotation;
     private ulong _lastTimeStamp;
@@ -25,7 +25,7 @@ public class Npc : MonoBehaviour
         BitCraftMiniGameManager.instance.messageSendTick -= GameTick;
     }
     
-    public void Spawn(uint entityId)
+    public void Spawn(ulong entityId)
     {
         _entityId = entityId;
         gameObject.name = $"Npc - {entityId}";

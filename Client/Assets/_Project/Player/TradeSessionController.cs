@@ -9,9 +9,9 @@ public class TradeSessionController : MonoBehaviour
 
     public static TradeSessionController Local;
 
-    private uint _localOfferEntityId;
-    private uint _remoteOfferEntityId;
-    private uint _sessionEntityId;
+    private ulong _localOfferEntityId;
+    private ulong _remoteOfferEntityId;
+    private ulong _sessionEntityId;
 
     private readonly Dictionary<uint, Pocket> _localPockets = new Dictionary<uint, Pocket>();
     private readonly Dictionary<uint, Pocket> _remotePockets = new Dictionary<uint, Pocket>();
@@ -35,7 +35,7 @@ public class TradeSessionController : MonoBehaviour
         InventoryUpdate(null);
 	}
 
-	public void Initiate(uint sessionEntityId, uint localOfferEntityId, uint remoteOfferEntityId)
+	public void Initiate(ulong sessionEntityId, ulong localOfferEntityId, ulong remoteOfferEntityId)
 	{
         _sessionEntityId = sessionEntityId;
 
@@ -60,7 +60,7 @@ public class TradeSessionController : MonoBehaviour
 		}
 	}
 
-	public void UpdateSession(uint sessionEntityId)
+	public void UpdateSession(ulong sessionEntityId)
 	{
 		if (sessionEntityId != _sessionEntityId)
 		{

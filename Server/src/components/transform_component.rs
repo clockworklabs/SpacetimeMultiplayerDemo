@@ -5,7 +5,7 @@ use spacetimedb::spacetimedb;
 #[spacetimedb(table)]
 pub struct TransformComponent {
     #[unique]
-    pub entity_id: u32,
+    pub entity_id: u64,
     pub pos: StdbVector3,
     pub rot: StdbQuaternion,
 }

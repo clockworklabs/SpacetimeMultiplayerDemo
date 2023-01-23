@@ -55,53 +55,7 @@ If you've gotten this message then everything should be working properly so far.
 
 ## 3. Replace address in BitCraftMiniGameManager
 
-Now that you have published the module to a new address, we will need to put this address in `BitCraftMiniGameManager.cs`.
-
-Inside of BitCraftMiniGameManager.cs, you should see a `Start()` function similar to this:
-
-```cs
-protected void Start()
-{
-    FeatureRoot = new GameObject("Features");
-
-    Application.targetFrameRate = 60;
-
-    NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
-    NetworkManager.instance.onConnectError += a =>
-    {
-        Debug.LogError($"Connection error: " + (a.HasValue ? a.Value.ToString() : "Null"));
-    };
-    NetworkManager.instance.onDisconnect += (closeStatus, error) =>
-    {
-        Debug.Log("Disconnected.");
-    };
-
-    NetworkManager.instance.onRowUpdate += OnRowUpdate;
-    NetworkManager.instance.onEvent += OnEvent;
-
-    NetworkManager.instance.onIdentityReceived += (identity) => {
-        NetworkPlayer.identity = identity;
-    };
-
-    NetworkManager.instance.onTransactionComplete += CheckNewPlayer;
-
-    NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "bitcraftmini");
-}
-```
-
-The last line is the one we want to change. We want to take our address and change from this:
-
-```cs
-	NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "bitcraftmini");
-```
-
-to this:
-
-```cs
-	NetworkManager.instance.Connect("spacetimedb.com/spacetimedb", "c91c17ecdcea8a05302be2bad9dd59b3");
-```
-
-Instead of putting `c91c17ecdcea8a05302be2bad9dd59b3`, you should use your own address that you generated in step 2.
+Now that you have published the module to a new address, we will need to put this address in the BitCraftMiniGameManager inspector. Open the Main scene and click on the GameManager object in the Hierarchy. In the inspector, edit the "Module Address" field and put the address that you generated in step 2.
 
 ## 4. Play Mode
 

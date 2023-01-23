@@ -4,6 +4,7 @@ use crate::components::AnimationComponent;
 use crate::components::NpcComponent;
 use crate::components::PlayerLoginComponent;
 use crate::components::TransformComponent;
+use crate::helpers;
 use crate::math::StdbQuaternion;
 use crate::math::StdbVector3;
 use crate::{random, Config};
@@ -36,7 +37,7 @@ pub(crate) fn spawn_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
     let min_sq_radius = config.min_spawn_range.powi(2);
 
     // pick a random logged-in player around which the npc will be spawned
-    let logged_in_players: Vec<u32> = PlayerLoginComponent::iter()
+    let logged_in_players: Vec<u64> = PlayerLoginComponent::iter()
         .filter(|p| p.logged_in)
         .map(|p| p.entity_id)
         .collect();
@@ -79,7 +80,7 @@ pub(crate) fn spawn_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
     // Spawn the npc.
     let rot = StdbQuaternion::new(0.0, rng.gen_range(-PI..PI), 0.0);
 
-    let entity_id = timestamp as u32;
+    let entity_id = helpers::next_entity_id();
 
     // Make sure this npc doesn't already exist
     if NpcComponent::filter_by_entity_id(entity_id).is_some() {
@@ -158,7 +159,7 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
     random::register();
     let mut rng = ChaCha8Rng::seed_from_u64(timestamp);
 
-    let npc_entity_ids: Vec<u32> = NpcComponent::iter().map(|npc| npc.entity_id).collect();
+    let npc_entity_ids: Vec<u64> = NpcComponent::iter().map(|npc| npc.entity_id).collect();
 
     for npc_entity_id in npc_entity_ids {
         let npc = NpcComponent::filter_by_entity_id(npc_entity_id).unwrap();

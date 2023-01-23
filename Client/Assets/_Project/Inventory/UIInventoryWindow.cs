@@ -11,9 +11,9 @@ public abstract class UIInventoryWindow : MonoBehaviour
     private bool _slotsCreated;
     private List<UIInventorySlot> _slots = new List<UIInventorySlot>();
 
-    public uint InventoryEntityId { get; set; }
+    public ulong InventoryEntityId { get; set; }
 
-    protected abstract void CallReducer(uint playerEntityId, UIInventorySlot source, UIInventorySlot dest);
+    protected abstract void CallReducer(ulong playerEntityId, UIInventorySlot source, UIInventorySlot dest);
 
     protected virtual void Start()
 	{

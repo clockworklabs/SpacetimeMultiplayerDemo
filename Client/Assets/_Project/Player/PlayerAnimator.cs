@@ -48,7 +48,7 @@ public class PlayerAnimator : MonoBehaviour
         _target = res;
 	}
 
-	public void SetRemoteAction(uint actionTargetEntityId)
+	public void SetRemoteAction(ulong actionTargetEntityId)
 	{
         if (!GetComponentInParent<NetworkPlayer>().IsLocal())
         {
