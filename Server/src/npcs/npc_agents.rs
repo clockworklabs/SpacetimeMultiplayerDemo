@@ -15,6 +15,7 @@ use spacetimedb::Timestamp;
 use spacetimedb::{hash::hash_bytes, spacetimedb, ReducerContext};
 use std::f32::consts::PI;
 use std::ops::Add;
+use spacetimedb::println;
 
 #[spacetimedb(reducer, repeat = 5000ms)]
 pub(crate) fn spawn_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
