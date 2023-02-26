@@ -1,8 +1,7 @@
-use spacetimedb::spacetimedb;
+use spacetimedb::SpacetimeType;
 use std::ops;
 
-#[derive(Clone, Copy, Debug)]
-#[spacetimedb(tuple)]
+#[derive(Clone, Copy, Debug, SpacetimeType)]
 pub struct StdbVector3 {
     pub x: f32,
     pub y: f32,
@@ -110,8 +109,7 @@ impl ops::Mul<StdbVector3> for f32 {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-#[spacetimedb(tuple)]
+#[derive(Clone, Copy, Debug, SpacetimeType)]
 pub struct StdbQuaternion {
     pub y: f32,
     pub x: f32,

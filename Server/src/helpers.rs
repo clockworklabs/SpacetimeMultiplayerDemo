@@ -1,11 +1,7 @@
-use crate::tables::{Config, ServerGlobals};
+use crate::tables::ServerGlobals;
 
 pub fn get_globals() -> ServerGlobals {
     ServerGlobals::filter_by_version(0).unwrap()
-}
-
-pub fn get_config() -> Config {
-    Config::filter_by_version(0).unwrap()
 }
 
 pub fn update_globals(globals: ServerGlobals) {

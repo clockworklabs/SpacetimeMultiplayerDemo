@@ -45,7 +45,7 @@ public partial class BitCraftMiniGameManager
 
     }
 
-    void OnCreateNewPlayerEvent(ClientApi.Event.Types.Status status, Hash identity, StdbVector3 startPos, StdbQuaternion startRot, string username)
+    void OnCreateNewPlayerEvent(ClientApi.Event.Types.Status status, Identity identity, StdbVector3 startPos, StdbQuaternion startRot, string username)
     {
         if (identity == NetworkPlayer.identity)
         {
@@ -68,19 +68,19 @@ public partial class BitCraftMiniGameManager
     void OnNpcComponentUpdate(NpcComponent oldValue, NpcComponent newValue)
     {
         // check to see if this player already exists
-        if (!npcs.TryGetValue(newValue.entityId, out _))
+        if (!npcs.TryGetValue(newValue.EntityId, out _))
         {
             // Create a new npc
-            var prefabData = npcPrefabs.FirstOrDefault(npcData => npcData.npcType == newValue.model);
+            var prefabData = npcPrefabs.FirstOrDefault(npcData => npcData.npcType == newValue.Model);
             if (prefabData != null)
             {
                 var newNpc = Instantiate(prefabData.prefab);
-                newNpc.Spawn(newValue.entityId);
-                npcs[newValue.entityId] = newNpc;
+                newNpc.Spawn(newValue.EntityId);
+                npcs[newValue.EntityId] = newNpc;
             }
             else
             {
-                Debug.LogError($"Did not find npc prefab for {newValue.model}");
+                Debug.LogError($"Did not find npc prefab for {newValue.Model}");
             }
         }
     }
@@ -88,10 +88,10 @@ public partial class BitCraftMiniGameManager
     void OnNpcComponentDelete(NpcComponent oldValue)
     {
         // check to see if this player already exists
-        if (npcs.TryGetValue(oldValue.entityId, out var npcModel))
+        if (npcs.TryGetValue(oldValue.EntityId, out var npcModel))
         {
             Destroy(npcModel.gameObject);
-            npcs.Remove(oldValue.entityId);
+            npcs.Remove(oldValue.EntityId);
         }
     }
 
@@ -103,14 +103,14 @@ public partial class BitCraftMiniGameManager
     void OnPlayerComponentUpdate(PlayerComponent oldValue, PlayerComponent newValue)
     {
         // check to see if this player already exists
-        if (!players.TryGetValue(newValue.entityId, out _))
+        if (!players.TryGetValue(newValue.EntityId, out _))
         {
             // Create a new player
             var newNetworkPlayer = Instantiate(playerPrefab);
 
             // Do we own this player?
             if (NetworkPlayer.identity.HasValue &&
-                newValue.ownerId.Equals(NetworkPlayer.identity.Value))
+                Identity.From(newValue.OwnerId).Equals(NetworkPlayer.identity.Value))
             {
                 if (NetworkPlayer.localPlayerId.HasValue)
                 {
@@ -118,12 +118,12 @@ public partial class BitCraftMiniGameManager
                     return;
                 }
 
-                Debug.Log($"Attaching to player with id: {newValue.entityId}");
-                NetworkPlayer.localPlayerId = newValue.entityId;
+                Debug.Log($"Attaching to player with id: {newValue.EntityId}");
+                NetworkPlayer.localPlayerId = newValue.EntityId;
             }
 
-            newNetworkPlayer.Spawn(newValue.entityId);
-            players[newValue.entityId] = newNetworkPlayer;
+            newNetworkPlayer.Spawn(newValue.EntityId);
+            players[newValue.EntityId] = newNetworkPlayer;
         }
     }
 
@@ -135,7 +135,7 @@ public partial class BitCraftMiniGameManager
     void OnTransformComponentUpdate(TransformComponent oldValue, TransformComponent newValue)
     {
         // check to see if this player already exists
-        if (players.TryGetValue(newValue.entityId, out var networkPlayer))
+        if (players.TryGetValue(newValue.EntityId, out var networkPlayer))
         {
             // Is this our player?
             if (networkPlayer.IsLocal())
@@ -145,8 +145,8 @@ public partial class BitCraftMiniGameManager
             else
             {
                 networkPlayer.SetTargetTransform(
-                    newValue.pos.ToVector3(),
-                    newValue.rot.ToQuaternion()
+                    newValue.Pos.ToVector3(),
+                    newValue.Rot.ToQuaternion()
                 );
             }
         }
@@ -160,7 +160,7 @@ public partial class BitCraftMiniGameManager
     void OnAnimationComponentUpdate(AnimationComponent oldValue, AnimationComponent newValue)
     {
         // check to see if this player already exists
-        if (players.TryGetValue(newValue.entityId, out var networkPlayer))
+        if (players.TryGetValue(newValue.EntityId, out var networkPlayer))
         {
             // Is this our player?
             if (networkPlayer.IsLocal())
@@ -169,8 +169,8 @@ public partial class BitCraftMiniGameManager
             }
             else
             {
-                networkPlayer.GetComponent<PlayerMovementController>().SetMoving(newValue.moving);
-                networkPlayer.GetComponentInChildren<PlayerAnimator>(true).SetRemoteAction(newValue.actionTargetEntityId);
+                networkPlayer.GetComponent<PlayerMovementController>().SetMoving(newValue.Moving);
+                networkPlayer.GetComponentInChildren<PlayerAnimator>(true).SetRemoteAction(newValue.ActionTargetEntityId);
             }
         }
     }
@@ -183,7 +183,7 @@ public partial class BitCraftMiniGameManager
     void OnInventoryComponentUpdate(InventoryComponent oldValue, InventoryComponent newValue)
     {
         // check to see if this player already exists
-        if (players.TryGetValue(newValue.entityId, out var networkPlayer))
+        if (players.TryGetValue(newValue.EntityId, out var networkPlayer))
         {
             // Is this our player?
             if (networkPlayer.IsLocal())
@@ -205,7 +205,7 @@ public partial class BitCraftMiniGameManager
     void OnPlayerLoginComponentUpdate(PlayerLoginComponent oldValue, PlayerLoginComponent newValue)
     {
         // check to see if this player already exists
-        if (players.TryGetValue(newValue.entityId, out var networkPlayer))
+        if (players.TryGetValue(newValue.EntityId, out var networkPlayer))
         {
             networkPlayer.LoginStateChanged();
         }
@@ -218,7 +218,7 @@ public partial class BitCraftMiniGameManager
 
     void OnPlayerChatMessageUpdate(PlayerChatMessage oldValue, PlayerChatMessage newValue)
     {
-        UIChatController.instance.OnChatMessageReceived(newValue.playerId, newValue.message);
+        UIChatController.instance.OnChatMessageReceived(newValue.PlayerId, newValue.Message);
     }
 
     void OnChunkInsert(Chunk newValue)
@@ -238,14 +238,14 @@ public partial class BitCraftMiniGameManager
 
     void OnResourceComponentUpdate(ResourceComponent oldValue, ResourceComponent newValue)
     {
-        resources[newValue.entityId] = newValue;
-        OnResourceUpdated?.Invoke(newValue.entityId);
+        resources[newValue.EntityId] = newValue;
+        OnResourceUpdated?.Invoke(newValue.EntityId);
     }
 
     void OnResourceComponentDelete(ResourceComponent oldValue)
     {
-        resources.Remove(oldValue.entityId);
-        OnResourceUpdated?.Invoke(oldValue.entityId);
+        resources.Remove(oldValue.EntityId);
+        OnResourceUpdated?.Invoke(oldValue.EntityId);
     }
 
     void OnTradeSessionComponentInsert(TradeSessionComponent newValue)
@@ -253,12 +253,12 @@ public partial class BitCraftMiniGameManager
         if (NetworkPlayer.localPlayerId.HasValue)
         {
             var localId = NetworkPlayer.localPlayerId.Value;
-            if (newValue.acceptorEntityId == localId || newValue.initiatorEntityId == localId)
+            if (newValue.AcceptorEntityId == localId || newValue.InitiatorEntityId == localId)
             {
-                var local = newValue.acceptorEntityId == localId ? newValue.acceptorOfferInventoryEntityId : newValue.initiatorOfferInventoryEntityId;
-                var remote = newValue.acceptorEntityId == localId ? newValue.initiatorOfferInventoryEntityId : newValue.acceptorOfferInventoryEntityId;
+                var local = newValue.AcceptorEntityId == localId ? newValue.AcceptorOfferInventoryEntityId : newValue.InitiatorOfferInventoryEntityId;
+                var remote = newValue.AcceptorEntityId == localId ? newValue.InitiatorOfferInventoryEntityId : newValue.AcceptorOfferInventoryEntityId;
 
-                TradeSessionController.Local.Initiate(newValue.entityId, local, remote);
+                TradeSessionController.Local.Initiate(newValue.EntityId, local, remote);
             }
         }
     }
@@ -268,12 +268,12 @@ public partial class BitCraftMiniGameManager
         if (NetworkPlayer.localPlayerId.HasValue)
         {
             var localId = NetworkPlayer.localPlayerId.Value;
-            if (newValue.acceptorEntityId == localId || newValue.initiatorEntityId == localId)
+            if (newValue.AcceptorEntityId == localId || newValue.InitiatorEntityId == localId)
             {
-                var local = newValue.acceptorEntityId == localId ? newValue.acceptorOfferInventoryEntityId : newValue.initiatorOfferInventoryEntityId;
-                var remote = newValue.acceptorEntityId == localId ? newValue.initiatorOfferInventoryEntityId : newValue.acceptorOfferInventoryEntityId;
+                var local = newValue.AcceptorEntityId == localId ? newValue.AcceptorOfferInventoryEntityId : newValue.InitiatorOfferInventoryEntityId;
+                var remote = newValue.AcceptorEntityId == localId ? newValue.InitiatorOfferInventoryEntityId : newValue.AcceptorOfferInventoryEntityId;
 
-                TradeSessionController.Local.UpdateSession(newValue.entityId);
+                TradeSessionController.Local.UpdateSession(newValue.EntityId);
             }
         }
     }
@@ -281,9 +281,9 @@ public partial class BitCraftMiniGameManager
     void OnTradeSessionComponentDelete(TradeSessionComponent oldValue)
     {
         var localId = NetworkPlayer.localPlayerId.Value;
-        if (oldValue.acceptorEntityId == localId || oldValue.initiatorEntityId == localId)
+        if (oldValue.AcceptorEntityId == localId || oldValue.InitiatorEntityId == localId)
         {
-            TradeSessionController.Local.Terminate(oldValue.approvedByInitiator && oldValue.approvedByAcceptor);
+            TradeSessionController.Local.Terminate(oldValue.ApprovedByInitiator && oldValue.ApprovedByAcceptor);
         }
     }
 }

@@ -33,8 +33,8 @@ public class Npc : MonoBehaviour
         var entityTransform = TransformComponent.FilterByEntityId(entityId);
         if (entityTransform != null)
         {
-            transform.position = entityTransform.pos.ToVector3();
-            transform.rotation = entityTransform.rot.ToQuaternion();
+            transform.position = entityTransform.Pos.ToVector3();
+            transform.rotation = entityTransform.Rot.ToQuaternion();
             _targetRotation = transform.rotation;
             _targetPosition = transform.position;
         }
@@ -46,7 +46,7 @@ public class Npc : MonoBehaviour
         var npc = NpcComponent.FilterByEntityId(entityId);
         if (npc != null)
         {
-            _lastTimeStamp = npc.nextAction;
+            _lastTimeStamp = npc.NextAction;
         }
     }
 
@@ -68,7 +68,7 @@ public class Npc : MonoBehaviour
         var entityTransform = TransformComponent.FilterByEntityId(entityId);
         if (entityTransform != null)
         {
-            var newRotation = entityTransform.rot.ToQuaternion();
+            var newRotation = entityTransform.Rot.ToQuaternion();
             if (newRotation != _targetRotation)
             {
                 _targetRotation = newRotation;
@@ -76,10 +76,10 @@ public class Npc : MonoBehaviour
                 {
                     StopCoroutine(_lerpRotation);
                 }
-                _lerpRotation = StartCoroutine(LerpRotation(transform.rotation, _targetRotation, npc.nextAction - _lastTimeStamp));    
+                _lerpRotation = StartCoroutine(LerpRotation(transform.rotation, _targetRotation, npc.NextAction - _lastTimeStamp));    
             }
 
-            var newPosition = entityTransform.pos.ToVector3();
+            var newPosition = entityTransform.Pos.ToVector3();
             if (newPosition != _targetPosition)
             {
                 _targetPosition = newPosition;
@@ -97,7 +97,7 @@ public class Npc : MonoBehaviour
             // Move animation is handled by LerpPosition.
             // ToDo: Npc actions.
         }
-        _lastTimeStamp = npc.nextAction;
+        _lastTimeStamp = npc.NextAction;
 	}
 
 	IEnumerator LerpRotation(Quaternion start, Quaternion end, ulong duration)

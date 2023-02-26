@@ -2,11 +2,10 @@ use crate::{
     components::{AnimationComponent, NpcComponent, TransformComponent},
     math::{StdbQuaternion, StdbVector3},
 };
-use spacetimedb::hash::Hash;
-use spacetimedb::spacetimedb;
+use spacetimedb::{spacetimedb, Identity};
 
 #[spacetimedb(reducer)]
-pub fn move_npc(_identity: Hash, timestamp: u64, entity_id: u64, pos: StdbVector3, rot: StdbQuaternion, duration: u64) {
+pub fn move_npc(_identity: Identity, timestamp: u64, entity_id: u64, pos: StdbVector3, rot: StdbQuaternion, duration: u64) {
     /*
     TODO: Uncomment when supported.
     if identity != 0 {
@@ -24,7 +23,7 @@ pub fn move_npc(_identity: Hash, timestamp: u64, entity_id: u64, pos: StdbVector
 
 #[spacetimedb(reducer)]
 pub fn update_npc_animation(
-    _identity: Hash,
+    _identity: Identity,
     _timestamp: u64,
     entity_id: u64,
     moving: bool,

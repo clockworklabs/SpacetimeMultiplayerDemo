@@ -26,7 +26,7 @@ public class PlayerInventoryController : MonoBehaviour
         Local = this;
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null, "Server config missing!");
-        _maxInventorySlots = (int)config.maxPlayerInventorySlots;
+        _maxInventorySlots = (int)config.MaxPlayerInventorySlots;
         UIPlayerInventoryWindow.instance.CreateSlots(_maxInventorySlots, false);
         UIPlayerInventoryWindow.instance.InventoryEntityId = NetworkPlayer.localPlayerId.Value;
         // Reset the inventory window to default state
@@ -35,9 +35,9 @@ public class PlayerInventoryController : MonoBehaviour
         // Give starting items if inventory is empty
         var inv = InventoryComponent.FilterByEntityId(NetworkPlayer.localPlayerId.Value);
         bool isEmpty = true;
-        foreach (var p in inv.pockets)
+        foreach (var p in inv.Pockets)
         {
-            isEmpty &= p.itemId == 0 || p.itemCount == 0;
+            isEmpty &= p.ItemId == 0 || p.ItemCount == 0;
         }
 
         if (isEmpty)
@@ -63,9 +63,9 @@ public class PlayerInventoryController : MonoBehaviour
         _pockets.Clear();
         if (inventory != null)
         {
-            foreach (var pocket in inventory.pockets)
+            foreach (var pocket in inventory.Pockets)
             {
-                _pockets[pocket.pocketIdx] = pocket;
+                _pockets[pocket.PocketIdx] = pocket;
             }    
         }
 

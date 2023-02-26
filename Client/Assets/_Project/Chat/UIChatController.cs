@@ -76,7 +76,7 @@ public class UIChatController : Singleton<UIChatController>
         var player = PlayerComponent.FilterByEntityId(playerId);
         if (player != null)
         {
-            _messages.text += $"{player.username} says, \"{message}\"\n";
+            _messages.text += $"{player.Username} says, \"{message}\"\n";
 
             // Force scroll to bottom.
             if (gameObject.activeSelf)

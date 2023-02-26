@@ -32,8 +32,8 @@ public class PlayerMovementController : MonoBehaviour
         {
             var config = SpacetimeDB.Config.FilterByVersion(0);
             var position = transform.position;
-            var chunkPosX = MathUtil.RoundNegInf(position.x / config.chunkSize);
-            var chunkPosY = MathUtil.RoundNegInf(position.z / config.chunkSize);
+            var chunkPosX = MathUtil.RoundNegInf(position.x / config.ChunkSize);
+            var chunkPosY = MathUtil.RoundNegInf(position.z / config.ChunkSize);
             var chunk = TerrainController.instance.GetChunk(chunkPosX, chunkPosY);
             return chunk == null;
         });

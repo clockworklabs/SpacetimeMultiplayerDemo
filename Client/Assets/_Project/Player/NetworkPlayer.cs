@@ -12,7 +12,7 @@ public class NetworkPlayer : MonoBehaviour
 
     private ulong? _playerId;
     public static ulong? localPlayerId;
-    public static Hash? identity;
+    public static Identity? identity;
     public static string token;
 
     public static Action OnLocalPlayerInitialized;
@@ -46,14 +46,14 @@ public class NetworkPlayer : MonoBehaviour
         var loginState = PlayerLoginComponent.FilterByEntityId(_playerId.Value);
         if (loginState != null)
         {
-            Debug.Log($"Player {_playerId.Value} has changed login state: {loginState.loggedIn}");
+            Debug.Log($"Player {_playerId.Value} has changed login state: {loginState.LoggedIn}");
             foreach (var mesh in disableWhileOffline)
             {
-                mesh.SetActive(loginState.loggedIn);
+                mesh.SetActive(loginState.LoggedIn);
             }
 
             var body = GetComponent<Rigidbody>();
-            body.isKinematic = !loginState.loggedIn;
+            body.isKinematic = !loginState.LoggedIn;
         }
     }
 
@@ -93,8 +93,8 @@ public class NetworkPlayer : MonoBehaviour
         var entityTransform = TransformComponent.FilterByEntityId(playerId);
         if (entityTransform != null)
         {
-            transform.position = entityTransform.pos.ToVector3();
-            transform.rotation = entityTransform.rot.ToQuaternion();
+            transform.position = entityTransform.Pos.ToVector3();
+            transform.rotation = entityTransform.Rot.ToQuaternion();
         }
         else
         {

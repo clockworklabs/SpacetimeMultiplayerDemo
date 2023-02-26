@@ -47,22 +47,22 @@ public class TerrainChunk : MonoBehaviour
         _chunk = chunk;
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null);
-        var chunkPosition = _chunk.position;
+        var chunkPosition = _chunk.Position;
         var chunkTransform = transform;
-        chunkTransform.position = new Vector3((float)(chunkPosition.x * config.chunkSize), 0,
-            (float)(chunkPosition.y * config.chunkSize));
+        chunkTransform.position = new Vector3((float)(chunkPosition.X * config.ChunkSize), 0,
+            (float)(chunkPosition.Y * config.ChunkSize));
         chunkTransform.localScale =
-            new Vector3((float)config.chunkSize, (float)config.chunkSize, (float)config.chunkSize);
+            new Vector3((float)config.ChunkSize, (float)config.ChunkSize, (float)config.ChunkSize);
 
-        var chunkData = ChunkData.FilterByChunkId(_chunk.chunkId);
+        var chunkData = ChunkData.FilterByChunkId(_chunk.ChunkId);
         Texture2D splat1 = null;
-        var nativeData = new NativeArray<byte>((int)config.chunkSplatResolution * (int)config.chunkSplatResolution * 4, Allocator.Persistent);
-        for (var x = 0; x < chunkData.data.Length; x++)
+        var nativeData = new NativeArray<byte>((int)config.ChunkSplatResolution * (int)config.ChunkSplatResolution * 4, Allocator.Persistent);
+        for (var x = 0; x < chunkData.Data.Length; x++)
         {
-            nativeData[x] = chunkData.data[x];
+            nativeData[x] = chunkData.Data[x];
         }
 
-        yield return TextureUtil.Create(nativeData, (int)config.chunkSplatResolution, (int)config.chunkTerrainResolution, outputTexture => splat1 = outputTexture);
+        yield return TextureUtil.Create(nativeData, (int)config.ChunkSplatResolution, (int)config.ChunkTerrainResolution, outputTexture => splat1 = outputTexture);
         if (splat1 == null)
         {
             yield break;
@@ -70,7 +70,6 @@ public class TerrainChunk : MonoBehaviour
 
         nativeData.Dispose();
 
-        
         terrainRenderer.enabled = true;
         var instancedMat = terrainRenderer.material;
         instancedMat.SetTexture(Splat1Property, splat1);
@@ -81,30 +80,30 @@ public class TerrainChunk : MonoBehaviour
             grassMaterialInstance.SetTexture(Splat1Property, splat1);
             var grassBillboardMaterialInstance = Instantiate(grassPrefab.billboard.sharedMaterial);
             grassBillboardMaterialInstance.SetTexture(Splat1Property, splat1);
-            foreach (var grass in chunkData.grass)
+            foreach (var grass in chunkData.Grass)
             {
                 var feature = Feature.Create(grassPrefab.gameObject, true, true);
-                feature.SetRootPosition(chunkTransform.position + new Vector3(grass.x, 0.0f, grass.y));
-                feature.SetLocalScale(Vector3.one * grass.scale);
+                feature.SetRootPosition(chunkTransform.position + new Vector3(grass.X, 0.0f, grass.Y));
+                feature.SetLocalScale(Vector3.one * grass.Scale);
                 features.Add(feature);
             }
         }
 
-        foreach (var tree in chunkData.trees)
+        foreach (var tree in chunkData.Trees)
         {
             var feature = Feature.Create(treePrefab, false, true);
-            feature.SetLocalScale(Vector3.one * tree.scale);
-            feature.SetRootPosition(chunkTransform.position + new Vector3(tree.x, 0.0f, tree.y));
-            feature.Model.GetComponent<GameResource>().Init(tree.entityId);
+            feature.SetLocalScale(Vector3.one * tree.Scale);
+            feature.SetRootPosition(chunkTransform.position + new Vector3(tree.X, 0.0f, tree.Y));
+            feature.Model.GetComponent<GameResource>().Init(tree.EntityId);
             features.Add(feature);
         }
 
-        foreach (var deposit in chunkData.deposits)
+        foreach (var deposit in chunkData.Deposits)
         {
             var feature = Feature.Create(ironDepositPrefab, false, true);
-            feature.SetLocalScale(Vector3.one * deposit.scale);
-            feature.SetRootPosition(chunkTransform.position + new Vector3(deposit.x, 0.0f, deposit.y));
-            feature.Model.GetComponent<GameResource>().Init(deposit.entityId);
+            feature.SetLocalScale(Vector3.one * deposit.Scale);
+            feature.SetRootPosition(chunkTransform.position + new Vector3(deposit.X, 0.0f, deposit.Y));
+            feature.Model.GetComponent<GameResource>().Init(deposit.EntityId);
             features.Add(feature);
         }
         

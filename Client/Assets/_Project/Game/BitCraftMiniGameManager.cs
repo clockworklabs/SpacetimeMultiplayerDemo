@@ -16,7 +16,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
     }
 
     [SerializeField] private string moduleAddress = "bitcraftmini";
-    [SerializeField] private string hostName = "spacetimedb.com/spacetimedb";
+    [SerializeField] private string hostName = "127.0.0.1:3000";
     [SerializeField] private bool sslEnabled = true;    
 
     [SerializeField] private NetworkPlayer playerPrefab;
@@ -43,7 +43,18 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
 
         Application.targetFrameRate = 60;
 
-        NetworkManager.instance.onConnect += () => { Debug.Log("Connected."); };
+        NetworkManager.instance.onConnect += () =>
+        {
+            Debug.Log("Connected.");
+
+            NetworkManager.instance.Subscribe(new List<string>()
+            {
+                "Config", "PlayerLoginComponent", "TransformComponent", "AnimationComponent", "ActiveTradeComponent",
+                "TradeSessionComponent", "ChunkData", "NpcComponent", "Chunk",
+                "ResourceComponent", "ServerGlobals", "InventoryComponent", "PlayerComponent",
+                "PlayerChatMessage"
+            });
+        };
         NetworkManager.instance.onConnectError += a =>
         {
             Debug.LogError($"Connection error: " + (a.HasValue ? a.Value.ToString() : "Null"));
@@ -82,11 +93,8 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
 
     void CheckNewPlayer()
     {
-        var count = NetworkManager.clientDB.GetEntries("Chunk").Count();
-        // TODO: This should be handled via on-demand subscription (eg client doesn't receive any subscription by default
-        // until explicitely requesting some.)
         // If we don't have any data for our player, then we are creating a new one.
-        var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value);
+        var player = PlayerComponent.FilterByOwnerId(NetworkPlayer.identity.Value.Bytes);
         if (!NetworkPlayer.localPlayerId.HasValue || player == null)
         {
             // Show username selection

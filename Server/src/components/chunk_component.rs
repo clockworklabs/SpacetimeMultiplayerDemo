@@ -10,26 +10,22 @@ use noise::Seedable;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-use spacetimedb::hash::hash_bytes;
-use spacetimedb::spacetimedb;
-use spacetimedb::spacetimedb_lib;
-use spacetimedb::Hash;
+use spacetimedb::{spacetimedb, SpacetimeType};
 
-#[spacetimedb(tuple)]
-#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, SpacetimeType)]
 pub struct ChunkPosition {
     pub x: i32,
     pub y: i32,
 }
 
-#[spacetimedb(tuple)]
+#[derive(SpacetimeType)]
 pub struct Grass {
     pub x: f32,
     pub y: f32,
     pub scale: f32,
 }
 
-#[spacetimedb(tuple)]
+#[derive(SpacetimeType)]
 pub struct Tree {
     pub entity_id: u64,
     pub chunk: ChunkPosition,
@@ -39,7 +35,7 @@ pub struct Tree {
     pub scale: f32,
 }
 
-#[spacetimedb(tuple)]
+#[derive(SpacetimeType)]
 pub struct Deposit {
     pub entity_id: u64,
     pub chunk: ChunkPosition,
@@ -52,7 +48,7 @@ pub struct Deposit {
 #[spacetimedb(table)]
 pub struct ChunkData {
     #[unique]
-    pub chunk_id: Hash,
+    pub chunk_id: u64,
     pub data: Vec<u8>,
     pub grass: Vec<Grass>,
     pub trees: Vec<Tree>,
@@ -62,7 +58,7 @@ pub struct ChunkData {
 #[spacetimedb(table)]
 pub struct Chunk {
     #[unique]
-    pub chunk_id: Hash,
+    pub chunk_id: u64,
     pub position: ChunkPosition,
 }
 
@@ -291,13 +287,8 @@ fn encode_chunk_data(splats: Vec<Vec<u8>>) -> Vec<u8> {
     result
 }
 
-fn hash_chunk(pos: ChunkPosition) -> Hash {
-    let mut buff = Vec::<u8>::new();
-    let value = spacetimedb_lib::TypeValue::I32(pos.x);
-    value.encode(&mut buff);
-    let value = spacetimedb_lib::TypeValue::I32(pos.y);
-    value.encode(&mut buff);
-    hash_bytes(buff)
+fn hash_chunk(pos: ChunkPosition) -> u64 {
+    ((pos.x as i64) << 32 + pos.y as i64) as u64
 }
 
 pub(crate) fn world_pos_to_chunk_pos(x: f64, y: f64, chunk_size: f64) -> ChunkPosition {

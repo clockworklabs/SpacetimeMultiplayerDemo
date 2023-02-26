@@ -21,7 +21,7 @@ public class TerrainController : Singleton<TerrainController>
     {
         foreach (var chunk in chunks)
         {
-            if (chunk.GetChunk().position.Equals(pos))
+            if (chunk.GetChunk().Position.Equals(pos))
             {
                 return chunk;
             }   
@@ -30,7 +30,7 @@ public class TerrainController : Singleton<TerrainController>
         return null;
     }
 
-    public TerrainChunk GetChunk(int x, int y) => GetChunk(new ChunkPosition() { x = x, y = y });
+    public TerrainChunk GetChunk(int x, int y) => GetChunk(new ChunkPosition() { X = x, Y = y });
 
     public void AddChunk(Chunk chunk)
     {
@@ -56,7 +56,7 @@ public class TerrainController : Singleton<TerrainController>
             return;
 		}
 
-		var halfSize = (float)(config.chunkSize / 2);
+		var halfSize = (float)(config.ChunkSize / 2);
         var halfSizeVector = new Vector3(halfSize, 0, halfSize);
         var viewDistSq = _viewDistance * _viewDistance;
 

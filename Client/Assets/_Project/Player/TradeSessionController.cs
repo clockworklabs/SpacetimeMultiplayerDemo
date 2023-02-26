@@ -27,7 +27,7 @@ public class TradeSessionController : MonoBehaviour
     {
         var config = Config.FilterByVersion(0);
         Debug.Assert(config != null, "Server config missing!");
-        _tradingSlots = (int)config.tradingSlots;
+        _tradingSlots = (int)config.TradingSlots;
         UITradeLocalOfferWindow.instance.CreateSlots(_tradingSlots, false);
         UITradeRemoteOfferWindow.instance.CreateSlots(_tradingSlots, true);
 
@@ -71,9 +71,9 @@ public class TradeSessionController : MonoBehaviour
 		var session = TradeSessionComponent.FilterByEntityId(_sessionEntityId);
 
         // update checkboxes
-        var isInitiator = session.initiatorEntityId == NetworkPlayer.localPlayerId.Value;
-        UITradeLocalOfferWindow.instance.SetCheckmark(isInitiator ? session.approvedByInitiator : session.approvedByAcceptor);
-        UITradeRemoteOfferWindow.instance.SetCheckmark(isInitiator ? session.approvedByAcceptor : session.approvedByInitiator);
+        var isInitiator = session.InitiatorEntityId == NetworkPlayer.localPlayerId.Value;
+        UITradeLocalOfferWindow.instance.SetCheckmark(isInitiator ? session.ApprovedByInitiator : session.ApprovedByAcceptor);
+        UITradeRemoteOfferWindow.instance.SetCheckmark(isInitiator ? session.ApprovedByAcceptor : session.ApprovedByInitiator);
     }
 
 
@@ -98,12 +98,12 @@ public class TradeSessionController : MonoBehaviour
 
         Dictionary<uint, Pocket> pockets;
         UIInventoryWindow ui;
-        if (inventory.entityId == _localOfferEntityId)
+        if (inventory.EntityId == _localOfferEntityId)
         {
             pockets = _localPockets;
             ui = UITradeLocalOfferWindow.instance;
         }
-        else if (inventory.entityId == _remoteOfferEntityId)
+        else if (inventory.EntityId == _remoteOfferEntityId)
         {
             pockets = _remotePockets;
             ui = UITradeRemoteOfferWindow.instance;
@@ -115,9 +115,9 @@ public class TradeSessionController : MonoBehaviour
         }
 
         pockets.Clear();
-        foreach (var pocket in inventory.pockets)
+        foreach (var pocket in inventory.Pockets)
         {
-            pockets[pocket.pocketIdx] = pocket;
+            pockets[pocket.PocketIdx] = pocket;
         }
 
         for (var x = 0; x < _tradingSlots; x++)

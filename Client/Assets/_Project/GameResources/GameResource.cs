@@ -7,9 +7,9 @@ public class GameResource : MonoBehaviour
 {
 
 	public ulong EntityId { get; private set; }
-	public int Type => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.resourceId ?? 0;
-	public int MaxHealth => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.maxHealth ?? 0;
-	public int Health => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.health ?? 0;
+	public int Type => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.ResourceId ?? 0;
+	public int MaxHealth => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.MaxHealth ?? 0;
+	public int Health => BitCraftMiniGameManager.instance.GetResourceComponent(EntityId)?.Health ?? 0;
 
 	[SerializeField] private GameObject _vfx;
 	[SerializeField] private GameObject _deathVfx;

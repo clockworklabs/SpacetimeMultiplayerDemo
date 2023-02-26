@@ -46,11 +46,11 @@ public class UIInventorySlot : MonoBehaviour, IPointerDownHandler
     public void Display(Pocket pocket)
     {
         _displaying = true;
-        var item = AssetRegistry.singleton.GetAsset(pocket.itemId) as ItemAsset;
+        var item = AssetRegistry.singleton.GetAsset(pocket.ItemId) as ItemAsset;
         Debug.Assert(item != null, nameof(item) + " != null");
         _itemImage.sprite = item.sprite;
         _itemImage.enabled = true;
-        _itemQuantity.text = pocket.itemCount + "";
+        _itemQuantity.text = pocket.ItemCount + "";
     }
 
     public void Display(UIInventorySlot slot)

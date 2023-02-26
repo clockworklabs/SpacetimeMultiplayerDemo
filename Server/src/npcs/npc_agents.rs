@@ -11,8 +11,9 @@ use crate::{random, Config};
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use spacetimedb::Identity;
 use spacetimedb::Timestamp;
-use spacetimedb::{hash::hash_bytes, spacetimedb, ReducerContext};
+use spacetimedb::{spacetimedb, ReducerContext};
 use std::f32::consts::PI;
 use std::ops::Add;
 use spacetimedb::println;
@@ -187,14 +188,14 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
         if rng.gen_range(0.0..detection_range) <= vector.length() {
             // React on threat
             move_npc(
-                hash_bytes(vec![0]), // todo : server hash
+                Identity::from_hashing_bytes([0]), // todo : server hash
                 timestamp,
                 npc_entity_id,
                 npc_transform.pos + vector.normalized() * 2.0,
                 StdbQuaternion::look_rotation(vector, StdbVector3::up()),
                 300000,
             );
-            update_npc_animation(hash_bytes(vec![0]), timestamp, npc_entity_id, true, 0);
+            update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, true, 0);
         } else {
             // React randomly
             let rnd = rng.gen_range(0..40);
@@ -206,18 +207,18 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
                     z: rng.gen_range(-1.0..1.0),
                 };
                 move_npc(
-                    hash_bytes(vec![0]), // todo : server hash
+                    Identity::from_hashing_bytes([0]), // todo : server hash
                     timestamp,
                     npc_entity_id,
                     npc_transform.pos + vector.normalized() * distance,
                     StdbQuaternion::look_rotation(vector, StdbVector3::up()),
                     (150000.0 * distance) as u64,
                 );
-                update_npc_animation(hash_bytes(vec![0]), timestamp, npc_entity_id, true, 0);
+                update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, true, 0);
             } else {
                 let npc_animation = AnimationComponent::filter_by_entity_id(npc_entity_id).unwrap();
                 if npc_animation.moving {
-                    update_npc_animation(hash_bytes(vec![0]), timestamp, npc_entity_id, false, 0);
+                    update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, false, 0);
                 }
                 let mut npc = NpcComponent::filter_by_entity_id(npc_entity_id).unwrap();
                 npc.next_action = timestamp + rng.gen_range(100000..300000);

@@ -6,9 +6,9 @@
         {
             return new Vector3
             {
-                x = position.x,
-                y = position.y,
-                z = position.z,
+                x = position.X,
+                y = position.Y,
+                z = position.Z,
             };
         }
         
@@ -16,10 +16,10 @@
         {
             return new Quaternion
             {
-                x = rotation.x,
-                y = rotation.y,
-                z = rotation.z,
-                w = rotation.w,
+                x = rotation.X,
+                y = rotation.Y,
+                z = rotation.Z,
+                w = rotation.W,
             };
         }
 
@@ -27,9 +27,9 @@
         {
             return new SpacetimeDB.StdbVector3 
             {
-                x = vec.x,
-                y = vec.y,
-                z = vec.z,
+                X = vec.x,
+                Y = vec.y,
+                Z = vec.z,
             };
         }
 
@@ -37,10 +37,10 @@
         {
             return new SpacetimeDB.StdbQuaternion 
             {
-                x = q.x,
-                y = q.y,
-                z = q.z,
-                w = q.w,
+                X = q.x,
+                Y = q.y,
+                Z = q.z,
+                W = q.w,
             };
         }
     }

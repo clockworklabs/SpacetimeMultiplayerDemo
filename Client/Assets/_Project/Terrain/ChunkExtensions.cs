@@ -9,7 +9,7 @@ namespace SpacetimeDB
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return x == other.x && y == other.y;
+            return X == other.X && Y == other.Y;
         }
 
         public override bool Equals(object obj)
@@ -24,7 +24,7 @@ namespace SpacetimeDB
         {
             unchecked
             {
-                return (x * 397) ^ y;
+                return (X * 397) ^ Y;
             }
         }
     }    
