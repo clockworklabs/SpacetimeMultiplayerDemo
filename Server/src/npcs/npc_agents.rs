@@ -11,12 +11,12 @@ use crate::{random, Config};
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use spacetimedb::println;
 use spacetimedb::Identity;
 use spacetimedb::Timestamp;
 use spacetimedb::{spacetimedb, ReducerContext};
 use std::f32::consts::PI;
 use std::ops::Add;
-use spacetimedb::println;
 
 #[spacetimedb(reducer, repeat = 5000ms)]
 pub(crate) fn spawn_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
@@ -193,7 +193,7 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
                 npc_entity_id,
                 npc_transform.pos + vector.normalized() * 2.0,
                 StdbQuaternion::look_rotation(vector, StdbVector3::up()),
-                300000,
+                300,
             );
             update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, true, 0);
         } else {
@@ -212,7 +212,7 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
                     npc_entity_id,
                     npc_transform.pos + vector.normalized() * distance,
                     StdbQuaternion::look_rotation(vector, StdbVector3::up()),
-                    (150000.0 * distance) as u64,
+                    (150.0 * distance) as u64,
                 );
                 update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, true, 0);
             } else {
@@ -221,7 +221,7 @@ pub(crate) fn move_npcs(ctx: ReducerContext, _prev_time: Timestamp) {
                     update_npc_animation(Identity::from_hashing_bytes([0]), timestamp, npc_entity_id, false, 0);
                 }
                 let mut npc = NpcComponent::filter_by_entity_id(npc_entity_id).unwrap();
-                npc.next_action = timestamp + rng.gen_range(100000..300000);
+                npc.next_action = timestamp + rng.gen_range(100..300);
                 NpcComponent::update_by_entity_id(npc_entity_id, npc);
             }
         }
