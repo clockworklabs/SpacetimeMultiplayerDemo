@@ -90,6 +90,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f382ab9569bb6e024a0dac01954fa828, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moduleAddress: bitcraftmini
+  hostName: spacetimedb.com/spacetimedb
+  sslEnabled: 1
   playerPrefab: {fileID: 7979707959555921424, guid: 412d89e4212abfc489869de4e240a1db, type: 3}
   preSpawnCamera: {fileID: 0}
   clientSendRate: 30

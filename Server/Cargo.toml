@@ -22,8 +22,7 @@ rand_chacha = "0.3.1"
 getrandom = { version = "0.2", features = ["custom"] }
 
 # These will be replaced with crates on crates.io eventually
-# TODO(jdetter): Revert this before merge
-spacetimedb = { path = "../../SpacetimeDB/crates/bindings" }
+spacetimedb = "0.3.4"
 
 [profile.release]
 opt-level = 's'

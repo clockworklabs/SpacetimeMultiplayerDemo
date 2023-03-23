@@ -16,7 +16,7 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
     }
 
     [SerializeField] private string moduleAddress = "bitcraftmini";
-    [SerializeField] private string hostName = "127.0.0.1:3000";
+    [SerializeField] private string hostName = "spacetimedb.com/spacetimedb";
     [SerializeField] private bool sslEnabled = true;    
 
     [SerializeField] private NetworkPlayer playerPrefab;
