@@ -38,7 +38,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ServerGlobals"))
 			{
-				yield return (ServerGlobals)entry;
+				yield return (ServerGlobals)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -49,10 +49,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ServerGlobals"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[0].AsU32();
 				if (compareValue == value) {
-					return (ServerGlobals)entry;
+					return (ServerGlobals)entry.Item2;
 				}
 			}
 			return null;
@@ -62,10 +62,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ServerGlobals"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[1].AsU64();
 				if (compareValue == value) {
-					yield return (ServerGlobals)entry;
+					yield return (ServerGlobals)entry.Item2;
 				}
 			}
 		}

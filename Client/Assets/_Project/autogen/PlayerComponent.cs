@@ -47,7 +47,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerComponent"))
 			{
-				yield return (PlayerComponent)entry;
+				yield return (PlayerComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -58,10 +58,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (PlayerComponent)entry;
+					return (PlayerComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -71,7 +71,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte[])productValue.elements[1].AsBytes();
 				static bool ByteArrayCompare(byte[] a1, byte[] a2)
 				{
@@ -86,7 +86,7 @@ namespace SpacetimeDB
 				}
 
 				if (ByteArrayCompare(compareValue, value)) {
-					return (PlayerComponent)entry;
+					return (PlayerComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -96,10 +96,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (string)productValue.elements[2].AsString();
 				if (compareValue == value) {
-					return (PlayerComponent)entry;
+					return (PlayerComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -109,10 +109,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[3].AsU64();
 				if (compareValue == value) {
-					yield return (PlayerComponent)entry;
+					yield return (PlayerComponent)entry.Item2;
 				}
 			}
 		}

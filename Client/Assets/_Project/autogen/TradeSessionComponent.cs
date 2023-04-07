@@ -58,7 +58,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				yield return (TradeSessionComponent)entry;
+				yield return (TradeSessionComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -69,10 +69,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (TradeSessionComponent)entry;
+					return (TradeSessionComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -82,10 +82,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[1].AsU64();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}
@@ -94,10 +94,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[2].AsU64();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}
@@ -106,10 +106,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[3].AsU64();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}
@@ -118,10 +118,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[4].AsU64();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}
@@ -130,10 +130,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (bool)productValue.elements[5].AsBool();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}
@@ -142,10 +142,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("TradeSessionComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (bool)productValue.elements[6].AsBool();
 				if (compareValue == value) {
-					yield return (TradeSessionComponent)entry;
+					yield return (TradeSessionComponent)entry.Item2;
 				}
 			}
 		}

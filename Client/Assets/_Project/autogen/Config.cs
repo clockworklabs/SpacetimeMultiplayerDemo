@@ -74,7 +74,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				yield return (Config)entry;
+				yield return (Config)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -85,10 +85,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[0].AsU32();
 				if (compareValue == value) {
-					return (Config)entry;
+					return (Config)entry.Item2;
 				}
 			}
 			return null;
@@ -98,10 +98,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[1].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -110,10 +110,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[2].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -122,10 +122,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[3].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -134,10 +134,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[4].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -146,10 +146,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (double)productValue.elements[5].AsF64();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -158,10 +158,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[6].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -170,10 +170,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (uint)productValue.elements[7].AsU32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -182,10 +182,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (float)productValue.elements[8].AsF32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -194,10 +194,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (float)productValue.elements[9].AsF32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}
@@ -206,10 +206,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Config"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (float)productValue.elements[10].AsF32();
 				if (compareValue == value) {
-					yield return (Config)entry;
+					yield return (Config)entry.Item2;
 				}
 			}
 		}

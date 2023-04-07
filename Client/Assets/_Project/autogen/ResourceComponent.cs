@@ -54,7 +54,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				yield return (ResourceComponent)entry;
+				yield return (ResourceComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -65,10 +65,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (ResourceComponent)entry;
+					return (ResourceComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -78,10 +78,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte)productValue.elements[1].AsU8();
 				if (compareValue == value) {
-					yield return (ResourceComponent)entry;
+					yield return (ResourceComponent)entry.Item2;
 				}
 			}
 		}
@@ -90,10 +90,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte)productValue.elements[2].AsU8();
 				if (compareValue == value) {
-					yield return (ResourceComponent)entry;
+					yield return (ResourceComponent)entry.Item2;
 				}
 			}
 		}
@@ -102,10 +102,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte)productValue.elements[3].AsU8();
 				if (compareValue == value) {
-					yield return (ResourceComponent)entry;
+					yield return (ResourceComponent)entry.Item2;
 				}
 			}
 		}
@@ -114,10 +114,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte)productValue.elements[4].AsU8();
 				if (compareValue == value) {
-					yield return (ResourceComponent)entry;
+					yield return (ResourceComponent)entry.Item2;
 				}
 			}
 		}
@@ -126,10 +126,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte)productValue.elements[5].AsU8();
 				if (compareValue == value) {
-					yield return (ResourceComponent)entry;
+					yield return (ResourceComponent)entry.Item2;
 				}
 			}
 		}

@@ -14,11 +14,11 @@ pub fn move_npc(_identity: Identity, timestamp: u64, entity_id: u64, pos: StdbVe
     */
 
     // Next action timestamp
-    let mut npc = NpcComponent::filter_by_entity_id(entity_id).expect("This npc doesn't exist.");
+    let mut npc = NpcComponent::filter_by_entity_id(&entity_id).expect("This npc doesn't exist.");
     npc.next_action = timestamp + duration;
-    NpcComponent::update_by_entity_id(entity_id, npc);
+    NpcComponent::update_by_entity_id(&entity_id, npc);
 
-    TransformComponent::update_by_entity_id(entity_id, TransformComponent { entity_id, pos, rot });
+    TransformComponent::update_by_entity_id(&entity_id, TransformComponent { entity_id, pos, rot });
 }
 
 #[spacetimedb(reducer)]
@@ -29,7 +29,7 @@ pub fn update_npc_animation(
     moving: bool,
     action_target_entity_id: u64,
 ) {
-    let _npc = NpcComponent::filter_by_entity_id(entity_id).expect("This npc doesn't exist.");
+    let _npc = NpcComponent::filter_by_entity_id(&entity_id).expect("This npc doesn't exist.");
 
     /*
     TODO: Uncomment when supported.
@@ -40,7 +40,7 @@ pub fn update_npc_animation(
     */
 
     AnimationComponent::update_by_entity_id(
-        entity_id,
+        &entity_id,
         AnimationComponent {
             entity_id,
             moving,

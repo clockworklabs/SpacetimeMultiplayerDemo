@@ -38,7 +38,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ActiveTradeComponent"))
 			{
-				yield return (ActiveTradeComponent)entry;
+				yield return (ActiveTradeComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -49,10 +49,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ActiveTradeComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (ActiveTradeComponent)entry;
+					return (ActiveTradeComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -62,10 +62,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ActiveTradeComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[1].AsU64();
 				if (compareValue == value) {
-					yield return (ActiveTradeComponent)entry;
+					yield return (ActiveTradeComponent)entry.Item2;
 				}
 			}
 		}

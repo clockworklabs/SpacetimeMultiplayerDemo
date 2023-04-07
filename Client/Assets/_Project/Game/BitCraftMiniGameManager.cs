@@ -49,10 +49,20 @@ public partial class BitCraftMiniGameManager : Singleton<BitCraftMiniGameManager
 
             NetworkManager.instance.Subscribe(new List<string>()
             {
-                "Config", "PlayerLoginComponent", "TransformComponent", "AnimationComponent", "ActiveTradeComponent",
-                "TradeSessionComponent", "ChunkData", "NpcComponent", "Chunk",
-                "ResourceComponent", "ServerGlobals", "InventoryComponent", "PlayerComponent",
-                "PlayerChatMessage"
+                "SELECT * FROM Config", 
+                "SELECT * FROM PlayerLoginComponent", 
+                "SELECT * FROM TransformComponent", 
+                "SELECT * FROM AnimationComponent", 
+                "SELECT * FROM ActiveTradeComponent",
+                "SELECT * FROM TradeSessionComponent", 
+                "SELECT * FROM ChunkData", 
+                "SELECT * FROM NpcComponent", 
+                "SELECT * FROM Chunk",
+                "SELECT * FROM ResourceComponent", 
+                "SELECT * FROM ServerGlobals", 
+                "SELECT * FROM InventoryComponent", 
+                "SELECT * FROM PlayerComponent",
+                "SELECT * FROM PlayerChatMessage"
             });
         };
         NetworkManager.instance.onConnectError += a =>

@@ -38,7 +38,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Chunk"))
 			{
-				yield return (Chunk)entry;
+				yield return (Chunk)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -49,10 +49,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("Chunk"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (Chunk)entry;
+					return (Chunk)entry.Item2;
 				}
 			}
 			return null;

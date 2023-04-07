@@ -42,7 +42,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("NpcComponent"))
 			{
-				yield return (NpcComponent)entry;
+				yield return (NpcComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -53,10 +53,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("NpcComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (NpcComponent)entry;
+					return (NpcComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -66,10 +66,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("NpcComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (string)productValue.elements[1].AsString();
 				if (compareValue == value) {
-					yield return (NpcComponent)entry;
+					yield return (NpcComponent)entry.Item2;
 				}
 			}
 		}
@@ -78,10 +78,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("NpcComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[2].AsU64();
 				if (compareValue == value) {
-					yield return (NpcComponent)entry;
+					yield return (NpcComponent)entry.Item2;
 				}
 			}
 		}

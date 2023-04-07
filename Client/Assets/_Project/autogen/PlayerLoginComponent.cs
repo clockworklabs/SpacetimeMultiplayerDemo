@@ -38,7 +38,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerLoginComponent"))
 			{
-				yield return (PlayerLoginComponent)entry;
+				yield return (PlayerLoginComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -49,10 +49,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerLoginComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (PlayerLoginComponent)entry;
+					return (PlayerLoginComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -62,10 +62,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("PlayerLoginComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (bool)productValue.elements[1].AsBool();
 				if (compareValue == value) {
-					yield return (PlayerLoginComponent)entry;
+					yield return (PlayerLoginComponent)entry.Item2;
 				}
 			}
 		}

@@ -42,7 +42,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("AnimationComponent"))
 			{
-				yield return (AnimationComponent)entry;
+				yield return (AnimationComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -53,10 +53,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("AnimationComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (AnimationComponent)entry;
+					return (AnimationComponent)entry.Item2;
 				}
 			}
 			return null;
@@ -66,10 +66,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("AnimationComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (bool)productValue.elements[1].AsBool();
 				if (compareValue == value) {
-					yield return (AnimationComponent)entry;
+					yield return (AnimationComponent)entry.Item2;
 				}
 			}
 		}
@@ -78,10 +78,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("AnimationComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[2].AsU64();
 				if (compareValue == value) {
-					yield return (AnimationComponent)entry;
+					yield return (AnimationComponent)entry.Item2;
 				}
 			}
 		}

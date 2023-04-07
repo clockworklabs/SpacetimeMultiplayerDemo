@@ -30,7 +30,7 @@ pub fn init() {
     // TODO(cloutiertyler): Validate that the identity is the authorized
     // identity. (i.e. the one who initialized this database)
 
-    let config = Config::filter_by_version(0);
+    let config = Config::filter_by_version(&0);
     if config.is_some() {
         println!("Config already exists, skipping config.");
         return;
@@ -75,7 +75,7 @@ pub fn move_or_swap_inventory_slot(
     source_pocket_idx: u32,
     dest_pocket_idx: u32,
 ) -> Result<(), String> {
-    let config = Config::filter_by_version(0).expect("Config exists.");
+    let config = Config::filter_by_version(&0).expect("Config exists.");
 
     // Check to see if the source pocket index is bad
     if source_pocket_idx >= config.max_player_inventory_slots {
@@ -93,7 +93,7 @@ pub fn move_or_swap_inventory_slot(
     }
 
     // Make sure this identity owns this player
-    let player = PlayerComponent::filter_by_entity_id(player_entity_id).expect("This player doesn't exist!");
+    let player = PlayerComponent::filter_by_entity_id(&player_entity_id).expect("This player doesn't exist!");
     if player.owner_id != ctx.sender {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
         return Err(format!("This identity doesn't own this player! (allowed for now)"));
@@ -104,8 +104,8 @@ pub fn move_or_swap_inventory_slot(
         let mut valid = false;
 
         // Is it part of a trade involving the player?
-        if let Some(active_trade) = ActiveTradeComponent::filter_by_entity_id(player_entity_id) {
-            if let Some(session) = TradeSessionComponent::filter_by_entity_id(active_trade.trade_session_entity_id) {
+        if let Some(active_trade) = ActiveTradeComponent::filter_by_entity_id(&player_entity_id) {
+            if let Some(session) = TradeSessionComponent::filter_by_entity_id(&active_trade.trade_session_entity_id) {
                 valid |= session.initiator_entity_id == player_entity_id;
                 valid |= session.acceptor_entity_id == player_entity_id;
             }
@@ -120,7 +120,7 @@ pub fn move_or_swap_inventory_slot(
     }
 
     let mut inventory =
-        InventoryComponent::filter_by_entity_id(inventory_entity_id).expect("This inventory doesn't exist!");
+        InventoryComponent::filter_by_entity_id(&inventory_entity_id).expect("This inventory doesn't exist!");
 
     let mut source_pocket = inventory
         .get_pocket(source_pocket_idx)
@@ -133,7 +133,7 @@ pub fn move_or_swap_inventory_slot(
         inventory.delete_pocket(source_pocket_idx);
         source_pocket.pocket_idx = dest_pocket_idx;
         inventory.set_pocket(source_pocket);
-        InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
+        InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
         println!("Source pocket moved to dest pocket.");
 
         return Ok(());
@@ -146,7 +146,7 @@ pub fn move_or_swap_inventory_slot(
         dest_pocket.item_count += source_pocket.item_count;
         inventory.delete_pocket(source_pocket_idx);
         inventory.set_pocket(dest_pocket);
-        InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
+        InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
         println!("Source pocket moved into dest pocket (same item)");
 
         return Ok(());
@@ -158,7 +158,7 @@ pub fn move_or_swap_inventory_slot(
     source_pocket.pocket_idx = dest_pocket_idx;
     inventory.set_pocket(source_pocket);
     inventory.set_pocket(dest_pocket);
-    InventoryComponent::update_by_entity_id(inventory_entity_id, inventory);
+    InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
     println!("Pockets swapped (different items)");
 
     Ok(())
@@ -176,7 +176,7 @@ pub fn add_item_to_inventory(
 ) -> Result<(), String> {
     // Make sure this identity owns this player
     let player =
-        PlayerComponent::filter_by_entity_id(entity_id).expect("add_item_to_inventory: This player doesn't exist!");
+        PlayerComponent::filter_by_entity_id(&entity_id).expect("add_item_to_inventory: This player doesn't exist!");
 
     if player.owner_id != ctx.sender {
         // TODO: We are doing this for now so that its easier to test reducers from the command line
@@ -185,7 +185,7 @@ pub fn add_item_to_inventory(
     }
 
     let mut inventory =
-        InventoryComponent::filter_by_entity_id(entity_id).expect("This player doesn't have an inventory!");
+        InventoryComponent::filter_by_entity_id(&entity_id).expect("This player doesn't have an inventory!");
 
     if !inventory.add(
         item_id,
@@ -195,7 +195,7 @@ pub fn add_item_to_inventory(
         panic!("Failed to add items to inventory");
     }
 
-    InventoryComponent::update_by_entity_id(entity_id, inventory);
+    InventoryComponent::update_by_entity_id(&entity_id, inventory);
     println!("Item {} inserted into inventory {}", item_id, entity_id);
 
     Ok(())
@@ -203,7 +203,7 @@ pub fn add_item_to_inventory(
 
 #[spacetimedb(reducer)]
 pub fn dump_inventory(_ctx: ReducerContext, entity_id: u64) -> Result<(), String> {
-    let inventory = InventoryComponent::filter_by_entity_id(entity_id)
+    let inventory = InventoryComponent::filter_by_entity_id(&entity_id)
         .unwrap_or_else(|| panic!("Inventory NOT found for entity {}", entity_id));
 
     for pocket in inventory.pockets {
@@ -218,14 +218,14 @@ pub fn dump_inventory(_ctx: ReducerContext, entity_id: u64) -> Result<(), String
 
 #[spacetimedb(reducer)]
 pub fn move_player(ctx: ReducerContext, entity_id: u64, pos: StdbVector3, rot: StdbQuaternion) -> Result<(), String> {
-    let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
+    let player = PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
     if player.owner_id != ctx.sender {
         println!("This identity doesn't own this player! (allowed for now)");
     }
 
-    TransformComponent::update_by_entity_id(entity_id, TransformComponent { entity_id, pos, rot });
+    TransformComponent::update_by_entity_id(&entity_id, TransformComponent { entity_id, pos, rot });
 
     Ok(())
 }
@@ -237,7 +237,7 @@ pub fn update_animation(
     moving: bool,
     action_target_entity_id: u64,
 ) -> Result<(), String> {
-    let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist!");
+    let player = PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist!");
 
     // Make sure this identity owns this player
     if player.owner_id != ctx.sender {
@@ -245,7 +245,7 @@ pub fn update_animation(
     }
 
     AnimationComponent::update_by_entity_id(
-        entity_id,
+        &entity_id,
         AnimationComponent {
             entity_id,
             moving,
@@ -319,9 +319,9 @@ pub fn player_chat(ctx: ReducerContext, player_id: u64, message: String) -> Resu
 
 #[spacetimedb(reducer)]
 pub fn player_update_login_state(ctx: ReducerContext, logged_in: bool) -> Result<(), String> {
-    let player = PlayerComponent::filter_by_owner_id(ctx.sender).expect("You cannot sign in without a player!");
+    let player = PlayerComponent::filter_by_owner_id(&ctx.sender).expect("You cannot sign in without a player!");
 
-    if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(player.entity_id) {
+    if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(&player.entity_id) {
         assert!(
             login_state.logged_in != logged_in,
             "Player is already set to this login state: {}",
@@ -334,7 +334,7 @@ pub fn player_update_login_state(ctx: ReducerContext, logged_in: bool) -> Result
         }
 
         PlayerLoginComponent::update_by_entity_id(
-            player_entity_id,
+            &player_entity_id,
             PlayerLoginComponent {
                 entity_id: player_entity_id,
                 logged_in,
@@ -355,7 +355,7 @@ pub fn player_update_login_state(ctx: ReducerContext, logged_in: bool) -> Result
 
 #[spacetimedb(connect)]
 pub fn identity_connected(ctx: ReducerContext) {
-    let player = PlayerComponent::filter_by_owner_id(ctx.sender);
+    let player = PlayerComponent::filter_by_owner_id(&ctx.sender);
     if let Some(player) = player {
         println!("Player {} has returned.", player.entity_id);
     } else {
@@ -365,8 +365,8 @@ pub fn identity_connected(ctx: ReducerContext) {
 
 #[spacetimedb(disconnect)]
 pub fn identity_disconnected(ctx: ReducerContext) {
-    if let Some(player) = PlayerComponent::filter_by_owner_id(ctx.sender) {
-        if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(player.entity_id) {
+    if let Some(player) = PlayerComponent::filter_by_owner_id(&ctx.sender) {
+        if let Some(login_state) = PlayerLoginComponent::filter_by_entity_id(&player.entity_id) {
             if login_state.logged_in {
                 println!("User has disconnected without signing out.");
                 let player_entity_id = player.entity_id;
@@ -374,7 +374,7 @@ pub fn identity_disconnected(ctx: ReducerContext) {
                 cancel_trade_session_with_participant(player_entity_id);
 
                 PlayerLoginComponent::update_by_entity_id(
-                    player_entity_id,
+                    &player_entity_id,
                     PlayerLoginComponent {
                         entity_id: player_entity_id,
                         logged_in: false,
@@ -387,7 +387,7 @@ pub fn identity_disconnected(ctx: ReducerContext) {
 
 #[spacetimedb(reducer)]
 pub fn extract(ctx: ReducerContext, entity_id: u64, resource_entity_id: u64) -> Result<(), String> {
-    let player = PlayerComponent::filter_by_entity_id(entity_id).expect("This player doesn't exist.");
+    let player = PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist.");
 
     // Make sure this identity owns this player
     if player.owner_id != ctx.sender {
@@ -396,7 +396,7 @@ pub fn extract(ctx: ReducerContext, entity_id: u64, resource_entity_id: u64) -> 
 
     // ToDo: validate resource distance from player. For now resource position is determined by the chunk so we can't.
 
-    let mut resource = ResourceComponent::filter_by_entity_id(resource_entity_id).expect("This resource doesn't exist");
+    let mut resource = ResourceComponent::filter_by_entity_id(&resource_entity_id).expect("This resource doesn't exist");
 
     // Attempt to add resources to the player's inventory
     add_item_to_inventory(
@@ -411,9 +411,9 @@ pub fn extract(ctx: ReducerContext, entity_id: u64, resource_entity_id: u64) -> 
 
     //TODO: Is this a bug? `health` is unsigned so this cmp is non-sense.
     if resource.health <= 0 {
-        ResourceComponent::delete_by_entity_id(resource_entity_id);
+        ResourceComponent::delete_by_entity_id(&resource_entity_id);
     } else {
-        ResourceComponent::update_by_entity_id(resource_entity_id, resource);
+        ResourceComponent::update_by_entity_id(&resource_entity_id, resource);
     }
 
     Ok(())

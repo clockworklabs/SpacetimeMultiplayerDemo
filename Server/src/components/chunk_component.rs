@@ -64,7 +64,7 @@ pub struct Chunk {
 
 pub(crate) fn generate_chunk(chunk_pos: ChunkPosition) {
     spacetimedb::println!("Generating chunk: {:?}", chunk_pos);
-    let config = Config::filter_by_version(0).unwrap();
+    let config = Config::filter_by_version(&0).unwrap();
     random::register();
 
     let mut rng = ChaCha8Rng::seed_from_u64(config.terrain_seed as u64 + chunk_pos.x as u64 + chunk_pos.y as u64);
@@ -288,7 +288,7 @@ fn encode_chunk_data(splats: Vec<Vec<u8>>) -> Vec<u8> {
 }
 
 fn hash_chunk(pos: ChunkPosition) -> u64 {
-    ((pos.x as i64) << 32 + pos.y as i64) as u64
+    (((pos.x as u64) & 0xFFFF) << 32) + pos.y as u64
 }
 
 pub(crate) fn world_pos_to_chunk_pos(x: f64, y: f64, chunk_size: f64) -> ChunkPosition {

@@ -75,7 +75,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ChunkData"))
 			{
-				yield return (ChunkData)entry;
+				yield return (ChunkData)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -86,10 +86,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ChunkData"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (ChunkData)entry;
+					return (ChunkData)entry.Item2;
 				}
 			}
 			return null;
@@ -99,7 +99,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("ChunkData"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (byte[])productValue.elements[1].AsBytes();
 				static bool ByteArrayCompare(byte[] a1, byte[] a2)
 				{
@@ -114,7 +114,7 @@ namespace SpacetimeDB
 				}
 
 				if (ByteArrayCompare(compareValue, value)) {
-					yield return (ChunkData)entry;
+					yield return (ChunkData)entry.Item2;
 				}
 			}
 		}

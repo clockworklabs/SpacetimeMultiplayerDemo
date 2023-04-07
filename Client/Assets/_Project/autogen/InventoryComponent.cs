@@ -46,7 +46,7 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("InventoryComponent"))
 			{
-				yield return (InventoryComponent)entry;
+				yield return (InventoryComponent)entry.Item2;
 			}
 		}
 		public static int Count()
@@ -57,10 +57,10 @@ namespace SpacetimeDB
 		{
 			foreach(var entry in NetworkManager.clientDB.GetEntries("InventoryComponent"))
 			{
-				var productValue = entry.AsProductValue();
+				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[0].AsU64();
 				if (compareValue == value) {
-					return (InventoryComponent)entry;
+					return (InventoryComponent)entry.Item2;
 				}
 			}
 			return null;
