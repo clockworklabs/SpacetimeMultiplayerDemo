@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: TreeBark
+  m_Shader: {fileID: -6465566751694194690, guid: 42401fe7496ee07e78cf4d02d6ff8488, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - Texture2D_6911fe0433ec4999b8e11222aa724d0e:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - Texture2D_8d2b285a9beb41118e2bc0020f93a83f:
+        m_Texture: {fileID: 2800000, guid: c80a9265d41862e4caa470b13f8227fd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - Vector1_5cd52542c29e44d0a2c79008032a37d7: 0
+    - Vector1_68de0c68f595498ab84aaf9542ca67a6: 1
+    - Vector1_a648f1d206344e87839496cc27e38169: 0
+    m_Colors:
+    - Color_068d066c273e4198b5fca5c4736a9d79: {r: 0.53900003, g: 0.4846724, b: 0.42419302, a: 0}
+  m_BuildTextureStacks: []
