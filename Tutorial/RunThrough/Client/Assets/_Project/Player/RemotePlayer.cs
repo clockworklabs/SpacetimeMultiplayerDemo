@@ -7,8 +7,6 @@ public class RemotePlayer : MonoBehaviour
 {
     public ulong EntityId { get; set; }
 
-    public Vector2? destination;    
-
     // Start is called before the first frame update
     void Start()
     {
