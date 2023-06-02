@@ -70,9 +70,15 @@ public class UIChatController : Singleton<UIChatController>
         Canvas.ForceUpdateCanvases();
     }
     
-    public void OnChatMessageReceived(ulong playerId, String message)
+    public void OnChatMessageReceived(String message)
     {
+        _messages.text += $"{message}\n";
 
+        // Force scroll to bottom.
+        if (gameObject.activeSelf)
+        {
+            StartCoroutine(AutoScroll());
+        }
     }
     
     public void OnChatButtonPress()

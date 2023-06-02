@@ -21,6 +21,6 @@ public class BitcraftMiniGameManager : MonoBehaviour
     public void StartGame()
     {
         preSpawnCamera.SetActive(false);
-        UIChatController.instance.Show();
+        UIChatController.instance.enabled = true;
     }
 }

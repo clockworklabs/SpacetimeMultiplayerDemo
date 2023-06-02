@@ -73,6 +73,8 @@ public class BitcraftMiniGameManager : MonoBehaviour
     {
         UIChatController.instance.enabled = true;
         preSpawnCamera.SetActive(false);
+
+        UIChatController.instance.OnChatMessageReceived("Message of the Day: " + Config.FilterByVersion(0).MessageOfTheDay);
     }
 
     void CheckNewPlayer()
