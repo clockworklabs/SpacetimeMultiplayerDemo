@@ -26,26 +26,34 @@ public class PlayerAnimator : MonoBehaviour
 
     public void Interact(GameResource res)
     {
-        var resourceType = res?.Type ?? -1;
-        switch (resourceType)
+        if (res == null)
         {
-            case 0:
-                _animator.SetTrigger("Mine");
-                Interacting = true;
-                break;
-            case 1:
-                _animator.SetTrigger("Chop");
-                Interacting = true;
-                break;
-            default:
-                Interacting = false;
-                break;
+            Interacting = false;
+            for (int i = 0; i < _tools.Length; i++)
+            {
+                _tools[i].SetActive(false);
+            }
+            _target = null;
         }
-        for (int i = 0; i < _tools.Length; i++)
+        else
         {
-            _tools[i].SetActive(resourceType == i);
+            var resourceType = res?.Type ?? SpacetimeDB.ResourceNodeType.Iron;
+            switch (resourceType)
+            {
+                case SpacetimeDB.ResourceNodeType.Iron:
+                    _animator.SetTrigger("Mine");
+                    Interacting = true;
+                    break;
+                default:
+                    Interacting = false;
+                    break;
+            }
+            for (int i = 0; i < _tools.Length; i++)
+            {
+                _tools[i].SetActive(((int)resourceType) == i);
+            }
+            _target = res;
         }
-        _target = res;
 	}
 
 	public void OnStartAction()

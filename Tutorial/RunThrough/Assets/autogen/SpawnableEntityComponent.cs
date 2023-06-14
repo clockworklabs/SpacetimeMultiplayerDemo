@@ -54,9 +54,11 @@ namespace SpacetimeDB
 			return null;
 		}
 
-		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue _v1, SpacetimeDB.SATS.AlgebraicValue _v2)
+		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue v1, SpacetimeDB.SATS.AlgebraicValue v2)
 		{
-			return false;
+			var primaryColumnValue1 = v1.AsProductValue().elements[0];
+			var primaryColumnValue2 = v2.AsProductValue().elements[0];
+			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
 		public delegate void InsertEventHandler(SpawnableEntityComponent insertedValue, ClientApi.Event dbEvent);

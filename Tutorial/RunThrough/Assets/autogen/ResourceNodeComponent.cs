@@ -10,14 +10,19 @@ namespace SpacetimeDB
 		[Newtonsoft.Json.JsonProperty("entity_id")]
 		public ulong EntityId;
 		[Newtonsoft.Json.JsonProperty("resource_type")]
-		public string ResourceType;
+		public SpacetimeDB.ResourceNodeType ResourceType;
 
 		public static SpacetimeDB.SATS.AlgebraicType GetAlgebraicType()
 		{
 			return SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
 			{
 				new SpacetimeDB.SATS.ProductTypeElement("entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
-				new SpacetimeDB.SATS.ProductTypeElement("resource_type", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String)),
+				new SpacetimeDB.SATS.ProductTypeElement("resource_type", SpacetimeDB.SATS.AlgebraicType.CreateSumType(new System.Collections.Generic.List<SpacetimeDB.SATS.SumTypeVariant>
+			{
+				new SpacetimeDB.SATS.SumTypeVariant("Iron", SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
+			{
+			})),
+			})),
 			});
 		}
 
@@ -30,7 +35,8 @@ namespace SpacetimeDB
 			return new ResourceNodeComponent
 			{
 				EntityId = productValue.elements[0].AsU64(),
-				ResourceType = productValue.elements[1].AsString(),
+				ResourceType = (ResourceNodeType)Enum.Parse(typeof(ResourceNodeType), productValue.elements[1].AsSumValue().tag.ToString())
+		,
 			};
 		}
 
@@ -58,21 +64,11 @@ namespace SpacetimeDB
 			return null;
 		}
 
-		public static System.Collections.Generic.IEnumerable<ResourceNodeComponent> FilterByResourceType(string value)
+		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue v1, SpacetimeDB.SATS.AlgebraicValue v2)
 		{
-			foreach(var entry in NetworkManager.clientDB.GetEntries("ResourceNodeComponent"))
-			{
-				var productValue = entry.Item1.AsProductValue();
-				var compareValue = (string)productValue.elements[1].AsString();
-				if (compareValue == value) {
-					yield return (ResourceNodeComponent)entry.Item2;
-				}
-			}
-		}
-
-		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue _v1, SpacetimeDB.SATS.AlgebraicValue _v2)
-		{
-			return false;
+			var primaryColumnValue1 = v1.AsProductValue().elements[0];
+			var primaryColumnValue2 = v2.AsProductValue().elements[0];
+			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
 		public delegate void InsertEventHandler(ResourceNodeComponent insertedValue, ClientApi.Event dbEvent);

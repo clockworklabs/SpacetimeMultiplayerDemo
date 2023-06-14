@@ -5,7 +5,7 @@ using SpacetimeDB;
 
 public class RemotePlayer : MonoBehaviour
 {
-    public ulong EntityId { get; set; }
+    public ulong EntityId;
 
     void Start()
     {

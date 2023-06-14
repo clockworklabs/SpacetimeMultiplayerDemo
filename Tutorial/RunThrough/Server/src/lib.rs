@@ -1,19 +1,24 @@
 use log;
+use rand::Rng;
 use spacetimedb::{spacetimedb, Identity, SpacetimeType};
 use spacetimedb::{ReducerContext, Timestamp};
 
 #[spacetimedb(table)]
 pub struct Config {
-    #[unique]
+    #[primarykey]
     // always 0 for now
     pub version: u32,
 
     pub message_of_the_day: String,
+
+    // PART2
+    pub map_extents: u32,
+    pub num_resource_nodes: u32,
 }
 
 #[spacetimedb(table)]
 pub struct SpawnableEntityComponent {
-    #[unique]
+    #[primarykey]
     #[autoinc]
     pub entity_id: u64,
 }
@@ -21,7 +26,7 @@ pub struct SpawnableEntityComponent {
 #[spacetimedb(table)]
 #[derive(Clone)]
 pub struct PlayerComponent {
-    #[unique]
+    #[primarykey]
     pub entity_id: u64,
     #[unique]
     pub owner_id: Identity,
@@ -43,7 +48,7 @@ impl StdbVector2 {
 #[spacetimedb(table)]
 #[derive(Clone)]
 pub struct MobileEntityComponent {
-    #[unique]
+    #[primarykey]
     pub entity_id: u64,
 
     pub location: StdbVector2,
@@ -52,13 +57,45 @@ pub struct MobileEntityComponent {
     pub move_start_timestamp: Timestamp,
 }
 
+// PART2
+#[derive(spacetimedb::SpacetimeType, Clone)]
+pub enum ResourceNodeType {
+    Iron,
+}
+
+#[spacetimedb(table)]
+#[derive(Clone)]
+pub struct ResourceNodeComponent {
+    #[primarykey]
+    pub entity_id: u64,
+
+    pub resource_type: ResourceNodeType,
+}
+
+#[spacetimedb(table)]
+#[derive(Clone)]
+pub struct StaticLocationComponent {
+    #[primarykey]
+    pub entity_id: u64,
+
+    pub location: StdbVector2,
+    pub rotation: f32,
+}
+
 #[spacetimedb(init)]
 pub fn init() {
     Config::insert(Config {
         version: 0,
         message_of_the_day: "Hello, World!".to_string(),
+
+        // PART2
+        map_extents: 25,
+        num_resource_nodes: 10,
     })
     .expect("Failed to insert config.");
+
+    // PART2
+    spacetimedb::schedule!("5000ms", resource_spawner_agent(_, Timestamp::now()));
 }
 
 #[spacetimedb(connect)]
@@ -149,4 +186,61 @@ pub fn stop_player(ctx: ReducerContext, location: StdbVector2) -> Result<(), Str
     }
 
     return Err("Player not found".to_string());
+}
+
+// PART2
+#[spacetimedb(reducer, repeat = 1000ms)]
+pub fn resource_spawner_agent(_ctx: ReducerContext, _prev_time: Timestamp) -> Result<(), String> {
+    let config = Config::filter_by_version(&0).unwrap();
+    let num_resource_nodes = config.num_resource_nodes as usize;
+
+    let num_resource_nodes_spawned = ResourceNodeComponent::iter().count();
+    if num_resource_nodes_spawned >= num_resource_nodes {
+        log::info!("All resource nodes spawned. Skipping.");
+        return Ok(());
+    }
+
+    let mut rng = rand::thread_rng();
+
+    let map_extents = config.map_extents as f32;
+
+    let location = StdbVector2 {
+        x: rng.gen_range(-map_extents..map_extents),
+        z: rng.gen_range(-map_extents..map_extents),
+    };
+
+    let rotation = rng.gen_range(0.0..360.0);
+
+    let entity_id = SpawnableEntityComponent::insert(SpawnableEntityComponent { entity_id: 0 })
+        .expect("Failed to create resource spawnable entity component.")
+        .entity_id;
+
+    StaticLocationComponent::insert(StaticLocationComponent {
+        entity_id,
+        location: location.clone(),
+        rotation,
+    })
+    .expect("Failed to insert resource static location component.");
+
+    ResourceNodeComponent::insert(ResourceNodeComponent {
+        entity_id,
+        resource_type: ResourceNodeType::Iron,
+    })
+    .expect("Failed to insert resource node component.");
+
+    log::info!(
+        "Resource node spawned: {} at ({}, {})",
+        entity_id,
+        location.x,
+        location.z,
+    );
+
+    Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn message_of_the_day(_ctx: ReducerContext, new_message: String) {
+    let mut config = Config::filter_by_version(&0).unwrap();
+    config.message_of_the_day = new_message;
+    Config::update_by_version(&0, config);
 }

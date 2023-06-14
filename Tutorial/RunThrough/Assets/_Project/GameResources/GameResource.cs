@@ -2,15 +2,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using SpacetimeDB;
 
 public class GameResource : MonoBehaviour
 {
+	public ulong EntityId;
+
 	[SerializeField] private GameObject _vfx;
 	[SerializeField] private GameObject _deathVfx;
 
 	private bool _flagForDeath;
 
-	public int Type = 0;
+	public ResourceNodeType Type = ResourceNodeType.Iron;
     public int MaxHealth = 0;
     public int Health = 0;
 

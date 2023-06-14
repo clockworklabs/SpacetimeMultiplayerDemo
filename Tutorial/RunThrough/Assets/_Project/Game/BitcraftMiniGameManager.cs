@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SpacetimeDB;
+using System.Linq;
 
 public class BitcraftMiniGameManager : MonoBehaviour
 {
@@ -19,6 +20,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
     private Identity local_identity;
 
     public GameObject PlayerPrefab;
+    public GameObject IronPrefab;
 
     [SerializeField] private GameObject preSpawnCamera;
 
@@ -39,6 +41,8 @@ public class BitcraftMiniGameManager : MonoBehaviour
                 "SELECT * FROM SpawnableEntityComponent",
                 "SELECT * FROM PlayerComponent",
                 "SELECT * FROM MobileEntityComponent",
+                "SELECT * FROM ResourceNodeComponent",
+                "SELECT * FROM StaticLocationComponent"
             });
         };
 
@@ -66,30 +70,63 @@ public class BitcraftMiniGameManager : MonoBehaviour
         NetworkManager.instance.onTransactionComplete += OnSubscriptionUpdate;
 
         PlayerComponent.OnInsert += PlayerComponent_OnInsert;
+        PlayerComponent.OnUpdate += PlayerComponent_OnUpdate;
+
+        ResourceNodeComponent.OnInsert += ResourceNodeComponent_OnInsert;
 
         // now that we’ve registered all our callbacks, lets connect to
         // spacetimedb
         NetworkManager.instance.Connect(hostName, moduleAddress, sslEnabled);
     }
 
-    private void PlayerComponent_OnInsert(PlayerComponent obj, ClientApi.Event dbEvent)
+    private void ResourceNodeComponent_OnInsert(ResourceNodeComponent insertedValue, ClientApi.Event dbEvent)
     {
+        switch(insertedValue.ResourceType)
+        {
+            case ResourceNodeType.Iron:
+                var iron = Instantiate(IronPrefab);
+
+                GameResource gameResource = iron.GetComponent<GameResource>();
+                gameResource.EntityId = insertedValue.EntityId;
+
+                StaticLocationComponent loc = StaticLocationComponent.FilterByEntityId(insertedValue.EntityId);
+                iron.transform.position = new Vector3(loc.Location.X, 0.0f, loc.Location.Z);
+                iron.transform.rotation = Quaternion.Euler(0.0f, loc.Rotation, 0.0f);
+                break;
+        }
+    }
+
+    private void PlayerComponent_OnUpdate(PlayerComponent oldValue, PlayerComponent newValue, ClientApi.Event dbEvent)
+    {        
         // if the identity of the PlayerComponent matches our user identity then this is the local player
-        if (Identity.From(obj.OwnerId) == local_identity)
+        if (Identity.From(newValue.OwnerId) == local_identity)
         {
             // Get the MobileEntityComponent for this object and update the position to match the server
-            MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(obj.EntityId);
+            MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(newValue.EntityId);
             LocalPlayer.instance.transform.position = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
             // Now that we have our initial position we can start the game
             StartGame();
         }
         // otherwise this is a remote player
-        else
+        else if(newValue.LoggedIn)
         {
             // spawn the player object and attach the RemotePlayer component
             var remotePlayer = Instantiate(PlayerPrefab);
-            remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+            remotePlayer.AddComponent<RemotePlayer>().EntityId = newValue.EntityId;
         }
+        else
+        {
+            var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == newValue.EntityId);
+            if (remotePlayer != null)
+            {
+                Destroy(remotePlayer.gameObject);
+            }
+        }
+    }   
+
+    private void PlayerComponent_OnInsert(PlayerComponent obj, ClientApi.Event dbEvent)
+    {
+        PlayerComponent_OnUpdate(null, obj, dbEvent);
     }
 
     void OnSubscriptionUpdate()

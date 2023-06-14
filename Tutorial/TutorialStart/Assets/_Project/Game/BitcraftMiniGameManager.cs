@@ -7,6 +7,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
     public static BitcraftMiniGameManager instance;
 
     public GameObject PlayerPrefab;
+    public GameObject IronPrefab;
 
     [SerializeField] private GameObject preSpawnCamera;
 
