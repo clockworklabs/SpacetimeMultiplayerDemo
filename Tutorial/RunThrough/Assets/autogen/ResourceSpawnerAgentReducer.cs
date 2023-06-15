@@ -31,20 +31,16 @@ namespace SpacetimeDB
 		{
 			if(OnResourceSpawnerAgentEvent != null)
 			{
-				var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
-				using var ms = new System.IO.MemoryStream();
-				ms.SetLength(bsatnBytes.Length);
-				bsatnBytes.CopyTo(ms.GetBuffer(), 0);
-				ms.Position = 0;
-				using var reader = new System.IO.BinaryReader(ms);
-				var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64), reader);
-				var args_0 = args_0_value.AsU64();
-				OnResourceSpawnerAgentEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0);
+				var args = dbEvent.FunctionCall.CallInfo.ResourceSpawnerAgentArgs;
+				OnResourceSpawnerAgentEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray())
+					,(ulong)args.PrevTime
+				);
 			}
 		}
 		[DeserializeEvent(FunctionName = "resource_spawner_agent")]
-		public static object[] ResourceSpawnerAgentDeserializeEventArgs(ClientApi.Event dbEvent)
+		public static void ResourceSpawnerAgentDeserializeEventArgs(ClientApi.Event dbEvent)
 		{
+			var args = new ResourceSpawnerAgentArgsStruct();
 			var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 			using var ms = new System.IO.MemoryStream();
 			ms.SetLength(bsatnBytes.Length);
@@ -52,10 +48,33 @@ namespace SpacetimeDB
 			ms.Position = 0;
 			using var reader = new System.IO.BinaryReader(ms);
 			var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64), reader);
-			var args_0 = args_0_value.AsU64();
-			return new object[] {
-				args_0,
-			};
+			args.PrevTime = args_0_value.AsU64();
+			var argsGeneric = new ReducerArgs();
+			argsGeneric.ResourceSpawnerAgentArgs = args;
+			dbEvent.FunctionCall.CallInfo = new ReducerCallInfo(ReducerType.ResourceSpawnerAgent, dbEvent.Message, dbEvent.Status, argsGeneric);
+		}
+	}
+
+	public struct ResourceSpawnerAgentArgsStruct
+	{
+		public ulong PrevTime;
+	}
+
+	public partial struct ReducerArgs
+	{
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		public ResourceSpawnerAgentArgsStruct ResourceSpawnerAgentArgs;
+	}
+
+	public partial class ReducerCallInfo
+	{
+		public ResourceSpawnerAgentArgsStruct ResourceSpawnerAgentArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.ResourceSpawnerAgent) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "ResourceSpawnerAgent");
+				return Args.ResourceSpawnerAgentArgs;
+			}
 		}
 	}
 }

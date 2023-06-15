@@ -61,10 +61,10 @@ namespace SpacetimeDB
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
-		public delegate void InsertEventHandler(SpawnableEntityComponent insertedValue, ClientApi.Event dbEvent);
-		public delegate void UpdateEventHandler(SpawnableEntityComponent oldValue, SpawnableEntityComponent newValue, ClientApi.Event dbEvent);
-		public delegate void DeleteEventHandler(SpawnableEntityComponent deletedValue, ClientApi.Event dbEvent);
-		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, SpawnableEntityComponent oldValue, SpawnableEntityComponent newValue, ClientApi.Event dbEvent);
+		public delegate void InsertEventHandler(SpawnableEntityComponent insertedValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void UpdateEventHandler(SpawnableEntityComponent oldValue, SpawnableEntityComponent newValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void DeleteEventHandler(SpawnableEntityComponent deletedValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, SpawnableEntityComponent oldValue, SpawnableEntityComponent newValue, SpacetimeDB.ReducerCallInfo dbEvent);
 		public static event InsertEventHandler OnInsert;
 		public static event UpdateEventHandler OnUpdate;
 		public static event DeleteEventHandler OnDelete;
@@ -72,22 +72,22 @@ namespace SpacetimeDB
 
 		public static void OnInsertEvent(object newValue, ClientApi.Event dbEvent)
 		{
-			OnInsert?.Invoke((SpawnableEntityComponent)newValue,dbEvent);
+			OnInsert?.Invoke((SpawnableEntityComponent)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnUpdateEvent(object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnUpdate?.Invoke((SpawnableEntityComponent)oldValue,(SpawnableEntityComponent)newValue,dbEvent);
+			OnUpdate?.Invoke((SpawnableEntityComponent)oldValue,(SpawnableEntityComponent)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnDeleteEvent(object oldValue, ClientApi.Event dbEvent)
 		{
-			OnDelete?.Invoke((SpawnableEntityComponent)oldValue,dbEvent);
+			OnDelete?.Invoke((SpawnableEntityComponent)oldValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnRowUpdateEvent(NetworkManager.TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnRowUpdate?.Invoke(op, (SpawnableEntityComponent)oldValue,(SpawnableEntityComponent)newValue,dbEvent);
+			OnRowUpdate?.Invoke(op, (SpawnableEntityComponent)oldValue,(SpawnableEntityComponent)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 	}
 }

@@ -20,7 +20,7 @@ public class RemotePlayer : MonoBehaviour
         transform.position = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
     }
 
-    private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, ClientApi.Event dbEvent)
+    private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, SpacetimeDB.ReducerCallInfo callInfo)
     {
         // if the update was made to this object
         if (obj.EntityId == EntityId)

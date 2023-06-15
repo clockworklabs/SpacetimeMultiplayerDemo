@@ -26,6 +26,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 6.32, y: 0, z: 7.95}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 609108669033260354}
   m_RootOrder: 0
@@ -57,6 +58,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 609108668202625261}
   m_Father: {fileID: 0}
@@ -74,5 +76,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d28210f2bb583ac48879944e3558c7bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerPrefab: {fileID: 6306767005091426027, guid: 412d89e4212abfc489869de4e240a1db, type: 3}
+  PlayerPrefab: {fileID: 6306767005091426027, guid: 412d89e4212abfc489869de4e240a1db,
+    type: 3}
+  IronPrefab: {fileID: 7685275626274994537, guid: 07b8dfa24111040d1bc21c863dbfd9fb,
+    type: 3}
   preSpawnCamera: {fileID: 0}

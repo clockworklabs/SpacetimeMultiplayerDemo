@@ -31,20 +31,16 @@ namespace SpacetimeDB
 		{
 			if(OnStopPlayerEvent != null)
 			{
-				var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
-				using var ms = new System.IO.MemoryStream();
-				ms.SetLength(bsatnBytes.Length);
-				bsatnBytes.CopyTo(ms.GetBuffer(), 0);
-				ms.Position = 0;
-				using var reader = new System.IO.BinaryReader(ms);
-				var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-				var args_0 = (SpacetimeDB.StdbVector2)(args_0_value);
-				OnStopPlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0);
+				var args = dbEvent.FunctionCall.CallInfo.StopPlayerArgs;
+				OnStopPlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray())
+					,(SpacetimeDB.StdbVector2)args.Location
+				);
 			}
 		}
 		[DeserializeEvent(FunctionName = "stop_player")]
-		public static object[] StopPlayerDeserializeEventArgs(ClientApi.Event dbEvent)
+		public static void StopPlayerDeserializeEventArgs(ClientApi.Event dbEvent)
 		{
+			var args = new StopPlayerArgsStruct();
 			var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 			using var ms = new System.IO.MemoryStream();
 			ms.SetLength(bsatnBytes.Length);
@@ -52,10 +48,33 @@ namespace SpacetimeDB
 			ms.Position = 0;
 			using var reader = new System.IO.BinaryReader(ms);
 			var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-			var args_0 = (SpacetimeDB.StdbVector2)(args_0_value);
-			return new object[] {
-				args_0,
-			};
+			args.Location = (SpacetimeDB.StdbVector2)(args_0_value);
+			var argsGeneric = new ReducerArgs();
+			argsGeneric.StopPlayerArgs = args;
+			dbEvent.FunctionCall.CallInfo = new ReducerCallInfo(ReducerType.StopPlayer, dbEvent.Message, dbEvent.Status, argsGeneric);
+		}
+	}
+
+	public struct StopPlayerArgsStruct
+	{
+		public SpacetimeDB.StdbVector2 Location;
+	}
+
+	public partial struct ReducerArgs
+	{
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		public StopPlayerArgsStruct StopPlayerArgs;
+	}
+
+	public partial class ReducerCallInfo
+	{
+		public StopPlayerArgsStruct StopPlayerArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.StopPlayer) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "StopPlayer");
+				return Args.StopPlayerArgs;
+			}
 		}
 	}
 }

@@ -6,14 +6,14 @@ using SpacetimeDB;
 
 public class GameResource : MonoBehaviour
 {
-	public ulong EntityId;
-
 	[SerializeField] private GameObject _vfx;
 	[SerializeField] private GameObject _deathVfx;
 
 	private bool _flagForDeath;
 
-	public ResourceNodeType Type = ResourceNodeType.Iron;
+    public ulong EntityId;
+
+    public ResourceNodeType Type = ResourceNodeType.Iron;
     public int MaxHealth = 0;
     public int Health = 0;
 

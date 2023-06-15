@@ -11,6 +11,7 @@ public class LocalPlayer : MonoBehaviour
     public string username;
 
     private Vector2 movementVec;
+
     private Vector3? lastUpdateDirection;
 
     // Start is called before the first frame update

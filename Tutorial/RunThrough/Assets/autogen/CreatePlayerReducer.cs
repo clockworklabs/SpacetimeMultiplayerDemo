@@ -31,20 +31,16 @@ namespace SpacetimeDB
 		{
 			if(OnCreatePlayerEvent != null)
 			{
-				var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
-				using var ms = new System.IO.MemoryStream();
-				ms.SetLength(bsatnBytes.Length);
-				bsatnBytes.CopyTo(ms.GetBuffer(), 0);
-				ms.Position = 0;
-				using var reader = new System.IO.BinaryReader(ms);
-				var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String), reader);
-				var args_0 = args_0_value.AsString();
-				OnCreatePlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0);
+				var args = dbEvent.FunctionCall.CallInfo.CreatePlayerArgs;
+				OnCreatePlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray())
+					,(string)args.Username
+				);
 			}
 		}
 		[DeserializeEvent(FunctionName = "create_player")]
-		public static object[] CreatePlayerDeserializeEventArgs(ClientApi.Event dbEvent)
+		public static void CreatePlayerDeserializeEventArgs(ClientApi.Event dbEvent)
 		{
+			var args = new CreatePlayerArgsStruct();
 			var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 			using var ms = new System.IO.MemoryStream();
 			ms.SetLength(bsatnBytes.Length);
@@ -52,10 +48,33 @@ namespace SpacetimeDB
 			ms.Position = 0;
 			using var reader = new System.IO.BinaryReader(ms);
 			var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String), reader);
-			var args_0 = args_0_value.AsString();
-			return new object[] {
-				args_0,
-			};
+			args.Username = args_0_value.AsString();
+			var argsGeneric = new ReducerArgs();
+			argsGeneric.CreatePlayerArgs = args;
+			dbEvent.FunctionCall.CallInfo = new ReducerCallInfo(ReducerType.CreatePlayer, dbEvent.Message, dbEvent.Status, argsGeneric);
+		}
+	}
+
+	public struct CreatePlayerArgsStruct
+	{
+		public string Username;
+	}
+
+	public partial struct ReducerArgs
+	{
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		public CreatePlayerArgsStruct CreatePlayerArgs;
+	}
+
+	public partial class ReducerCallInfo
+	{
+		public CreatePlayerArgsStruct CreatePlayerArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.CreatePlayer) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "CreatePlayer");
+				return Args.CreatePlayerArgs;
+			}
 		}
 	}
 }

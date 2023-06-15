@@ -41,7 +41,7 @@ namespace SpacetimeDB
             public string subscriptionQuery;
         }
 
-        private struct DbEvent
+        public struct DbEvent
         {
             public ClientCache.TableCache table;
             public TableOp op;
@@ -51,7 +51,7 @@ namespace SpacetimeDB
             public byte[] insertedPk;
         }
 
-        public delegate void RowUpdate(string tableName, TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent);
+        public delegate void RowUpdate(string tableName, TableOp op, object oldValue, object newValue, SpacetimeDB.ReducerCallInfo dbEvent);
 
         /// <summary>
         /// Called when a connection is established to a spacetimedb instance.
@@ -79,9 +79,9 @@ namespace SpacetimeDB
         public event RowUpdate onRowUpdate;
 
         /// <summary>
-        /// Callback is invoked after a transaction or subscription update is received and all updates have been applied.
+        /// Invoked when the local client cache is updated as a result of changes made to the subscription queries.
         /// </summary>
-        public event Action onTransactionComplete;
+        public event Action onSubscriptionUpdate;
 
         /// <summary>
         /// Called when we receive an identity from the server
@@ -96,8 +96,8 @@ namespace SpacetimeDB
         private SpacetimeDB.WebSocket webSocket;
         private bool connectionClosed;
         public static ClientCache clientDB;
-        public static Dictionary<string, MethodInfo> reducerEventCache = new Dictionary<string, MethodInfo>();
-        public static Dictionary<string, MethodInfo> deserializeEventCache = new Dictionary<string, MethodInfo>();
+        public static Dictionary<string, Action<ClientApi.Event>> reducerEventCache = new Dictionary<string, Action<ClientApi.Event>>();
+        public static Dictionary<string, Action<ClientApi.Event>> deserializeEventCache = new Dictionary<string, Action<ClientApi.Event>>();
 
         private Thread messageProcessThread;
 
@@ -155,18 +155,18 @@ namespace SpacetimeDB
             }
 
             // cache all our reducer events by their function name 
-            foreach (var methodInfo in typeof(Bitcraft.Reducer).GetMethods())
+            foreach (var methodInfo in typeof(SpacetimeDB.Reducer).GetMethods())
             {
                 if (methodInfo.GetCustomAttribute<ReducerEvent>() is
                     { } reducerEvent)
                 {
-                    reducerEventCache.Add(reducerEvent.FunctionName, methodInfo);
+                    reducerEventCache.Add(reducerEvent.FunctionName, (Action<ClientApi.Event>)methodInfo.CreateDelegate(typeof(Action<ClientApi.Event>)));
                 }
 
                 if (methodInfo.GetCustomAttribute<DeserializeEvent>() is
                     { } deserializeEvent)
                 {
-                    deserializeEventCache.Add(deserializeEvent.FunctionName, methodInfo);
+                    deserializeEventCache.Add(deserializeEvent.FunctionName, (Action<ClientApi.Event>)methodInfo.CreateDelegate(typeof(Action<ClientApi.Event>)));
                 }
             }
 
@@ -180,7 +180,7 @@ namespace SpacetimeDB
             public IList<DbEvent> events;
         }
 
-        private readonly BlockingCollection<byte[]> _messageQueue = new(new ConcurrentQueue<byte[]>());
+        private readonly BlockingCollection<byte[]> _messageQueue = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>());
         private ProcessedMessage? nextMessage;
 
         void ProcessMessages()
@@ -367,6 +367,13 @@ namespace SpacetimeDB
                     }
                 }
 
+
+                if (message.TypeCase == Message.TypeOneofCase.TransactionUpdate && 
+                    deserializeEventCache.TryGetValue(message.TransactionUpdate.Event.FunctionCall.Reducer, out var deserializer))
+                {
+                    deserializer.Invoke(message.TransactionUpdate.Event);
+                }
+
                 return (message, dbEvents);
             }
         }
@@ -437,7 +444,7 @@ namespace SpacetimeDB
                                 throw new ArgumentOutOfRangeException();
                         }
                     }
-
+                    
                     // Send out events
                     var eventCount = events.Count;
                     for (var i = 0; i < eventCount; i++)
@@ -560,22 +567,21 @@ namespace SpacetimeDB
                                 throw new ArgumentOutOfRangeException();
                         }
 
-                        onRowUpdate?.Invoke(tableName, tableOp, oldValue, newValue, message.Event);
+                        onRowUpdate?.Invoke(tableName, tableOp, oldValue, newValue, message.Event?.FunctionCall.CallInfo);
                     }
 
                     switch (message.TypeCase)
                     {
                         case Message.TypeOneofCase.SubscriptionUpdate:
-                            onTransactionComplete?.Invoke();
+                            onSubscriptionUpdate?.Invoke();
                             break;
                         case Message.TypeOneofCase.TransactionUpdate:
-                            onTransactionComplete?.Invoke();
                             onEvent?.Invoke(message.TransactionUpdate.Event);
 
                             var functionName = message.TransactionUpdate.Event.FunctionCall.Reducer;
                             if (reducerEventCache.TryGetValue(functionName, out var value))
                             {
-                                value.Invoke(null, new object[] { message.TransactionUpdate.Event });
+                                value.Invoke(message.TransactionUpdate.Event);
                             }
 
                             break;

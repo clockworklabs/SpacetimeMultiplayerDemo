@@ -52,11 +52,10 @@ public class PlayerAnimator : MonoBehaviour
             {
                 _tools[i].SetActive(((int)resourceType) == i);
             }
-            _target = res;
         }
-	}
+    }
 
-	public void OnStartAction()
+    public void OnStartAction()
     {
         if (_target != null)
         {

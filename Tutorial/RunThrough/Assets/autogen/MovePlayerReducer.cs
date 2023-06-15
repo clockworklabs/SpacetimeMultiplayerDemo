@@ -31,22 +31,17 @@ namespace SpacetimeDB
 		{
 			if(OnMovePlayerEvent != null)
 			{
-				var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
-				using var ms = new System.IO.MemoryStream();
-				ms.SetLength(bsatnBytes.Length);
-				bsatnBytes.CopyTo(ms.GetBuffer(), 0);
-				ms.Position = 0;
-				using var reader = new System.IO.BinaryReader(ms);
-				var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-				var args_0 = (SpacetimeDB.StdbVector2)(args_0_value);
-				var args_1_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-				var args_1 = (SpacetimeDB.StdbVector2)(args_1_value);
-				OnMovePlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0, args_1);
+				var args = dbEvent.FunctionCall.CallInfo.MovePlayerArgs;
+				OnMovePlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray())
+					,(SpacetimeDB.StdbVector2)args.Start
+					,(SpacetimeDB.StdbVector2)args.Direction
+				);
 			}
 		}
 		[DeserializeEvent(FunctionName = "move_player")]
-		public static object[] MovePlayerDeserializeEventArgs(ClientApi.Event dbEvent)
+		public static void MovePlayerDeserializeEventArgs(ClientApi.Event dbEvent)
 		{
+			var args = new MovePlayerArgsStruct();
 			var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 			using var ms = new System.IO.MemoryStream();
 			ms.SetLength(bsatnBytes.Length);
@@ -54,13 +49,36 @@ namespace SpacetimeDB
 			ms.Position = 0;
 			using var reader = new System.IO.BinaryReader(ms);
 			var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-			var args_0 = (SpacetimeDB.StdbVector2)(args_0_value);
+			args.Start = (SpacetimeDB.StdbVector2)(args_0_value);
 			var args_1_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.StdbVector2.GetAlgebraicType(), reader);
-			var args_1 = (SpacetimeDB.StdbVector2)(args_1_value);
-			return new object[] {
-				args_0,
-				args_1,
-			};
+			args.Direction = (SpacetimeDB.StdbVector2)(args_1_value);
+			var argsGeneric = new ReducerArgs();
+			argsGeneric.MovePlayerArgs = args;
+			dbEvent.FunctionCall.CallInfo = new ReducerCallInfo(ReducerType.MovePlayer, dbEvent.Message, dbEvent.Status, argsGeneric);
+		}
+	}
+
+	public struct MovePlayerArgsStruct
+	{
+		public SpacetimeDB.StdbVector2 Start;
+		public SpacetimeDB.StdbVector2 Direction;
+	}
+
+	public partial struct ReducerArgs
+	{
+		[System.Runtime.InteropServices.FieldOffset(0)]
+		public MovePlayerArgsStruct MovePlayerArgs;
+	}
+
+	public partial class ReducerCallInfo
+	{
+		public MovePlayerArgsStruct MovePlayerArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.MovePlayer) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "MovePlayer");
+				return Args.MovePlayerArgs;
+			}
 		}
 	}
 }

@@ -109,10 +109,10 @@ namespace SpacetimeDB
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
-		public delegate void InsertEventHandler(Config insertedValue, ClientApi.Event dbEvent);
-		public delegate void UpdateEventHandler(Config oldValue, Config newValue, ClientApi.Event dbEvent);
-		public delegate void DeleteEventHandler(Config deletedValue, ClientApi.Event dbEvent);
-		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, Config oldValue, Config newValue, ClientApi.Event dbEvent);
+		public delegate void InsertEventHandler(Config insertedValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void UpdateEventHandler(Config oldValue, Config newValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void DeleteEventHandler(Config deletedValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, Config oldValue, Config newValue, SpacetimeDB.ReducerCallInfo dbEvent);
 		public static event InsertEventHandler OnInsert;
 		public static event UpdateEventHandler OnUpdate;
 		public static event DeleteEventHandler OnDelete;
@@ -120,22 +120,22 @@ namespace SpacetimeDB
 
 		public static void OnInsertEvent(object newValue, ClientApi.Event dbEvent)
 		{
-			OnInsert?.Invoke((Config)newValue,dbEvent);
+			OnInsert?.Invoke((Config)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnUpdateEvent(object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnUpdate?.Invoke((Config)oldValue,(Config)newValue,dbEvent);
+			OnUpdate?.Invoke((Config)oldValue,(Config)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnDeleteEvent(object oldValue, ClientApi.Event dbEvent)
 		{
-			OnDelete?.Invoke((Config)oldValue,dbEvent);
+			OnDelete?.Invoke((Config)oldValue,dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnRowUpdateEvent(NetworkManager.TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnRowUpdate?.Invoke(op, (Config)oldValue,(Config)newValue,dbEvent);
+			OnRowUpdate?.Invoke(op, (Config)oldValue,(Config)newValue,dbEvent?.FunctionCall.CallInfo);
 		}
 	}
 }
