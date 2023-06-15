@@ -9,13 +9,13 @@ namespace SpacetimeDB
 {
 	public static partial class Reducer
 	{
-		public static event Action<ClientApi.Event.Types.Status, Identity, string> OnCreatePlayerEvent;
+		public static event Action<ClientApi.Event.Types.Status, Identity, string> OnChatMessageEvent;
 
-		public static void CreatePlayer(string username)
+		public static void ChatMessage(string message)
 		{
-			var _argArray = new object[] {username};
+			var _argArray = new object[] {message};
 			var _message = new NetworkManager.ReducerCallRequest {
-				fn = "create_player",
+				fn = "chat_message",
 				args = _argArray,
 			};
 			Newtonsoft.Json.JsonSerializerSettings _settings = new Newtonsoft.Json.JsonSerializerSettings
@@ -26,10 +26,10 @@ namespace SpacetimeDB
 			NetworkManager.instance.InternalCallReducer(Newtonsoft.Json.JsonConvert.SerializeObject(_message, _settings));
 		}
 
-		[ReducerEvent(FunctionName = "create_player")]
-		public static void OnCreatePlayer(ClientApi.Event dbEvent)
+		[ReducerEvent(FunctionName = "chat_message")]
+		public static void OnChatMessage(ClientApi.Event dbEvent)
 		{
-			if(OnCreatePlayerEvent != null)
+			if(OnChatMessageEvent != null)
 			{
 				var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 				using var ms = new System.IO.MemoryStream();
@@ -39,11 +39,11 @@ namespace SpacetimeDB
 				using var reader = new System.IO.BinaryReader(ms);
 				var args_0_value = SpacetimeDB.SATS.AlgebraicValue.Deserialize(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String), reader);
 				var args_0 = args_0_value.AsString();
-				OnCreatePlayerEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0);
+				OnChatMessageEvent(dbEvent.Status, Identity.From(dbEvent.CallerIdentity.ToByteArray()), args_0);
 			}
 		}
-		[DeserializeEvent(FunctionName = "create_player")]
-		public static object[] CreatePlayerDeserializeEventArgs(ClientApi.Event dbEvent)
+		[DeserializeEvent(FunctionName = "chat_message")]
+		public static object[] ChatMessageDeserializeEventArgs(ClientApi.Event dbEvent)
 		{
 			var bsatnBytes = dbEvent.FunctionCall.ArgBytes;
 			using var ms = new System.IO.MemoryStream();

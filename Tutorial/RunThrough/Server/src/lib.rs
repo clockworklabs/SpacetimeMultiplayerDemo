@@ -103,6 +103,17 @@ pub struct StaticLocationComponent {
     pub rotation: f32,
 }
 
+#[spacetimedb(table)]
+pub struct ChatMessage {
+    #[unique]
+    #[autoinc]
+    pub chat_entity_id: u64,
+
+    pub source_entity_id: u64,
+    pub chat_text: String,
+    pub timestamp: Timestamp,
+}
+
 #[spacetimedb(init)]
 pub fn init() {
     // Called when the module is initially published
@@ -118,7 +129,7 @@ pub fn init() {
     .expect("Failed to insert config.");
 
     // Start our resource spawner repeating reducer
-    spacetimedb::schedule!("1000ms", resource_spawner_agent(_, Timestamp::now()));
+    //spacetimedb::schedule!("1000ms", resource_spawner_agent(_, Timestamp::now()));
 }
 
 #[spacetimedb(connect)]
@@ -293,4 +304,25 @@ pub fn resource_spawner_agent(_ctx: ReducerContext, _prev_time: Timestamp) -> Re
     );
 
     Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn chat_message(ctx: ReducerContext, message: String) -> Result<(), String> {
+    // Add a chat entry to the ChatMessage table
+
+    let owner_id = ctx.sender;
+    if let Some(player) = PlayerComponent::filter_by_owner_id(&owner_id) {
+        // Add an entry to the Chat table
+        ChatMessage::insert(ChatMessage {
+            chat_entity_id: 0,
+            source_entity_id: player.entity_id,
+            chat_text: message,
+            timestamp: ctx.timestamp,
+        })
+        .unwrap();
+
+        return Ok(());
+    }
+
+    Err("Player not found".into())
 }

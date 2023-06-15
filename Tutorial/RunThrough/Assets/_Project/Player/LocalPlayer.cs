@@ -8,6 +8,8 @@ public class LocalPlayer : MonoBehaviour
     [SerializeField] private GameObject cameraRig;
 
     public static LocalPlayer instance;
+
+    public ulong EntityId;
     public string username;
 
     private Vector2 movementVec;

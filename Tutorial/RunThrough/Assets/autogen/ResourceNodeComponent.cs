@@ -71,10 +71,10 @@ namespace SpacetimeDB
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
-		public delegate void InsertEventHandler(ResourceNodeComponent insertedValue, SpacetimeDB.ReducerCallInfo dbEvent);
-		public delegate void UpdateEventHandler(ResourceNodeComponent oldValue, ResourceNodeComponent newValue, SpacetimeDB.ReducerCallInfo dbEvent);
-		public delegate void DeleteEventHandler(ResourceNodeComponent deletedValue, SpacetimeDB.ReducerCallInfo dbEvent);
-		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, ResourceNodeComponent oldValue, ResourceNodeComponent newValue, SpacetimeDB.ReducerCallInfo dbEvent);
+		public delegate void InsertEventHandler(ResourceNodeComponent insertedValue, ClientApi.Event dbEvent);
+		public delegate void UpdateEventHandler(ResourceNodeComponent oldValue, ResourceNodeComponent newValue, ClientApi.Event dbEvent);
+		public delegate void DeleteEventHandler(ResourceNodeComponent deletedValue, ClientApi.Event dbEvent);
+		public delegate void RowUpdateEventHandler(NetworkManager.TableOp op, ResourceNodeComponent oldValue, ResourceNodeComponent newValue, ClientApi.Event dbEvent);
 		public static event InsertEventHandler OnInsert;
 		public static event UpdateEventHandler OnUpdate;
 		public static event DeleteEventHandler OnDelete;
@@ -82,22 +82,22 @@ namespace SpacetimeDB
 
 		public static void OnInsertEvent(object newValue, ClientApi.Event dbEvent)
 		{
-			OnInsert?.Invoke((ResourceNodeComponent)newValue,dbEvent?.FunctionCall.CallInfo);
+			OnInsert?.Invoke((ResourceNodeComponent)newValue,dbEvent);
 		}
 
 		public static void OnUpdateEvent(object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnUpdate?.Invoke((ResourceNodeComponent)oldValue,(ResourceNodeComponent)newValue,dbEvent?.FunctionCall.CallInfo);
+			OnUpdate?.Invoke((ResourceNodeComponent)oldValue,(ResourceNodeComponent)newValue,dbEvent);
 		}
 
 		public static void OnDeleteEvent(object oldValue, ClientApi.Event dbEvent)
 		{
-			OnDelete?.Invoke((ResourceNodeComponent)oldValue,dbEvent?.FunctionCall.CallInfo);
+			OnDelete?.Invoke((ResourceNodeComponent)oldValue,dbEvent);
 		}
 
 		public static void OnRowUpdateEvent(NetworkManager.TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnRowUpdate?.Invoke(op, (ResourceNodeComponent)oldValue,(ResourceNodeComponent)newValue,dbEvent?.FunctionCall.CallInfo);
+			OnRowUpdate?.Invoke(op, (ResourceNodeComponent)oldValue,(ResourceNodeComponent)newValue,dbEvent);
 		}
 	}
 }

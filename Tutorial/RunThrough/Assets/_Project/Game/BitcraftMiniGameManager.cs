@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SpacetimeDB;
+using System.Linq;
 
 public class BitcraftMiniGameManager : MonoBehaviour
 {
@@ -40,6 +41,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
                 "SELECT * FROM SpawnableEntityComponent",
                 "SELECT * FROM PlayerComponent",
                 "SELECT * FROM MobileEntityComponent",
+                "SELECT * FROM ChatMessage",
                 // Our new tables for part 2 of the tutorial
                 "SELECT * FROM ResourceNodeComponent",
                 "SELECT * FROM StaticLocationComponent"
@@ -69,15 +71,18 @@ public class BitcraftMiniGameManager : MonoBehaviour
         NetworkManager.instance.onSubscriptionUpdate += OnSubscriptionUpdate;
 
         PlayerComponent.OnInsert += PlayerComponent_OnInsert;
+        PlayerComponent.OnUpdate += PlayerComponent_OnUpdate;
 
         ResourceNodeComponent.OnInsert += ResourceNodeComponent_OnInsert;
+
+        Reducer.OnChatMessageEvent += OnChatMessageEvent;
 
         // now that we’ve registered all our callbacks, lets connect to
         // spacetimedb
         NetworkManager.instance.Connect(hostName, moduleAddress, sslEnabled);
     }
 
-    private void ResourceNodeComponent_OnInsert(ResourceNodeComponent insertedValue, ReducerCallInfo callInfo)
+    private void ResourceNodeComponent_OnInsert(ResourceNodeComponent insertedValue, ClientApi.Event dbEvent)
     {
         switch (insertedValue.ResourceType)
         {
@@ -90,7 +95,17 @@ public class BitcraftMiniGameManager : MonoBehaviour
         }
     }
 
-    private void PlayerComponent_OnInsert(PlayerComponent obj, ReducerCallInfo callInfo)
+    private void PlayerComponent_OnUpdate(PlayerComponent oldValue, PlayerComponent newValue, ClientApi.Event dbEvent)
+    {
+        OnPlayerComponentChanged(newValue);
+    }
+
+    private void PlayerComponent_OnInsert(PlayerComponent obj, ClientApi.Event dbEvent)
+    {
+        OnPlayerComponentChanged(obj);
+    }
+
+    private void OnPlayerComponentChanged(PlayerComponent obj)
     {
         // if the identity of the PlayerComponent matches our user identity then this is the local player
         if (Identity.From(obj.OwnerId) == local_identity)
@@ -104,11 +119,33 @@ public class BitcraftMiniGameManager : MonoBehaviour
         // otherwise this is a remote player
         else
         {
-            // spawn the player object and attach the RemotePlayer component
-            var remotePlayer = Instantiate(PlayerPrefab);
-            remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+            // if the remote player is logged in, spawn it 
+            if (obj.LoggedIn)
+            {
+                // spawn the player object and attach the RemotePlayer component
+                var remotePlayer = Instantiate(PlayerPrefab);
+                remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+            }
+            // otherwise we need to look for the remote player object in the scene (if it exists) and destroy it
+            else
+            {
+                var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == obj.EntityId);
+                if (remotePlayer != null)
+                {
+                    Destroy(remotePlayer.gameObject);
+                }
+            }
         }
     }
+
+    private void OnChatMessageEvent(ClientApi.Event.Types.Status status, Identity caller, string message)
+    {
+        var player = PlayerComponent.FilterByOwnerId(caller.Bytes);
+        if (player != null)
+        {
+            UIChatController.instance.OnChatMessageReceived(player.Username + ": " + message);
+        }
+    }   
 
     void OnSubscriptionUpdate()
     {

@@ -41,7 +41,7 @@ namespace SpacetimeDB
             public string subscriptionQuery;
         }
 
-        public struct DbEvent
+        private struct DbEvent
         {
             public ClientCache.TableCache table;
             public TableOp op;
@@ -51,7 +51,7 @@ namespace SpacetimeDB
             public byte[] insertedPk;
         }
 
-        public delegate void RowUpdate(string tableName, TableOp op, object oldValue, object newValue, SpacetimeDB.ReducerCallInfo dbEvent);
+        public delegate void RowUpdate(string tableName, TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent);
 
         /// <summary>
         /// Called when a connection is established to a spacetimedb instance.
@@ -96,8 +96,8 @@ namespace SpacetimeDB
         private SpacetimeDB.WebSocket webSocket;
         private bool connectionClosed;
         public static ClientCache clientDB;
-        public static Dictionary<string, Action<ClientApi.Event>> reducerEventCache = new Dictionary<string, Action<ClientApi.Event>>();
-        public static Dictionary<string, Action<ClientApi.Event>> deserializeEventCache = new Dictionary<string, Action<ClientApi.Event>>();
+        public static Dictionary<string, MethodInfo> reducerEventCache = new Dictionary<string, MethodInfo>();
+        public static Dictionary<string, MethodInfo> deserializeEventCache = new Dictionary<string, MethodInfo>();
 
         private Thread messageProcessThread;
 
@@ -160,13 +160,13 @@ namespace SpacetimeDB
                 if (methodInfo.GetCustomAttribute<ReducerEvent>() is
                     { } reducerEvent)
                 {
-                    reducerEventCache.Add(reducerEvent.FunctionName, (Action<ClientApi.Event>)methodInfo.CreateDelegate(typeof(Action<ClientApi.Event>)));
+                    reducerEventCache.Add(reducerEvent.FunctionName, methodInfo);
                 }
 
                 if (methodInfo.GetCustomAttribute<DeserializeEvent>() is
                     { } deserializeEvent)
                 {
-                    deserializeEventCache.Add(deserializeEvent.FunctionName, (Action<ClientApi.Event>)methodInfo.CreateDelegate(typeof(Action<ClientApi.Event>)));
+                    deserializeEventCache.Add(deserializeEvent.FunctionName, methodInfo);
                 }
             }
 
@@ -367,13 +367,6 @@ namespace SpacetimeDB
                     }
                 }
 
-
-                if (message.TypeCase == Message.TypeOneofCase.TransactionUpdate && 
-                    deserializeEventCache.TryGetValue(message.TransactionUpdate.Event.FunctionCall.Reducer, out var deserializer))
-                {
-                    deserializer.Invoke(message.TransactionUpdate.Event);
-                }
-
                 return (message, dbEvents);
             }
         }
@@ -444,7 +437,7 @@ namespace SpacetimeDB
                                 throw new ArgumentOutOfRangeException();
                         }
                     }
-                    
+
                     // Send out events
                     var eventCount = events.Count;
                     for (var i = 0; i < eventCount; i++)
@@ -567,7 +560,7 @@ namespace SpacetimeDB
                                 throw new ArgumentOutOfRangeException();
                         }
 
-                        onRowUpdate?.Invoke(tableName, tableOp, oldValue, newValue, message.Event?.FunctionCall.CallInfo);
+                        onRowUpdate?.Invoke(tableName, tableOp, oldValue, newValue, message.Event);
                     }
 
                     switch (message.TypeCase)
@@ -581,7 +574,7 @@ namespace SpacetimeDB
                             var functionName = message.TransactionUpdate.Event.FunctionCall.Reducer;
                             if (reducerEventCache.TryGetValue(functionName, out var value))
                             {
-                                value.Invoke(message.TransactionUpdate.Event);
+                                value.Invoke(null, new object[] { message.TransactionUpdate.Event });
                             }
 
                             break;

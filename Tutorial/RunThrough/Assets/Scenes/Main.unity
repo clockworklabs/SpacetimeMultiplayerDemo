@@ -10474,7 +10474,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: hostName
-      value: localhost:3000
+      value: 127.0.0.1:3000
       objectReference: {fileID: 0}
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: sslEnabled
@@ -10482,7 +10482,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: moduleAddress
-      value: bitcraftmini
+      value: 93dda09db9a56d8fa6c024d843e805d8
       objectReference: {fileID: 0}
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: preSpawnCamera

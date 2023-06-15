@@ -6,6 +6,7 @@ using SpacetimeDB;
 public class RemotePlayer : MonoBehaviour
 {
     public ulong EntityId;
+    public string Username;
 
     void Start()
     {
@@ -20,7 +21,7 @@ public class RemotePlayer : MonoBehaviour
         transform.position = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
     }
 
-    private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, SpacetimeDB.ReducerCallInfo callInfo)
+    private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, ClientApi.Event dbEvent)
     {
         // if the update was made to this object
         if (obj.EntityId == EntityId)

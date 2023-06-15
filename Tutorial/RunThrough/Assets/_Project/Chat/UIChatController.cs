@@ -1,3 +1,4 @@
+using SpacetimeDB;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,6 +83,7 @@ public class UIChatController : Singleton<UIChatController>
     
     public void OnChatButtonPress()
     {
+        Reducer.ChatMessage(_chatInput.text);
         _chatInput.text = "";
     }
 }
