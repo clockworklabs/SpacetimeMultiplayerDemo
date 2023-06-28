@@ -52,6 +52,7 @@ public class PlayerAnimator : MonoBehaviour
             {
                 _tools[i].SetActive(((int)resourceType) == i);
             }
+            _target = res;
         }
     }
 
