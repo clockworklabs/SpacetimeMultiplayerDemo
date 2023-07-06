@@ -24,4 +24,16 @@ public static class MathUtil
 
         return val >= 0 ? Mathf.FloorToInt(val) : Mathf.FloorToInt(val + 1);
     }
+
+    public static float GetTerrainHeight(Vector3 position)
+    {
+        // Raycast down to get the terrain height
+        RaycastHit hit;
+        if (Physics.Raycast(position + Vector3.up * 1000.0f, Vector3.down, out hit, 10000.0f, LayerMask.GetMask("Default")))
+        {
+            return hit.point.y;
+        }
+
+        return 0.0f;
+    }
 }
