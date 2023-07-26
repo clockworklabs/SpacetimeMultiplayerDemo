@@ -11,6 +11,7 @@ namespace SpacetimeDB
 		[Newtonsoft.Json.JsonProperty("entity_id")]
 		public ulong EntityId;
 		[Newtonsoft.Json.JsonProperty("resource_type")]
+		[SpacetimeDB.Enum]
 		public SpacetimeDB.ResourceNodeType ResourceType;
 
 		private static Dictionary<ulong, ResourceNodeComponent> EntityId_Index = new Dictionary<ulong, ResourceNodeComponent>(16);

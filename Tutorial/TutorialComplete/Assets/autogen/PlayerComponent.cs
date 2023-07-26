@@ -11,15 +11,14 @@ namespace SpacetimeDB
 		[Newtonsoft.Json.JsonProperty("entity_id")]
 		public ulong EntityId;
 		[Newtonsoft.Json.JsonProperty("owner_id")]
-		[Newtonsoft.Json.JsonConverter(typeof(SpacetimeDB.ByteArrayConverter))]
-		public byte[] OwnerId;
+		public SpacetimeDB.Identity OwnerId;
 		[Newtonsoft.Json.JsonProperty("username")]
 		public string Username;
 		[Newtonsoft.Json.JsonProperty("logged_in")]
 		public bool LoggedIn;
 
 		private static Dictionary<ulong, PlayerComponent> EntityId_Index = new Dictionary<ulong, PlayerComponent>(16);
-		private static Dictionary<byte[], PlayerComponent> OwnerId_Index = new Dictionary<byte[], PlayerComponent>(16, new SpacetimeDB.ByteArrayComparer());
+		private static Dictionary<SpacetimeDB.Identity, PlayerComponent> OwnerId_Index = new Dictionary<SpacetimeDB.Identity, PlayerComponent>(16);
 
 		private static void InternalOnValueInserted(object insertedValue)
 		{
@@ -40,7 +39,10 @@ namespace SpacetimeDB
 			return SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
 			{
 				new SpacetimeDB.SATS.ProductTypeElement("entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
-				new SpacetimeDB.SATS.ProductTypeElement("owner_id", SpacetimeDB.SATS.AlgebraicType.CreateArrayType(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U8))),
+				new SpacetimeDB.SATS.ProductTypeElement("owner_id", SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
+			{
+				new SpacetimeDB.SATS.ProductTypeElement("__identity_bytes", SpacetimeDB.SATS.AlgebraicType.CreateArrayType(SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U8))),
+			})),
 				new SpacetimeDB.SATS.ProductTypeElement("username", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String)),
 				new SpacetimeDB.SATS.ProductTypeElement("logged_in", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.Bool)),
 			});
@@ -55,7 +57,7 @@ namespace SpacetimeDB
 			return new PlayerComponent
 			{
 				EntityId = productValue.elements[0].AsU64(),
-				OwnerId = productValue.elements[1].AsBytes(),
+				OwnerId = SpacetimeDB.Identity.From(productValue.elements[1].AsProductValue().elements[0].AsBytes()),
 				Username = productValue.elements[2].AsString(),
 				LoggedIn = productValue.elements[3].AsBool(),
 			};
@@ -78,7 +80,7 @@ namespace SpacetimeDB
 			return r;
 		}
 
-		public static PlayerComponent FilterByOwnerId(byte[] value)
+		public static PlayerComponent FilterByOwnerId(SpacetimeDB.Identity value)
 		{
 			OwnerId_Index.TryGetValue(value, out var r);
 			return r;

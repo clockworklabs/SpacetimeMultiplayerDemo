@@ -88,7 +88,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
         // If we don't have any data for our player, then we are creating a 
         // new one. Let's show the username dialog, which will then call the
         // create player reducer
-        var player = PlayerComponent.FilterByOwnerId(local_identity.Bytes);
+        var player = PlayerComponent.FilterByOwnerId(local_identity);
         if (player == null)
         {
             // Show username selection
@@ -114,7 +114,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
 
     private void OnChatMessageEvent(ReducerEvent dbEvent, string message)
     {
-        var player = PlayerComponent.FilterByOwnerId(dbEvent.Identity.Bytes);
+        var player = PlayerComponent.FilterByOwnerId(dbEvent.Identity);
         if (player != null)
         {
             UIChatController.instance.OnChatMessageReceived(player.Username + ": " + message);
@@ -124,7 +124,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
     private void OnPlayerComponentChanged(PlayerComponent obj)
     {
         // if the identity of the PlayerComponent matches our user identity then this is the local player
-        if (Identity.From(obj.OwnerId) == local_identity)
+        if (obj.OwnerId == local_identity)
         {
             // Get the MobileEntityComponent for this object and update the position to match the server
             MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(obj.EntityId);
