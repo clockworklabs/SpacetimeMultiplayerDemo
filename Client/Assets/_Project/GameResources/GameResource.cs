@@ -8,23 +8,46 @@ public class GameResource : MonoBehaviour
 {
     public ulong EntityId;
 
-    public ResourceNodeType Type = ResourceNodeType.Iron;
+    public ResourceNodeType Type => ResourceNodeComponent.FilterByEntityId(EntityId)?.ResourceType ?? ResourceNodeType.Iron;
+    public int MaxHealth => ResourceNodeComponent.FilterByEntityId(EntityId)?.MaxHealth ?? 0;
+    public int Health => ResourceNodeComponent.FilterByEntityId(EntityId)?.Health ?? 0;
     
 	[SerializeField] private GameObject _vfx;
 	[SerializeField] private GameObject _deathVfx;
 
 	private bool _flagForDeath;
 
-    public int MaxHealth = 0;
-    public int Health = 0;
+    public void Init(ResourceNodeComponent resourceNode)
+	{		
+		EntityId = resourceNode.EntityId;
 
-    public void Init()
-	{
-	}
+        ResourceNodeComponent.OnDelete += OnDelete;
+        ResourceNodeComponent.OnUpdate += OnUpdate;
+    }
 
 	private void OnDestroy()
 	{
+        ResourceNodeComponent.OnDelete -= OnDelete;
+        ResourceNodeComponent.OnUpdate -= OnUpdate;
+    }
+
+	private void OnDelete(ResourceNodeComponent oldValue, ReducerEvent reducerEvent)
+	{
+		Debug.Log("OnDelete ResourceNodeComponent " + _flagForDeath);
 	}
+
+	public void OnUpdate(ResourceNodeComponent oldValue, ResourceNodeComponent newValue, ReducerEvent reducerEvent)
+	{
+        if (oldValue.EntityId == EntityId)
+        {
+            Debug.Log($"OnResourceUpdated {EntityId} : {Health}");
+            if (Health == 1)
+            {
+                // this means the resource will be destroyed on the next strike
+                _flagForDeath = true;
+            }
+        }
+    }
 
 	public void Impact(Vector3 actorPosition)
 	{

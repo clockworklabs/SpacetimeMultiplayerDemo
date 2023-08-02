@@ -7,6 +7,8 @@ public class LocalPlayer : MonoBehaviour
 {
     [SerializeField] private GameObject cameraRig;
 
+    public ulong EntityId { get; set; }
+
     public static LocalPlayer instance;
     public string username;
 
@@ -18,6 +20,7 @@ public class LocalPlayer : MonoBehaviour
         instance = this;
         cameraRig.SetActive(true);
         PlayerMovementController.Local = GetComponent<PlayerMovementController>();
+        PlayerInventoryController.Local = GetComponent<PlayerInventoryController>();
         PlayerAnimator.Local = GetComponentInChildren<PlayerAnimator>(true);        
     }
 

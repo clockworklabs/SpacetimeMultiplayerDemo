@@ -70,6 +70,16 @@ namespace SpacetimeDB.Types
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
 		}
 
+		public static SpacetimeDB.SATS.AlgebraicValue GetPrimaryKeyValue(SpacetimeDB.SATS.AlgebraicValue v)
+		{
+			return v.AsProductValue().elements[0];
+		}
+
+		public static SpacetimeDB.SATS.AlgebraicType GetPrimaryKeyType(SpacetimeDB.SATS.AlgebraicType t)
+		{
+			return t.product.elements[0].algebraicType;
+		}
+
 		public delegate void InsertEventHandler(SpawnableEntityComponent insertedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
 		public delegate void UpdateEventHandler(SpawnableEntityComponent oldValue, SpawnableEntityComponent newValue, SpacetimeDB.Types.ReducerEvent dbEvent);
 		public delegate void DeleteEventHandler(SpawnableEntityComponent deletedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
