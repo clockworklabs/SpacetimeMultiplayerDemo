@@ -17,6 +17,8 @@ namespace SpacetimeDB.Types
 		public uint MapExtents;
 		[Newtonsoft.Json.JsonProperty("num_resource_nodes")]
 		public uint NumResourceNodes;
+		[Newtonsoft.Json.JsonProperty("max_player_inventory_slots")]
+		public uint MaxPlayerInventorySlots;
 
 		private static Dictionary<uint, Config> Version_Index = new Dictionary<uint, Config>(16);
 
@@ -40,6 +42,7 @@ namespace SpacetimeDB.Types
 				new SpacetimeDB.SATS.ProductTypeElement("message_of_the_day", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.String)),
 				new SpacetimeDB.SATS.ProductTypeElement("map_extents", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U32)),
 				new SpacetimeDB.SATS.ProductTypeElement("num_resource_nodes", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U32)),
+				new SpacetimeDB.SATS.ProductTypeElement("max_player_inventory_slots", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U32)),
 			});
 		}
 
@@ -55,6 +58,7 @@ namespace SpacetimeDB.Types
 				MessageOfTheDay = productValue.elements[1].AsString(),
 				MapExtents = productValue.elements[2].AsU32(),
 				NumResourceNodes = productValue.elements[3].AsU32(),
+				MaxPlayerInventorySlots = productValue.elements[4].AsU32(),
 			};
 		}
 
@@ -111,11 +115,33 @@ namespace SpacetimeDB.Types
 			}
 		}
 
+		public static System.Collections.Generic.IEnumerable<Config> FilterByMaxPlayerInventorySlots(uint value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("Config"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (uint)productValue.elements[4].AsU32();
+				if (compareValue == value) {
+					yield return (Config)entry.Item2;
+				}
+			}
+		}
+
 		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue v1, SpacetimeDB.SATS.AlgebraicValue v2)
 		{
 			var primaryColumnValue1 = v1.AsProductValue().elements[0];
 			var primaryColumnValue2 = v2.AsProductValue().elements[0];
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
+		}
+
+		public static SpacetimeDB.SATS.AlgebraicValue GetPrimaryKeyValue(SpacetimeDB.SATS.AlgebraicValue v)
+		{
+			return v.AsProductValue().elements[0];
+		}
+
+		public static SpacetimeDB.SATS.AlgebraicType GetPrimaryKeyType(SpacetimeDB.SATS.AlgebraicType t)
+		{
+			return t.product.elements[0].algebraicType;
 		}
 
 		public delegate void InsertEventHandler(Config insertedValue, SpacetimeDB.Types.ReducerEvent dbEvent);

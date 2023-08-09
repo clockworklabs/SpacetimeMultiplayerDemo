@@ -1,13 +1,12 @@
 {
   "dependencies": {
     "com.clockworklabs.spacetimedbsdk": {
-      "version": "https://github.com/clockworklabs/com.clockworklabs.spacetimedbsdk.git",
+      "version": "file:D:/dev/clockwork/com.clockworklabs.spacetimedbsdk",
       "depth": 0,
-      "source": "git",
+      "source": "local",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.1"
-      },
-      "hash": "083ba3da4cc19a847da8f12ef27b43535afacd77"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.7",

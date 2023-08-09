@@ -11,11 +11,16 @@ namespace SpacetimeDB.Types
 	public enum ReducerType
 	{
 		None,
+		AddItemToInventory,
 		ChatMessage,
 		CreatePlayer,
+		DumpInventory,
+		Extract,
+		MoveOrSwapInventorySlot,
 		MovePlayer,
 		ResourceSpawnerAgent,
 		StopPlayer,
+		UpdateAnimation,
 	}
 
 	public partial class ReducerEvent : ReducerEventBase
@@ -28,6 +33,14 @@ namespace SpacetimeDB.Types
 			Reducer = reducer;
 		}
 
+		public AddItemToInventoryArgsStruct AddItemToInventoryArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.AddItemToInventory) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "AddItemToInventory");
+				return (AddItemToInventoryArgsStruct)Args;
+			}
+		}
 		public ChatMessageArgsStruct ChatMessageArgs
 		{
 			get
@@ -42,6 +55,30 @@ namespace SpacetimeDB.Types
 			{
 				if (Reducer != ReducerType.CreatePlayer) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "CreatePlayer");
 				return (CreatePlayerArgsStruct)Args;
+			}
+		}
+		public DumpInventoryArgsStruct DumpInventoryArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.DumpInventory) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "DumpInventory");
+				return (DumpInventoryArgsStruct)Args;
+			}
+		}
+		public ExtractArgsStruct ExtractArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.Extract) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "Extract");
+				return (ExtractArgsStruct)Args;
+			}
+		}
+		public MoveOrSwapInventorySlotArgsStruct MoveOrSwapInventorySlotArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.MoveOrSwapInventorySlot) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "MoveOrSwapInventorySlot");
+				return (MoveOrSwapInventorySlotArgsStruct)Args;
 			}
 		}
 		public MovePlayerArgsStruct MovePlayerArgs
@@ -68,11 +105,29 @@ namespace SpacetimeDB.Types
 				return (StopPlayerArgsStruct)Args;
 			}
 		}
+		public UpdateAnimationArgsStruct UpdateAnimationArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.UpdateAnimation) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "UpdateAnimation");
+				return (UpdateAnimationArgsStruct)Args;
+			}
+		}
 
 		public object[] GetArgsAsObjectArray()
 		{
 			switch (Reducer)
 			{
+				case ReducerType.AddItemToInventory:
+				{
+					var args = AddItemToInventoryArgs;
+					return new object[] {
+						args.EntityId,
+						args.ItemId,
+						args.PocketIdx,
+						args.ItemCount,
+					};
+				}
 				case ReducerType.ChatMessage:
 				{
 					var args = ChatMessageArgs;
@@ -85,6 +140,31 @@ namespace SpacetimeDB.Types
 					var args = CreatePlayerArgs;
 					return new object[] {
 						args.Username,
+					};
+				}
+				case ReducerType.DumpInventory:
+				{
+					var args = DumpInventoryArgs;
+					return new object[] {
+						args.EntityId,
+					};
+				}
+				case ReducerType.Extract:
+				{
+					var args = ExtractArgs;
+					return new object[] {
+						args.EntityId,
+						args.ResourceEntityId,
+					};
+				}
+				case ReducerType.MoveOrSwapInventorySlot:
+				{
+					var args = MoveOrSwapInventorySlotArgs;
+					return new object[] {
+						args.PlayerEntityId,
+						args.InventoryEntityId,
+						args.SourcePocketIdx,
+						args.DestPocketIdx,
 					};
 				}
 				case ReducerType.MovePlayer:
@@ -107,6 +187,15 @@ namespace SpacetimeDB.Types
 					var args = StopPlayerArgs;
 					return new object[] {
 						args.Location,
+					};
+				}
+				case ReducerType.UpdateAnimation:
+				{
+					var args = UpdateAnimationArgs;
+					return new object[] {
+						args.EntityId,
+						args.Moving,
+						args.ActionTargetEntityId,
 					};
 				}
 				default: throw new System.Exception($"Unhandled reducer case: {Reducer}. Please run SpacetimeDB code generator");

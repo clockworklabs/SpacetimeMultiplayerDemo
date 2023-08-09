@@ -5,10 +5,14 @@ using SpacetimeDB.Types;
 
 public class RemotePlayer : MonoBehaviour
 {
+    public static List<RemotePlayer> Players = new List<RemotePlayer>();
+
     public ulong EntityId;
 
     void Start()
     {
+        Players.Add(this);
+
         // register for a callback that is called when the client gets an 
         // update for a row in the MobileEntityComponent table
         MobileEntityComponent.OnUpdate += MobileEntityComponent_OnUpdate;

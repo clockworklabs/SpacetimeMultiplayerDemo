@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using SpacetimeDB.Types;
+using System.Linq;
 
 public class PlayerAnimator : MonoBehaviour
 {
@@ -92,4 +93,12 @@ public class PlayerAnimator : MonoBehaviour
         }
     }
 
+    public void SetRemoteAction(ulong actionTargetEntityId)
+    {
+        var res = BitcraftMiniGameManager.instance.GameResources.FirstOrDefault(item => item.EntityId == actionTargetEntityId);
+        if (res != null)
+        {
+            Interact(res);
+        }
+    }
 }

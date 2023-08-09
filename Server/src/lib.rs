@@ -2,121 +2,116 @@ use log;
 use rand::Rng;
 use spacetimedb::{spacetimedb, Identity, ReducerContext, SpacetimeType, Timestamp};
 
-#[spacetimedb(table)]
-#[derive(Clone)]
-pub struct Config {
-    // Config is a global table with a single row. This table will be used to
-    // store configuration or global variables
-    #[primarykey]
-    // always 0
-    // having a table with a primarykey field which is always zero is a way to store singleton global state
-    pub version: u32,
+pub mod tables;
+use tables::*;
 
-    pub message_of_the_day: String,
+impl InventoryComponent {
+    pub fn get_pocket(&self, pocket_idx: u32) -> Option<Pocket> {
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket_idx && self.pockets[x].item_count > 0 {
+                return Some(self.pockets[x]);
+            }
+        }
 
-    // new variables for resource node spawner
-    // X and Z range of the map (-map_extents to map_extents)
-    pub map_extents: u32,
-    // maximum number of resource nodes to spawn on the map
-    pub num_resource_nodes: u32,
-}
+        None
+    }
 
-#[spacetimedb(table)]
-pub struct SpawnableEntityComponent {
-    // All entities that can be spawned in the world will have this component.
-    // This allows us to find all objects in the world by iterating through
-    // this table. It also ensures that all world objects have a unique
-    // entity_id.
-    #[primarykey]
-    #[autoinc]
-    pub entity_id: u64,
-}
+    pub fn set_pocket(&mut self, pocket: Pocket) {
+        // Try to find the pocket in the inventory
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket.pocket_idx {
+                self.pockets[x] = pocket;
+                return;
+            }
+        }
 
-#[derive(Clone)]
-#[spacetimedb(table)]
-pub struct PlayerComponent {
-    // All players have this component and it associates the spawnable entity
-    // with the user's identity. It also stores their username.
-    #[primarykey]
-    pub entity_id: u64,
-    #[unique]
-    pub owner_id: Identity,
+        // We did not find this pocket, create a new pocket
+        self.pockets.push(pocket);
+    }
 
-    // username is provided to the create_player reducer
-    pub username: String,
-    // this value is updated when the user logs in and out
-    pub logged_in: bool,
-}
+    pub fn delete_pocket(&mut self, pocket_idx: u32) {
+        // Try to find the pocket in the inventory
+        for x in 0..self.pockets.len() {
+            if self.pockets[x].pocket_idx == pocket_idx {
+                self.pockets.remove(x);
+                return;
+            }
+        }
+    }
 
-#[derive(SpacetimeType, Clone)]
-pub enum ResourceNodeType {
-    Iron,
-}
+    pub fn add(&mut self, item_id: u32, item_count: i32, index: Option<u32>) -> bool {
+        // Check to see if this pocket index is bad
+        let config = Config::filter_by_version(&0).unwrap();
 
-#[spacetimedb(table)]
-#[derive(Clone)]
-pub struct ResourceNodeComponent {
-    #[primarykey]
-    pub entity_id: u64,
+        // Change empty pocket index for the first EMPTY pocket index
+        let pocket_idx = if let Some(idx) = index {
+            idx
+        } else {
+            let mut idx = u32::MAX;
+            for i in 0..config.max_player_inventory_slots {
+                if self.get_pocket(i).is_none() {
+                    idx = i;
+                    break;
+                }
+            }
+            if idx >= config.max_player_inventory_slots {
+                return false;
+            }
+            idx
+        };
 
-    // Resource type of this resource node
-    pub resource_type: ResourceNodeType,
-}
+        if pocket_idx >= config.max_player_inventory_slots {
+            return false;
+        }
 
-#[derive(SpacetimeType, Clone)]
-pub struct StdbVector2 {
-    // A spacetime type which can be used in tables and reducers to represent
-    // a 2d position.
-    pub x: f32,
-    pub z: f32,
-}
+        let pocket = match self.get_pocket(pocket_idx) {
+            Some(mut pocket) => {
+                assert_eq!(pocket.item_id, item_id, "Item ID mismatch");
+                if pocket.item_count + item_count < 0 {
+                    // removed more than what's available
+                    return false;
+                }
+                pocket.item_count += item_count;
+                pocket
+            }
+            None => Pocket {
+                pocket_idx,
+                item_id,
+                item_count,
+            },
+        };
 
-impl StdbVector2 {
-    // this allows us to use StdbVector2::ZERO in reducers
-    pub const ZERO: StdbVector2 = StdbVector2 { x: 0.0, z: 0.0 };
-}
+        if pocket.item_count == 0 {
+            self.delete_pocket(pocket.pocket_idx);
+        } else {
+            self.set_pocket(pocket);
+        }
+        true
+    }
 
-#[spacetimedb(table)]
-#[derive(Clone)]
-pub struct MobileEntityComponent {
-    // This component will be created for all world objects that can move
-    // smoothly throughout the world. It keeps track of the position the last
-    // time the component was updated and the direction the mobile object is
-    // currently moving.
-    #[primarykey]
-    pub entity_id: u64,
+    pub fn can_hold(&self, items: &Vec<(u32, i32)>) -> bool {
+        let mut copy = self.clone();
+        let mut success = true;
+        for &(item_id, item_count) in items {
+            success &= copy.add(item_id, item_count, None);
+        }
+        success
+    }
 
-    // The last known location of this entity
-    pub location: StdbVector2,
-    // Movement direction, {0,0} if not moving at all.
-    pub direction: StdbVector2,
-    // Timestamp when movement started. Timestamp::UNIX_EPOCH if not moving.
-    pub move_start_timestamp: Timestamp,
-}
-
-#[spacetimedb(table)]
-#[derive(Clone)]
-pub struct StaticLocationComponent {
-    #[primarykey]
-    pub entity_id: u64,
-
-    pub location: StdbVector2,
-    pub rotation: f32,
-}
-
-#[spacetimedb(table)]
-pub struct ChatMessage {
-    // The primary key for this table will be auto-incremented
-    #[primarykey]
-    #[autoinc]
-    pub chat_entity_id: u64,
-
-    // The entity id of the player (or NPC) that sent the message
-    pub source_entity_id: u64,
-    // Message contents
-    pub chat_text: String,
-    // Timestamp of when the message was sent
-    pub timestamp: Timestamp,
+    pub fn combine(&mut self, other: &InventoryComponent) -> bool {
+        let other_items: Vec<(u32, i32)> = other
+            .pockets
+            .iter()
+            .map(|p| (p.item_id, p.item_count))
+            .collect();
+        if !self.can_hold(&other_items) {
+            return false;
+        }
+        for (item_id, item_count) in other_items {
+            self.add(item_id, item_count, None);
+        }
+        true
+    }
 }
 
 #[spacetimedb(init)]
@@ -131,6 +126,8 @@ pub fn init() {
         // new variables for resource node spawner
         map_extents: 25,
         num_resource_nodes: 10,
+
+        max_player_inventory_slots: 30,
     })
     .expect("Failed to insert config.");
 
@@ -202,6 +199,21 @@ pub fn create_player(ctx: ReducerContext, username: String) -> Result<(), String
         move_start_timestamp: Timestamp::UNIX_EPOCH,
     })
     .expect("Failed to insert player mobile entity component.");
+
+    AnimationComponent::insert(AnimationComponent {
+        entity_id,
+        moving: false,
+        action_target_entity_id: 0,
+    })
+    .expect("Failed to insert player animation component.");
+
+    // The InventoryComponent is used to store the player's inventory. We
+    // initialize it with an empty vector of pockets.
+    InventoryComponent::insert(InventoryComponent {
+        entity_id,
+        pockets: Vec::<Pocket>::new(),
+    })
+    .expect("Failed to insert player inventory component.");
 
     log::info!("Player created: {}({})", username, entity_id);
 
@@ -290,7 +302,7 @@ pub fn resource_spawner_agent(_ctx: ReducerContext, _prev_time: Timestamp) -> Re
     // Count the number of nodes currently spawned and exit if we have reached num_resource_nodes
     let num_resource_nodes_spawned = ResourceNodeComponent::iter().count();
     if num_resource_nodes_spawned >= num_resource_nodes {
-        log::info!("All resource nodes spawned. Skipping.");
+        //log::info!("All resource nodes spawned. Skipping.");
         return Ok(());
     }
 
@@ -320,6 +332,10 @@ pub fn resource_spawner_agent(_ctx: ReducerContext, _prev_time: Timestamp) -> Re
     // Insert our resource node component, so far we only have iron
     ResourceNodeComponent::insert(ResourceNodeComponent {
         entity_id,
+        health: 5,
+        max_health: 5,
+        item_yield_id: 0,
+        item_yield_quantity: 1,
         resource_type: ResourceNodeType::Iron,
     })
     .expect("Failed to insert resource node component.");
@@ -330,6 +346,213 @@ pub fn resource_spawner_agent(_ctx: ReducerContext, _prev_time: Timestamp) -> Re
         entity_id,
         location.x,
         location.z,
+    );
+
+    Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn move_or_swap_inventory_slot(
+    ctx: ReducerContext,
+    player_entity_id: u64,
+    inventory_entity_id: u64,
+    source_pocket_idx: u32,
+    dest_pocket_idx: u32,
+) -> Result<(), String> {
+    let config = Config::filter_by_version(&0).expect("Config exists.");
+
+    // Check to see if the source pocket index is bad
+    if source_pocket_idx >= config.max_player_inventory_slots {
+        return Err(format!(
+            "The source pocket index is invalid: {}",
+            source_pocket_idx
+        ));
+    }
+
+    // Check to see if the dest pocket index is bad
+    if dest_pocket_idx >= config.max_player_inventory_slots {
+        return Err(format!(
+            "The dest pocket index is invalid: {}",
+            dest_pocket_idx
+        ));
+    }
+
+    if source_pocket_idx == dest_pocket_idx {
+        // Cannot drag and drop on itself
+        return Ok(());
+    }
+
+    // Make sure this identity owns this player
+    let player = PlayerComponent::filter_by_entity_id(&player_entity_id)
+        .expect("This player doesn't exist!");
+    if player.owner_id != ctx.sender {
+        // TODO: We are doing this for now so that its easier to test reducers from the command line
+        return Err(format!(
+            "This identity doesn't own this player! (allowed for now)"
+        ));
+    }
+
+    let mut inventory = InventoryComponent::filter_by_entity_id(&inventory_entity_id)
+        .expect("This inventory doesn't exist!");
+
+    let mut source_pocket = inventory
+        .get_pocket(source_pocket_idx)
+        .expect("Nothing in source pocket, nothing to do.");
+
+    let dest_pocket = inventory.get_pocket(dest_pocket_idx);
+
+    // If we don't have a dest pocket, then just do a direct move
+    if dest_pocket.is_none() {
+        inventory.delete_pocket(source_pocket_idx);
+        source_pocket.pocket_idx = dest_pocket_idx;
+        inventory.set_pocket(source_pocket);
+        InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
+        log::info!("Source pocket moved to dest pocket.");
+
+        return Ok(());
+    }
+
+    // If we have a dest and source pocket then we have to see if we can stack onto the dest
+    let mut dest_pocket = dest_pocket.unwrap();
+    if source_pocket.item_id == dest_pocket.item_id {
+        // Move source items to dest
+        dest_pocket.item_count += source_pocket.item_count;
+        inventory.delete_pocket(source_pocket_idx);
+        inventory.set_pocket(dest_pocket);
+        InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
+        log::info!("Source pocket moved into dest pocket (same item)");
+
+        return Ok(());
+    }
+
+    inventory.delete_pocket(source_pocket_idx);
+    inventory.delete_pocket(dest_pocket_idx);
+    dest_pocket.pocket_idx = source_pocket_idx;
+    source_pocket.pocket_idx = dest_pocket_idx;
+    inventory.set_pocket(source_pocket);
+    inventory.set_pocket(dest_pocket);
+    InventoryComponent::update_by_entity_id(&inventory_entity_id, inventory);
+    log::info!("Pockets swapped (different items)");
+
+    Ok(())
+}
+
+/// This adds or removes items from an inventory slot. you can pass a negative item count in order
+/// to remove items.
+#[spacetimedb(reducer)]
+pub fn add_item_to_inventory(
+    ctx: ReducerContext,
+    entity_id: u64,
+    item_id: u32,
+    pocket_idx: i32, // < 0 to auto assign the first valid index
+    item_count: i32,
+) -> Result<(), String> {
+    // Make sure this identity owns this player
+    let player = PlayerComponent::filter_by_entity_id(&entity_id)
+        .expect("add_item_to_inventory: This player doesn't exist!");
+
+    if player.owner_id != ctx.sender {
+        // TODO: We are doing this for now so that its easier to test reducers from the command line
+        log::info!("This identity doesn't own this player! (allowed for now)");
+        // return;
+    }
+
+    let mut inventory = InventoryComponent::filter_by_entity_id(&entity_id)
+        .expect("This player doesn't have an inventory!");
+
+    if !inventory.add(
+        item_id,
+        item_count,
+        if pocket_idx < 0 {
+            None
+        } else {
+            Some(pocket_idx as u32)
+        },
+    ) {
+        panic!("Failed to add items to inventory");
+    }
+
+    InventoryComponent::update_by_entity_id(&entity_id, inventory);
+    log::info!("Item {} inserted into inventory {}", item_id, entity_id);
+
+    Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn dump_inventory(_ctx: ReducerContext, entity_id: u64) -> Result<(), String> {
+    let inventory = InventoryComponent::filter_by_entity_id(&entity_id)
+        .unwrap_or_else(|| panic!("Inventory NOT found for entity {}", entity_id));
+
+    for pocket in inventory.pockets {
+        log::info!(
+            "PocketIdx: {} Item: {} Count: {}",
+            pocket.pocket_idx,
+            pocket.item_id,
+            pocket.item_count
+        );
+    }
+
+    Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn extract(ctx: ReducerContext, entity_id: u64, resource_entity_id: u64) -> Result<(), String> {
+    let player =
+        PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist.");
+
+    // Make sure this identity owns this player
+    if player.owner_id != ctx.sender {
+        log::info!("This identity doesn't own this player! (allowed for now)");
+    }
+
+    // ToDo: validate resource distance from player. For now resource position is determined by the chunk so we can't.
+
+    let mut resource = ResourceNodeComponent::filter_by_entity_id(&resource_entity_id)
+        .expect("This resource doesn't exist");
+
+    // Attempt to add resources to the player's inventory
+    add_item_to_inventory(
+        ctx,
+        entity_id,
+        resource.item_yield_id.into(),
+        -1,
+        resource.item_yield_quantity.into(),
+    )?;
+
+    resource.health -= 1;
+
+    if resource.health <= 0 {
+        ResourceNodeComponent::delete_by_entity_id(&resource_entity_id);
+    } else {
+        log::info!("Resource health: {}", resource.health);
+        ResourceNodeComponent::update_by_entity_id(&resource_entity_id, resource);
+    }
+
+    Ok(())
+}
+
+#[spacetimedb(reducer)]
+pub fn update_animation(
+    ctx: ReducerContext,
+    entity_id: u64,
+    moving: bool,
+    action_target_entity_id: u64,
+) -> Result<(), String> {
+    let player =
+        PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist!");
+
+    // Make sure this identity owns this player
+    if player.owner_id != ctx.sender {
+        log::info!("This identity doesn't own this player! (allowed for now)");
+    }
+
+    AnimationComponent::update_by_entity_id(
+        &entity_id,
+        AnimationComponent {
+            entity_id,
+            moving,
+            action_target_entity_id,
+        },
     );
 
     Ok(())

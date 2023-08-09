@@ -11,9 +11,17 @@ namespace SpacetimeDB.Types
 	{
 		[Newtonsoft.Json.JsonProperty("entity_id")]
 		public ulong EntityId;
+		[Newtonsoft.Json.JsonProperty("health")]
+		public int Health;
 		[Newtonsoft.Json.JsonProperty("resource_type")]
 		[SpacetimeDB.Enum]
 		public SpacetimeDB.Types.ResourceNodeType ResourceType;
+		[Newtonsoft.Json.JsonProperty("max_health")]
+		public byte MaxHealth;
+		[Newtonsoft.Json.JsonProperty("item_yield_id")]
+		public byte ItemYieldId;
+		[Newtonsoft.Json.JsonProperty("item_yield_quantity")]
+		public byte ItemYieldQuantity;
 
 		private static Dictionary<ulong, ResourceNodeComponent> EntityId_Index = new Dictionary<ulong, ResourceNodeComponent>(16);
 
@@ -34,12 +42,16 @@ namespace SpacetimeDB.Types
 			return SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
 			{
 				new SpacetimeDB.SATS.ProductTypeElement("entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
+				new SpacetimeDB.SATS.ProductTypeElement("health", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.I32)),
 				new SpacetimeDB.SATS.ProductTypeElement("resource_type", SpacetimeDB.SATS.AlgebraicType.CreateSumType(new System.Collections.Generic.List<SpacetimeDB.SATS.SumTypeVariant>
 			{
 				new SpacetimeDB.SATS.SumTypeVariant("Iron", SpacetimeDB.SATS.AlgebraicType.CreateProductType(new SpacetimeDB.SATS.ProductTypeElement[]
 			{
 			})),
 			})),
+				new SpacetimeDB.SATS.ProductTypeElement("max_health", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U8)),
+				new SpacetimeDB.SATS.ProductTypeElement("item_yield_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U8)),
+				new SpacetimeDB.SATS.ProductTypeElement("item_yield_quantity", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U8)),
 			});
 		}
 
@@ -52,8 +64,12 @@ namespace SpacetimeDB.Types
 			return new ResourceNodeComponent
 			{
 				EntityId = productValue.elements[0].AsU64(),
-				ResourceType = (ResourceNodeType)Enum.Parse(typeof(ResourceNodeType), productValue.elements[1].AsSumValue().tag.ToString())
+				Health = productValue.elements[1].AsI32(),
+				ResourceType = (ResourceNodeType)Enum.Parse(typeof(ResourceNodeType), productValue.elements[2].AsSumValue().tag.ToString())
 		,
+				MaxHealth = productValue.elements[3].AsU8(),
+				ItemYieldId = productValue.elements[4].AsU8(),
+				ItemYieldQuantity = productValue.elements[5].AsU8(),
 			};
 		}
 
@@ -74,11 +90,69 @@ namespace SpacetimeDB.Types
 			return r;
 		}
 
+		public static System.Collections.Generic.IEnumerable<ResourceNodeComponent> FilterByHealth(int value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("ResourceNodeComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (int)productValue.elements[1].AsI32();
+				if (compareValue == value) {
+					yield return (ResourceNodeComponent)entry.Item2;
+				}
+			}
+		}
+
+		public static System.Collections.Generic.IEnumerable<ResourceNodeComponent> FilterByMaxHealth(byte value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("ResourceNodeComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (byte)productValue.elements[3].AsU8();
+				if (compareValue == value) {
+					yield return (ResourceNodeComponent)entry.Item2;
+				}
+			}
+		}
+
+		public static System.Collections.Generic.IEnumerable<ResourceNodeComponent> FilterByItemYieldId(byte value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("ResourceNodeComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (byte)productValue.elements[4].AsU8();
+				if (compareValue == value) {
+					yield return (ResourceNodeComponent)entry.Item2;
+				}
+			}
+		}
+
+		public static System.Collections.Generic.IEnumerable<ResourceNodeComponent> FilterByItemYieldQuantity(byte value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("ResourceNodeComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (byte)productValue.elements[5].AsU8();
+				if (compareValue == value) {
+					yield return (ResourceNodeComponent)entry.Item2;
+				}
+			}
+		}
+
 		public static bool ComparePrimaryKey(SpacetimeDB.SATS.AlgebraicType t, SpacetimeDB.SATS.AlgebraicValue v1, SpacetimeDB.SATS.AlgebraicValue v2)
 		{
 			var primaryColumnValue1 = v1.AsProductValue().elements[0];
 			var primaryColumnValue2 = v2.AsProductValue().elements[0];
 			return SpacetimeDB.SATS.AlgebraicValue.Compare(t.product.elements[0].algebraicType, primaryColumnValue1, primaryColumnValue2);
+		}
+
+		public static SpacetimeDB.SATS.AlgebraicValue GetPrimaryKeyValue(SpacetimeDB.SATS.AlgebraicValue v)
+		{
+			return v.AsProductValue().elements[0];
+		}
+
+		public static SpacetimeDB.SATS.AlgebraicType GetPrimaryKeyType(SpacetimeDB.SATS.AlgebraicType t)
+		{
+			return t.product.elements[0].algebraicType;
 		}
 
 		public delegate void InsertEventHandler(ResourceNodeComponent insertedValue, SpacetimeDB.Types.ReducerEvent dbEvent);

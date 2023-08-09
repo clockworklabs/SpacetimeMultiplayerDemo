@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using SpacetimeDB;
 using SpacetimeDB.Types;
+using System.Linq;
 
 public class BitcraftMiniGameManager : MonoBehaviour
 {
@@ -24,6 +25,9 @@ public class BitcraftMiniGameManager : MonoBehaviour
 
     [SerializeField] private GameObject preSpawnCamera;
 
+    [HideInInspector]
+    public List<GameResource> GameResources = new List<GameResource>();
+
     // Start is called before the first frame update
     void Start()
     {
@@ -43,7 +47,9 @@ public class BitcraftMiniGameManager : MonoBehaviour
                 "SELECT * FROM MobileEntityComponent",
                 // Our new tables for part 2 of the tutorial
                 "SELECT * FROM ResourceNodeComponent",
-                "SELECT * FROM StaticLocationComponent"
+                "SELECT * FROM StaticLocationComponent",
+                "SELECT * FROM AnimationComponent",
+                "SELECT * FROM InventoryComponent"
             });
         };
 
@@ -71,7 +77,17 @@ public class BitcraftMiniGameManager : MonoBehaviour
         SpacetimeDBClient.instance.onSubscriptionApplied += OnSubscriptionApplied;
 
         PlayerComponent.OnInsert += PlayerComponent_OnInsert;
+
+        Reducer.OnChatMessageEvent += OnChatMessageEvent;
+
         ResourceNodeComponent.OnInsert += ResourceNodeComponent_OnInsert;
+        ResourceNodeComponent.OnDelete += ResourceNodeComponent_OnDelete;
+
+        AnimationComponent.OnInsert += OnAnimationComponentInsert;
+        AnimationComponent.OnUpdate += OnAnimationComponentUpdate;
+
+        InventoryComponent.OnInsert += OnInventoryComponentInsert;
+        InventoryComponent.OnUpdate += OnInventoryComponentUpdate;
 
         // now that we’ve registered all our callbacks, lets connect to
         // spacetimedb
@@ -87,6 +103,10 @@ public class BitcraftMiniGameManager : MonoBehaviour
             MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(obj.EntityId);
             Vector3 playerPos = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
             LocalPlayer.instance.transform.position = new Vector3(playerPos.x, MathUtil.GetTerrainHeight(playerPos), playerPos.z);
+            LocalPlayer.instance.EntityId = obj.EntityId;
+
+            PlayerInventoryController.Local.Spawn();
+
             // Now that we have our initial position we can start the game
             StartGame();
         }
@@ -96,6 +116,15 @@ public class BitcraftMiniGameManager : MonoBehaviour
             // spawn the player object and attach the RemotePlayer component
             var remotePlayer = Instantiate(PlayerPrefab);
             remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+        }
+    }
+
+    private void OnChatMessageEvent(ReducerEvent dbEvent, string message)
+    {
+        var player = PlayerComponent.FilterByOwnerId(dbEvent.Identity);
+        if (player != null)
+        {
+            UIChatController.instance.OnChatMessageReceived(player.Username + ": " + message);
         }
     }
 
@@ -109,11 +138,49 @@ public class BitcraftMiniGameManager : MonoBehaviour
                 Vector3 nodePos = new Vector3(loc.Location.X, 0.0f, loc.Location.Z);
                 iron.transform.position = new Vector3(nodePos.x, MathUtil.GetTerrainHeight(nodePos), nodePos.z);
                 iron.transform.rotation = Quaternion.Euler(0.0f, loc.Rotation, 0.0f);
+                GameResource gameResource = iron.GetComponent<GameResource>();                
+                gameResource.Init(insertedValue);
+                GameResources.Add(gameResource);                
                 break;
         }
     }
 
-    void OnSubscriptionApplied()
+    private void ResourceNodeComponent_OnDelete(ResourceNodeComponent oldValue, ReducerEvent info)
+    {
+        GameResources.RemoveAll(item => item.EntityId == oldValue.EntityId);
+    }
+
+    private void OnAnimationComponentInsert(AnimationComponent newValue, ReducerEvent info)
+    {
+        OnAnimationComponentUpdate(null, newValue, info);
+    }
+
+    private void OnAnimationComponentUpdate(AnimationComponent oldValue, AnimationComponent newValue, ReducerEvent info)
+    {
+        // check to see if this player already exists
+        var remotePlayer = RemotePlayer.Players.FirstOrDefault(item => item.EntityId == newValue.EntityId);
+        if (remotePlayer)
+        {
+            remotePlayer.GetComponent<PlayerMovementController>().SetMoving(newValue.Moving);
+            remotePlayer.GetComponentInChildren<PlayerAnimator>(true).SetRemoteAction(newValue.ActionTargetEntityId);
+        }
+    }
+
+    private void OnInventoryComponentInsert(InventoryComponent newValue, ReducerEvent info)
+    {
+        OnInventoryComponentUpdate(null, newValue, info);
+    }
+
+    private void OnInventoryComponentUpdate(InventoryComponent oldValue, InventoryComponent newValue, ReducerEvent info)
+    {
+        // check to see if this player already exists
+        if (newValue.EntityId == LocalPlayer.instance.EntityId)
+        {
+            PlayerInventoryController.Local.InventoryUpdate(newValue);
+        }
+    }
+
+    private void OnSubscriptionApplied()
     {
         // If we don't have any data for our player, then we are creating a 
         // new one. Let's show the username dialog, which will then call the
@@ -137,5 +204,6 @@ public class BitcraftMiniGameManager : MonoBehaviour
         preSpawnCamera.SetActive(false);
         Reticle.instance.OnStart();
         UIChatController.instance.enabled = true;
+        UIPlayerInventoryWindow.instance.enabled = true;
     }
 }

@@ -3,12 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SpacetimeDB.Types;
 
 public class PlayerInputReceiver : MonoBehaviour
 {
     private bool cameraMouseButtonDown;
     private Vector2 mouseDelta;
     private float zoomDelta;
+
+    void OnToggleInventory(InputValue value)
+    {
+        UIPlayerInventoryWindow.instance.Toggle();
+    }
 
     void OnToggleChat(InputValue value)
     {
@@ -25,12 +31,13 @@ public class PlayerInputReceiver : MonoBehaviour
                 if (resource != null)
                 {
                     PlayerAnimator.Local.Interact(resource);
+                    Reducer.Extract(LocalPlayer.instance.EntityId, resource.EntityId);
+                    Reducer.UpdateAnimation(LocalPlayer.instance.EntityId, false, resource.EntityId);
                     return;
                 }
 			}
 		}
     }
-
 	
     void OnMove(InputValue value)
     {
