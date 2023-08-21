@@ -1,6 +1,6 @@
 use log;
 use rand::Rng;
-use spacetimedb::{spacetimedb, Identity, ReducerContext, SpacetimeType, Timestamp};
+use spacetimedb::{spacetimedb, ReducerContext, Timestamp};
 
 pub mod tables;
 use tables::*;

@@ -99,6 +99,9 @@ public class BitcraftMiniGameManager : MonoBehaviour
         // if the identity of the PlayerComponent matches our user identity then this is the local player
         if (obj.OwnerId == local_identity)
         {
+            // set the username on the LocalPlayer instance
+            LocalPlayer.instance.Username = obj.Username;
+
             // Get the MobileEntityComponent for this object and update the position to match the server
             MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(obj.EntityId);
             Vector3 playerPos = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
