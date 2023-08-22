@@ -14648,7 +14648,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: hostName
-      value: localhost
+      value: localhost:3000
       objectReference: {fileID: 0}
     - target: {fileID: 1248606208, guid: 0a65d425d4d081a4faaed2d47c9fe6f4, type: 3}
       propertyPath: sslEnabled
@@ -15095,6 +15095,11 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 439391310542328227, guid: b2c1e51c518e2475eac9bbc3b97871c8,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 696227345407022344, guid: b2c1e51c518e2475eac9bbc3b97871c8,
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
@@ -15848,6 +15853,9 @@ MonoBehaviour:
   modelTurnSpeed: 360
   anim: {fileID: 886284154}
   DirectionVec: {x: 0, y: 0, z: 0}
+  VerticalVelocity: 0
+  JumpHeight: 5
+  Gravity: -9.8
 --- !u!114 &6306767005561996383
 MonoBehaviour:
   m_ObjectHideFlags: 0
