@@ -17,6 +17,9 @@ public class PlayerAnimator : MonoBehaviour
 
     public static PlayerAnimator Local { get; set; }
 
+    public bool Grounded { get { return grounded; } }
+    private bool grounded = true;
+
     public System.Action<bool> OnInteractionUpdate;
 
 
@@ -24,6 +27,16 @@ public class PlayerAnimator : MonoBehaviour
 	{
 		_animator = GetComponent<Animator>();
         PlayerMovementController.localMovementDisabled.Add(() => Interacting);
+    }
+
+    private void Update()
+    {
+        var y = MathUtil.GetTerrainHeight(transform.position);
+        if(!grounded && GetComponentInParent<PlayerMovementController>(true).VerticalVelocity < 0.0f && ((transform.position.y - 2) - y <= 0.1f))
+        {
+            grounded = true;
+            _animator.SetBool("Grounded", true);
+        }        
     }
 
     public void Interact(GameResource res)
@@ -100,5 +113,17 @@ public class PlayerAnimator : MonoBehaviour
         {
             Interact(res);
         }
+    }
+
+    public void Jump()
+    {
+        if(!grounded)
+        {
+            return;
+        }
+
+        _animator.SetTrigger("Jump");
+        _animator.SetBool("Grounded", false);
+        grounded = false;
     }
 }

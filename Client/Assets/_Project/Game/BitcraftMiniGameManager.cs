@@ -31,6 +31,8 @@ public class BitcraftMiniGameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Application.runInBackground = true;
+
         instance = this;
 
         // When we connect to SpacetimeDB we send our subscription queries
@@ -76,9 +78,11 @@ public class BitcraftMiniGameManager : MonoBehaviour
         // called after our local cache is populated from a Subscribe call
         SpacetimeDBClient.instance.onSubscriptionApplied += OnSubscriptionApplied;
 
+        PlayerComponent.OnUpdate += PlayerComponent_OnUpdate;
         PlayerComponent.OnInsert += PlayerComponent_OnInsert;
 
         Reducer.OnChatMessageEvent += OnChatMessageEvent;
+        Reducer.OnJumpEvent += OnJumpEvent;
 
         ResourceNodeComponent.OnInsert += ResourceNodeComponent_OnInsert;
         ResourceNodeComponent.OnDelete += ResourceNodeComponent_OnDelete;
@@ -94,7 +98,30 @@ public class BitcraftMiniGameManager : MonoBehaviour
         SpacetimeDBClient.instance.Connect(AuthToken.Token, hostName, moduleAddress, sslEnabled);
     }
 
-    private void PlayerComponent_OnInsert(PlayerComponent obj, ReducerEvent callInfo)
+    private void OnJumpEvent(ReducerEvent reducerEvent, ulong entityId)
+    {
+        // if the identity of the PlayerComponent matches our user identity then this is the local player
+        if (reducerEvent.Status == ClientApi.Event.Types.Status.Committed && reducerEvent.Identity != local_identity)
+        {
+            var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == entityId);
+            if (remotePlayer != null)
+            {
+                remotePlayer.OnJump();
+            }
+        }
+    }
+
+    private void PlayerComponent_OnUpdate(PlayerComponent oldValue, PlayerComponent newValue, ReducerEvent dbEvent)
+    {
+        OnPlayerComponentChanged(newValue);
+    }
+
+    private void PlayerComponent_OnInsert(PlayerComponent obj, ReducerEvent dbEvent)
+    {
+        OnPlayerComponentChanged(obj);
+    }
+
+    private void OnPlayerComponentChanged(PlayerComponent obj)
     {
         // if the identity of the PlayerComponent matches our user identity then this is the local player
         if (obj.OwnerId == local_identity)
@@ -116,9 +143,22 @@ public class BitcraftMiniGameManager : MonoBehaviour
         // otherwise this is a remote player
         else
         {
-            // spawn the player object and attach the RemotePlayer component
-            var remotePlayer = Instantiate(PlayerPrefab);
-            remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+            // if the remote player is logged in, spawn it 
+            if (obj.LoggedIn)
+            {
+                // spawn the player object and attach the RemotePlayer component
+                var remotePlayer = Instantiate(PlayerPrefab);
+                remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+            }
+            // otherwise we need to look for the remote player object in the scene (if it exists) and destroy it
+            else
+            {
+                var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == obj.EntityId);
+                if (remotePlayer != null)
+                {
+                    Destroy(remotePlayer.gameObject);
+                }
+            }
         }
     }
 

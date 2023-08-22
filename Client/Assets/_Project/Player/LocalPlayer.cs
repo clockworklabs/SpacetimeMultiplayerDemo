@@ -57,4 +57,12 @@ public class LocalPlayer : MonoBehaviour
         var vec = new Vector3(movementVec.x, 0, movementVec.y);
         return CameraController.instance.transform.TransformDirection(vec);
     }
+
+    public void OnJump()
+    {   
+        PlayerAnimator.Local.Jump();
+        PlayerMovementController.Local.Jump();
+
+        Reducer.Jump(EntityId);
+    }
 }

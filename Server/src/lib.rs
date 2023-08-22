@@ -203,6 +203,7 @@ pub fn create_player(ctx: ReducerContext, username: String) -> Result<(), String
     AnimationComponent::insert(AnimationComponent {
         entity_id,
         moving: false,
+        jump_start_timestamp: Timestamp::UNIX_EPOCH,
         action_target_entity_id: 0,
     })
     .expect("Failed to insert player animation component.");
@@ -546,14 +547,33 @@ pub fn update_animation(
         log::info!("This identity doesn't own this player! (allowed for now)");
     }
 
-    AnimationComponent::update_by_entity_id(
-        &entity_id,
-        AnimationComponent {
-            entity_id,
-            moving,
-            action_target_entity_id,
-        },
-    );
+    if let Some(mut anim_comp) = AnimationComponent::filter_by_entity_id(&entity_id) {
+        anim_comp.moving = moving;
+        anim_comp.action_target_entity_id = action_target_entity_id;
 
-    Ok(())
+        AnimationComponent::update_by_entity_id(&entity_id, anim_comp);
+        return Ok(());
+    }
+
+    Err("AnimationComponent not found".to_string())
+}
+
+#[spacetimedb(reducer)]
+pub fn jump(ctx: ReducerContext, entity_id: u64) -> Result<(), String> {
+    let player =
+        PlayerComponent::filter_by_entity_id(&entity_id).expect("This player doesn't exist!");
+
+    // Make sure this identity owns this player
+    if player.owner_id != ctx.sender {
+        log::info!("This identity doesn't own this player! (allowed for now)");
+    }
+
+    if let Some(mut anim_comp) = AnimationComponent::filter_by_entity_id(&entity_id) {
+        anim_comp.jump_start_timestamp = ctx.timestamp;
+
+        AnimationComponent::update_by_entity_id(&entity_id, anim_comp);
+        return Ok(());
+    }
+
+    Err("AnimationComponent not found".to_string())
 }

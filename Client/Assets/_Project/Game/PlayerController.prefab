@@ -411,6 +411,9 @@ MonoBehaviour:
   modelTurnSpeed: 360
   anim: {fileID: 3959740252752747554}
   DirectionVec: {x: 0, y: 0, z: 0}
+  VerticalVelocity: 0
+  JumpHeight: 5
+  Gravity: -9.8
 --- !u!54 &6306767005091426030
 Rigidbody:
   m_ObjectHideFlags: 0

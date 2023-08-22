@@ -38,6 +38,11 @@ public class PlayerInputReceiver : MonoBehaviour
 			}
 		}
     }
+
+    void OnJump(InputValue value)
+    {
+        LocalPlayer.instance.OnJump();
+    }
 	
     void OnMove(InputValue value)
     {

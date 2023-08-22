@@ -16,6 +16,7 @@ namespace SpacetimeDB.Types
 		CreatePlayer,
 		DumpInventory,
 		Extract,
+		Jump,
 		MoveOrSwapInventorySlot,
 		MovePlayer,
 		ResourceSpawnerAgent,
@@ -71,6 +72,14 @@ namespace SpacetimeDB.Types
 			{
 				if (Reducer != ReducerType.Extract) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "Extract");
 				return (ExtractArgsStruct)Args;
+			}
+		}
+		public JumpArgsStruct JumpArgs
+		{
+			get
+			{
+				if (Reducer != ReducerType.Jump) throw new SpacetimeDB.ReducerMismatchException(Reducer.ToString(), "Jump");
+				return (JumpArgsStruct)Args;
 			}
 		}
 		public MoveOrSwapInventorySlotArgsStruct MoveOrSwapInventorySlotArgs
@@ -155,6 +164,13 @@ namespace SpacetimeDB.Types
 					return new object[] {
 						args.EntityId,
 						args.ResourceEntityId,
+					};
+				}
+				case ReducerType.Jump:
+				{
+					var args = JumpArgs;
+					return new object[] {
+						args.EntityId,
 					};
 				}
 				case ReducerType.MoveOrSwapInventorySlot:

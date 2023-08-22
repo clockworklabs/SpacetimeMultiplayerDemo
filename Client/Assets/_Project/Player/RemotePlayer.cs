@@ -53,4 +53,10 @@ public class RemotePlayer : MonoBehaviour
             }
         }
     }
+
+    public void OnJump()
+    {
+        GetComponentInChildren<PlayerAnimator>().Jump();
+        GetComponent<PlayerMovementController>().Jump();
+    }
 }
