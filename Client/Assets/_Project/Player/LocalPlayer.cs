@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using SpacetimeDB.Types;
 
@@ -10,7 +11,9 @@ public class LocalPlayer : MonoBehaviour
     public ulong EntityId { get; set; }
 
     public static LocalPlayer instance;
-    public string username;
+    public string Username { set { UsernameElement.text = value; } }
+
+    public TMP_Text UsernameElement;
 
     private Vector2 movementVec;
 
@@ -53,5 +56,13 @@ public class LocalPlayer : MonoBehaviour
     {
         var vec = new Vector3(movementVec.x, 0, movementVec.y);
         return CameraController.instance.transform.TransformDirection(vec);
+    }
+
+    public void OnJump()
+    {   
+        PlayerAnimator.Local.Jump();
+        PlayerMovementController.Local.Jump();
+
+        Reducer.Jump(EntityId);
     }
 }

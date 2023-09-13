@@ -13,6 +13,8 @@ namespace SpacetimeDB.Types
 		public ulong EntityId;
 		[Newtonsoft.Json.JsonProperty("moving")]
 		public bool Moving;
+		[Newtonsoft.Json.JsonProperty("jump_start_timestamp")]
+		public ulong JumpStartTimestamp;
 		[Newtonsoft.Json.JsonProperty("action_target_entity_id")]
 		public ulong ActionTargetEntityId;
 
@@ -36,6 +38,7 @@ namespace SpacetimeDB.Types
 			{
 				new SpacetimeDB.SATS.ProductTypeElement("entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
 				new SpacetimeDB.SATS.ProductTypeElement("moving", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.Bool)),
+				new SpacetimeDB.SATS.ProductTypeElement("jump_start_timestamp", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
 				new SpacetimeDB.SATS.ProductTypeElement("action_target_entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
 			});
 		}
@@ -50,7 +53,8 @@ namespace SpacetimeDB.Types
 			{
 				EntityId = productValue.elements[0].AsU64(),
 				Moving = productValue.elements[1].AsBool(),
-				ActionTargetEntityId = productValue.elements[2].AsU64(),
+				JumpStartTimestamp = productValue.elements[2].AsU64(),
+				ActionTargetEntityId = productValue.elements[3].AsU64(),
 			};
 		}
 
@@ -83,12 +87,24 @@ namespace SpacetimeDB.Types
 			}
 		}
 
-		public static System.Collections.Generic.IEnumerable<AnimationComponent> FilterByActionTargetEntityId(ulong value)
+		public static System.Collections.Generic.IEnumerable<AnimationComponent> FilterByJumpStartTimestamp(ulong value)
 		{
 			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("AnimationComponent"))
 			{
 				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[2].AsU64();
+				if (compareValue == value) {
+					yield return (AnimationComponent)entry.Item2;
+				}
+			}
+		}
+
+		public static System.Collections.Generic.IEnumerable<AnimationComponent> FilterByActionTargetEntityId(ulong value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("AnimationComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (ulong)productValue.elements[3].AsU64();
 				if (compareValue == value) {
 					yield return (AnimationComponent)entry.Item2;
 				}

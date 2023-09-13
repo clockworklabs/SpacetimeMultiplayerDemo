@@ -11,6 +11,7 @@ public class PlayerMovementController : MonoBehaviour
     [SerializeField] private Animator anim;
 
     public Vector3 DirectionVec;
+    public float VerticalVelocity;
 
     private bool moving;
     private bool _interacting;
@@ -21,6 +22,10 @@ public class PlayerMovementController : MonoBehaviour
     private static readonly int WalkingProperty = Animator.StringToHash("Walking");
 
     public static PlayerMovementController Local;
+
+    public float JumpHeight = 5f;
+    public float Gravity = -9.8f;
+    private float TerminalVelocity = 53.0f;
 
     protected void Awake()
     {
@@ -54,9 +59,9 @@ public class PlayerMovementController : MonoBehaviour
             return;
         }
 
-        if (DirectionVec.sqrMagnitude != 0)
+        if (DirectionVec.sqrMagnitude != 0 || VerticalVelocity != 0)
         {
-            body.MovePosition(body.position + DirectionVec * (Time.fixedDeltaTime * movementSpeed));
+            body.MovePosition(body.position + (DirectionVec * (Time.fixedDeltaTime * movementSpeed)) + (new Vector3(0.0f, VerticalVelocity, 0.0f) * Time.fixedDeltaTime));
         }
     }
 
@@ -97,5 +102,19 @@ public class PlayerMovementController : MonoBehaviour
             modelTransform.rotation = Quaternion.RotateTowards(modelTransform.rotation,
                 worldMovementDirection, modelTurnSpeed * Time.deltaTime);
         }
+
+        if (GetComponentInChildren<PlayerAnimator>(true).Grounded)
+        {
+            VerticalVelocity = 0.0f;
+        }
+        else if(VerticalVelocity < TerminalVelocity)
+        {
+            VerticalVelocity += Gravity * Time.deltaTime;
+        }
+    }
+
+    public void Jump()
+    {
+        VerticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
     }
 }

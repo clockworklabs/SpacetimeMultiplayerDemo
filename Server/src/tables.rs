@@ -133,6 +133,7 @@ pub struct AnimationComponent {
     #[primarykey]
     pub entity_id: u64,
     pub moving: bool,
+    pub jump_start_timestamp: Timestamp,
     pub action_target_entity_id: u64,
 }
 
