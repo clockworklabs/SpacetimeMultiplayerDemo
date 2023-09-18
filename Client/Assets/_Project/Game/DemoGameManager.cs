@@ -5,7 +5,7 @@ using SpacetimeDB;
 using SpacetimeDB.Types;
 using System.Linq;
 
-public class BitcraftMiniGameManager : MonoBehaviour
+public class DemoGameManager : MonoBehaviour
 {
     // These are connection variables that are exposed on the GameManager
     // inspector. The cloud version of SpacetimeDB needs sslEnabled = true
@@ -18,7 +18,7 @@ public class BitcraftMiniGameManager : MonoBehaviour
     // onIdentityReceived callback is triggered by the SDK after connecting
     private Identity local_identity;
 
-    public static BitcraftMiniGameManager instance;
+    public static DemoGameManager instance;
 
     public GameObject PlayerPrefab;
     public GameObject IronPrefab;
