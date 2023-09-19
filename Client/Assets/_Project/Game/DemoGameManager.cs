@@ -146,14 +146,18 @@ public class DemoGameManager : MonoBehaviour
             // if the remote player is logged in, spawn it 
             if (obj.LoggedIn)
             {
-                // spawn the player object and attach the RemotePlayer component
-                var remotePlayer = Instantiate(PlayerPrefab);
-                remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+                if (!RemotePlayer.RemotePlayers.ContainsKey(obj.EntityId))
+                {
+                    // spawn the player object and attach the RemotePlayer component
+                    var remotePlayer = Instantiate(PlayerPrefab);
+                    remotePlayer.AddComponent<RemotePlayer>().EntityId = obj.EntityId;
+                }
             }
             // otherwise we need to look for the remote player object in the scene (if it exists) and destroy it
             else
             {
-                var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == obj.EntityId);
+                RemotePlayer remotePlayer = null;
+                RemotePlayer.RemotePlayers.TryGetValue(obj.EntityId, out remotePlayer);
                 if (remotePlayer != null)
                 {
                     Destroy(remotePlayer.gameObject);
@@ -201,7 +205,8 @@ public class DemoGameManager : MonoBehaviour
     private void OnAnimationComponentUpdate(AnimationComponent oldValue, AnimationComponent newValue, ReducerEvent info)
     {
         // check to see if this player already exists
-        var remotePlayer = RemotePlayer.Players.FirstOrDefault(item => item.EntityId == newValue.EntityId);
+        RemotePlayer remotePlayer = null;
+        RemotePlayer.RemotePlayers.TryGetValue(newValue.EntityId, out remotePlayer);
         if (remotePlayer)
         {
             remotePlayer.GetComponent<PlayerMovementController>().SetMoving(newValue.Moving);
