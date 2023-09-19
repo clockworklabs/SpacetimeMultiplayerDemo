@@ -189,10 +189,10 @@ pub fn create_player(ctx: ReducerContext, username: String) -> Result<(), String
         logged_in: true,
     })
     .expect("Failed to insert player component.");
-    // The MobileEntityComponent is used to calculate the current position
+    // The MobileLocationComponent is used to calculate the current position
     // of an entity that can move smoothly in the world. We are using 2d
     // positions and the client will use the terrain height for the y value.
-    MobileEntityComponent::insert(MobileEntityComponent {
+    MobileLocationComponent::insert(MobileLocationComponent {
         entity_id,
         location: StdbVector2::ZERO,
         direction: StdbVector2::ZERO,
@@ -234,13 +234,13 @@ pub fn move_player(
 
     let owner_id = ctx.sender;
     // First, look up the player using the sender identity, then use that
-    // entity_id to retrieve and update the MobileEntityComponent
+    // entity_id to retrieve and update the MobileLocationComponent
     if let Some(player) = PlayerComponent::filter_by_owner_id(&owner_id) {
-        if let Some(mut mobile) = MobileEntityComponent::filter_by_entity_id(&player.entity_id) {
+        if let Some(mut mobile) = MobileLocationComponent::filter_by_entity_id(&player.entity_id) {
             mobile.location = start;
             mobile.direction = direction;
             mobile.move_start_timestamp = ctx.timestamp;
-            MobileEntityComponent::update_by_entity_id(&player.entity_id, mobile);
+            MobileLocationComponent::update_by_entity_id(&player.entity_id, mobile);
 
             return Ok(());
         }
@@ -253,15 +253,15 @@ pub fn move_player(
 
 #[spacetimedb(reducer)]
 pub fn stop_player(ctx: ReducerContext, location: StdbVector2) -> Result<(), String> {
-    // Update the MobileEntityComponent when a player comes to a stop. We set
+    // Update the MobileLocationComponent when a player comes to a stop. We set
     // the location to the current location and the direction to {0,0}
     let owner_id = ctx.sender;
     if let Some(player) = PlayerComponent::filter_by_owner_id(&owner_id) {
-        if let Some(mut mobile) = MobileEntityComponent::filter_by_entity_id(&player.entity_id) {
+        if let Some(mut mobile) = MobileLocationComponent::filter_by_entity_id(&player.entity_id) {
             mobile.location = location;
             mobile.direction = StdbVector2::ZERO;
             mobile.move_start_timestamp = Timestamp::UNIX_EPOCH;
-            MobileEntityComponent::update_by_entity_id(&player.entity_id, mobile);
+            MobileLocationComponent::update_by_entity_id(&player.entity_id, mobile);
 
             return Ok(());
         }

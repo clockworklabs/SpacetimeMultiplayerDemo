@@ -23,8 +23,8 @@ public class RemotePlayer : MonoBehaviour
         canvas.worldCamera = Camera.main;
 
         // register for a callback that is called when the client gets an 
-        // update for a row in the MobileEntityComponent table
-        MobileEntityComponent.OnUpdate += MobileEntityComponent_OnUpdate;
+        // update for a row in the MobileLocationComponent table
+        MobileLocationComponent.OnUpdate += MobileLocationComponent_OnUpdate;
 
         // get the username for this player from the PlayerComponent table
         PlayerComponent playerComp = PlayerComponent.FilterByEntityId(EntityId);        
@@ -32,12 +32,12 @@ public class RemotePlayer : MonoBehaviour
 
         // get the last location for this player and set the initial 
         // position 
-        MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(EntityId);
+        MobileLocationComponent mobPos = MobileLocationComponent.FilterByEntityId(EntityId);
         Vector3 playerPos = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
         transform.position = new Vector3(playerPos.x, MathUtil.GetTerrainHeight(playerPos), playerPos.z);
     }
 
-    private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, ReducerEvent callInfo)
+    private void MobileLocationComponent_OnUpdate(MobileLocationComponent oldObj, MobileLocationComponent obj, ReducerEvent callInfo)
     {
         // if the update was made to this object
         if (obj.EntityId == EntityId)

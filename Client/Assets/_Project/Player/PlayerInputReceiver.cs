@@ -11,15 +11,39 @@ public class PlayerInputReceiver : MonoBehaviour
     private Vector2 mouseDelta;
     private float zoomDelta;
 
+    private int escapeHash = "ESCAPE".GetHashCode();
+
     void OnToggleInventory(InputValue value)
     {
         UIPlayerInventoryWindow.instance.Toggle();
+        // let the inventory window take over the camera disabler
+        if (CameraController.HasDisabler(escapeHash))
+        {
+            CameraController.RemoveDisabler(escapeHash);
+        }
     }
 
     void OnToggleChat(InputValue value)
     {
         UIChatController.instance.Toggle();
-	}
+        // let the chat window take over the camera disabler
+        if (CameraController.HasDisabler(escapeHash))
+        {
+            CameraController.RemoveDisabler(escapeHash);
+        }
+    }
+
+    void OnEscape(InputValue value)
+    {        
+        if(CameraController.HasDisabler(escapeHash))
+        {
+            CameraController.RemoveDisabler(escapeHash);
+        }
+        else
+        {
+            CameraController.AddDisabler(escapeHash);
+        }        
+    }
 
 	void OnActionButton(InputValue value)
 	{
