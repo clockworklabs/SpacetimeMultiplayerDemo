@@ -1015,6 +1015,12 @@ Animator:
     type: 3}
   m_PrefabInstance: {fileID: 6306767006344007743}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &4289917693763030249 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7786435978589199574, guid: 92707f3b129414830b1e77123096b434,
+    type: 3}
+  m_PrefabInstance: {fileID: 6306767006344007743}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5685348612446919592 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1828542115234270103, guid: 92707f3b129414830b1e77123096b434,
@@ -1041,4 +1047,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _tools:
   - {fileID: 3554670996562545774}
-  _playerRoot: {fileID: 0}
+  _playerRoot: {fileID: 4289917693763030249}
