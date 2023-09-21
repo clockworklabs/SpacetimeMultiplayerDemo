@@ -36,6 +36,11 @@ public class CameraController : Singleton<CameraController>
         _disablers.Remove(hash);
 	}
 
+    public static bool HasDisabler(int hash)
+    {
+        return _disablers.Contains(hash);
+    }
+
     private static HashSet<int> _disablers = new HashSet<int>();
 
 
