@@ -51,6 +51,8 @@ public class GameResource : MonoBehaviour
 
 	public void Impact(Vector3 actorPosition)
 	{
+        Reducer.Extract(LocalPlayer.instance.EntityId, EntityId);
+        
 		if (_flagForDeath)
 		{
 			if (_deathVfx != null)
