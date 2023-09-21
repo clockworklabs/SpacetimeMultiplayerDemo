@@ -31,7 +31,6 @@ public class PlayerInputReceiver : MonoBehaviour
                 if (resource != null)
                 {
                     PlayerAnimator.Local.Interact(resource);
-                    Reducer.Extract(LocalPlayer.instance.EntityId, resource.EntityId);
                     Reducer.UpdateAnimation(LocalPlayer.instance.EntityId, false, resource.EntityId);
                     return;
                 }

@@ -6,7 +6,7 @@ using TMPro;
 
 public class RemotePlayer : MonoBehaviour
 {
-    public static List<RemotePlayer> Players = new List<RemotePlayer>();
+    public static Dictionary<ulong, RemotePlayer> RemotePlayers = new Dictionary<ulong, RemotePlayer>();
 
     public ulong EntityId;
     public string Username { set { UsernameElement.text = value; } }
@@ -15,7 +15,7 @@ public class RemotePlayer : MonoBehaviour
 
     void Start()
     {
-        Players.Add(this);
+        RemotePlayers.Add(EntityId, this);
 
         // initialize overhead name
         UsernameElement = GetComponentInChildren<TMP_Text>();
@@ -35,6 +35,14 @@ public class RemotePlayer : MonoBehaviour
         MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(EntityId);
         Vector3 playerPos = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
         transform.position = new Vector3(playerPos.x, MathUtil.GetTerrainHeight(playerPos), playerPos.z);
+    }
+
+    private void OnDestroy()
+    {
+        RemotePlayers.Remove(EntityId);
+
+        // unregister the callback
+        MobileEntityComponent.OnUpdate -= MobileEntityComponent_OnUpdate;
     }
 
     private void MobileEntityComponent_OnUpdate(MobileEntityComponent oldObj, MobileEntityComponent obj, ReducerEvent callInfo)

@@ -135,6 +135,7 @@ pub struct AnimationComponent {
     pub moving: bool,
     pub jump_start_timestamp: Timestamp,
     pub action_target_entity_id: u64,
+    pub action_start_timestamp: Timestamp,
 }
 
 #[spacetimedb(table)]

@@ -17,6 +17,8 @@ namespace SpacetimeDB.Types
 		public ulong JumpStartTimestamp;
 		[Newtonsoft.Json.JsonProperty("action_target_entity_id")]
 		public ulong ActionTargetEntityId;
+		[Newtonsoft.Json.JsonProperty("action_start_timestamp")]
+		public ulong ActionStartTimestamp;
 
 		private static Dictionary<ulong, AnimationComponent> EntityId_Index = new Dictionary<ulong, AnimationComponent>(16);
 
@@ -40,6 +42,7 @@ namespace SpacetimeDB.Types
 				new SpacetimeDB.SATS.ProductTypeElement("moving", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.Bool)),
 				new SpacetimeDB.SATS.ProductTypeElement("jump_start_timestamp", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
 				new SpacetimeDB.SATS.ProductTypeElement("action_target_entity_id", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
+				new SpacetimeDB.SATS.ProductTypeElement("action_start_timestamp", SpacetimeDB.SATS.AlgebraicType.CreatePrimitiveType(SpacetimeDB.SATS.BuiltinType.Type.U64)),
 			});
 		}
 
@@ -55,6 +58,7 @@ namespace SpacetimeDB.Types
 				Moving = productValue.elements[1].AsBool(),
 				JumpStartTimestamp = productValue.elements[2].AsU64(),
 				ActionTargetEntityId = productValue.elements[3].AsU64(),
+				ActionStartTimestamp = productValue.elements[4].AsU64(),
 			};
 		}
 
@@ -105,6 +109,18 @@ namespace SpacetimeDB.Types
 			{
 				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[3].AsU64();
+				if (compareValue == value) {
+					yield return (AnimationComponent)entry.Item2;
+				}
+			}
+		}
+
+		public static System.Collections.Generic.IEnumerable<AnimationComponent> FilterByActionStartTimestamp(ulong value)
+		{
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("AnimationComponent"))
+			{
+				var productValue = entry.Item1.AsProductValue();
+				var compareValue = (ulong)productValue.elements[4].AsU64();
 				if (compareValue == value) {
 					yield return (AnimationComponent)entry.Item2;
 				}
