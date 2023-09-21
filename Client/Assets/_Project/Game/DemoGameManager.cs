@@ -46,7 +46,7 @@ public class DemoGameManager : MonoBehaviour
                 "SELECT * FROM Config",
                 "SELECT * FROM SpawnableEntityComponent",
                 "SELECT * FROM PlayerComponent",
-                "SELECT * FROM MobileEntityComponent",
+                "SELECT * FROM MobileLocationComponent",
                 // Our new tables for part 2 of the tutorial
                 "SELECT * FROM ResourceNodeComponent",
                 "SELECT * FROM StaticLocationComponent",
@@ -129,8 +129,8 @@ public class DemoGameManager : MonoBehaviour
             // set the username on the LocalPlayer instance
             LocalPlayer.instance.Username = obj.Username;
 
-            // Get the MobileEntityComponent for this object and update the position to match the server
-            MobileEntityComponent mobPos = MobileEntityComponent.FilterByEntityId(obj.EntityId);
+            // Get the MobileLocationComponent for this object and update the position to match the server
+            MobileLocationComponent mobPos = MobileLocationComponent.FilterByEntityId(obj.EntityId);
             Vector3 playerPos = new Vector3(mobPos.Location.X, 0.0f, mobPos.Location.Z);
             LocalPlayer.instance.transform.position = new Vector3(playerPos.x, MathUtil.GetTerrainHeight(playerPos), playerPos.z);
             LocalPlayer.instance.EntityId = obj.EntityId;

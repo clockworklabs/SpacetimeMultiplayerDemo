@@ -80,7 +80,7 @@ impl StdbVector2 {
 
 #[spacetimedb(table)]
 #[derive(Clone)]
-pub struct MobileEntityComponent {
+pub struct MobileLocationComponent {
     // This component will be created for all world objects that can move
     // smoothly throughout the world. It keeps track of the position the last
     // time the component was updated and the direction the mobile object is

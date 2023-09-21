@@ -7,7 +7,7 @@ using SpacetimeDB;
 
 namespace SpacetimeDB.Types
 {
-	public partial class MobileEntityComponent : IDatabaseTable
+	public partial class MobileLocationComponent : IDatabaseTable
 	{
 		[Newtonsoft.Json.JsonProperty("entity_id")]
 		public ulong EntityId;
@@ -18,17 +18,17 @@ namespace SpacetimeDB.Types
 		[Newtonsoft.Json.JsonProperty("move_start_timestamp")]
 		public ulong MoveStartTimestamp;
 
-		private static Dictionary<ulong, MobileEntityComponent> EntityId_Index = new Dictionary<ulong, MobileEntityComponent>(16);
+		private static Dictionary<ulong, MobileLocationComponent> EntityId_Index = new Dictionary<ulong, MobileLocationComponent>(16);
 
 		private static void InternalOnValueInserted(object insertedValue)
 		{
-			var val = (MobileEntityComponent)insertedValue;
+			var val = (MobileLocationComponent)insertedValue;
 			EntityId_Index[val.EntityId] = val;
 		}
 
 		private static void InternalOnValueDeleted(object deletedValue)
 		{
-			var val = (MobileEntityComponent)deletedValue;
+			var val = (MobileLocationComponent)deletedValue;
 			EntityId_Index.Remove(val.EntityId);
 		}
 
@@ -43,13 +43,13 @@ namespace SpacetimeDB.Types
 			});
 		}
 
-		public static explicit operator MobileEntityComponent(SpacetimeDB.SATS.AlgebraicValue value)
+		public static explicit operator MobileLocationComponent(SpacetimeDB.SATS.AlgebraicValue value)
 		{
 			if (value == null) {
 				return null;
 			}
 			var productValue = value.AsProductValue();
-			return new MobileEntityComponent
+			return new MobileLocationComponent
 			{
 				EntityId = productValue.elements[0].AsU64(),
 				Location = (SpacetimeDB.Types.StdbVector2)(productValue.elements[1]),
@@ -58,31 +58,31 @@ namespace SpacetimeDB.Types
 			};
 		}
 
-		public static System.Collections.Generic.IEnumerable<MobileEntityComponent> Iter()
+		public static System.Collections.Generic.IEnumerable<MobileLocationComponent> Iter()
 		{
-			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("MobileEntityComponent"))
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("MobileLocationComponent"))
 			{
-				yield return (MobileEntityComponent)entry.Item2;
+				yield return (MobileLocationComponent)entry.Item2;
 			}
 		}
 		public static int Count()
 		{
-			return SpacetimeDBClient.clientDB.Count("MobileEntityComponent");
+			return SpacetimeDBClient.clientDB.Count("MobileLocationComponent");
 		}
-		public static MobileEntityComponent FilterByEntityId(ulong value)
+		public static MobileLocationComponent FilterByEntityId(ulong value)
 		{
 			EntityId_Index.TryGetValue(value, out var r);
 			return r;
 		}
 
-		public static System.Collections.Generic.IEnumerable<MobileEntityComponent> FilterByMoveStartTimestamp(ulong value)
+		public static System.Collections.Generic.IEnumerable<MobileLocationComponent> FilterByMoveStartTimestamp(ulong value)
 		{
-			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("MobileEntityComponent"))
+			foreach(var entry in SpacetimeDBClient.clientDB.GetEntries("MobileLocationComponent"))
 			{
 				var productValue = entry.Item1.AsProductValue();
 				var compareValue = (ulong)productValue.elements[3].AsU64();
 				if (compareValue == value) {
-					yield return (MobileEntityComponent)entry.Item2;
+					yield return (MobileLocationComponent)entry.Item2;
 				}
 			}
 		}
@@ -104,10 +104,10 @@ namespace SpacetimeDB.Types
 			return t.product.elements[0].algebraicType;
 		}
 
-		public delegate void InsertEventHandler(MobileEntityComponent insertedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
-		public delegate void UpdateEventHandler(MobileEntityComponent oldValue, MobileEntityComponent newValue, SpacetimeDB.Types.ReducerEvent dbEvent);
-		public delegate void DeleteEventHandler(MobileEntityComponent deletedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
-		public delegate void RowUpdateEventHandler(SpacetimeDBClient.TableOp op, MobileEntityComponent oldValue, MobileEntityComponent newValue, SpacetimeDB.Types.ReducerEvent dbEvent);
+		public delegate void InsertEventHandler(MobileLocationComponent insertedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
+		public delegate void UpdateEventHandler(MobileLocationComponent oldValue, MobileLocationComponent newValue, SpacetimeDB.Types.ReducerEvent dbEvent);
+		public delegate void DeleteEventHandler(MobileLocationComponent deletedValue, SpacetimeDB.Types.ReducerEvent dbEvent);
+		public delegate void RowUpdateEventHandler(SpacetimeDBClient.TableOp op, MobileLocationComponent oldValue, MobileLocationComponent newValue, SpacetimeDB.Types.ReducerEvent dbEvent);
 		public static event InsertEventHandler OnInsert;
 		public static event UpdateEventHandler OnUpdate;
 		public static event DeleteEventHandler OnBeforeDelete;
@@ -116,27 +116,27 @@ namespace SpacetimeDB.Types
 
 		public static void OnInsertEvent(object newValue, ClientApi.Event dbEvent)
 		{
-			OnInsert?.Invoke((MobileEntityComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
+			OnInsert?.Invoke((MobileLocationComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnUpdateEvent(object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnUpdate?.Invoke((MobileEntityComponent)oldValue,(MobileEntityComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
+			OnUpdate?.Invoke((MobileLocationComponent)oldValue,(MobileLocationComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnBeforeDeleteEvent(object oldValue, ClientApi.Event dbEvent)
 		{
-			OnBeforeDelete?.Invoke((MobileEntityComponent)oldValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
+			OnBeforeDelete?.Invoke((MobileLocationComponent)oldValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnDeleteEvent(object oldValue, ClientApi.Event dbEvent)
 		{
-			OnDelete?.Invoke((MobileEntityComponent)oldValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
+			OnDelete?.Invoke((MobileLocationComponent)oldValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
 		}
 
 		public static void OnRowUpdateEvent(SpacetimeDBClient.TableOp op, object oldValue, object newValue, ClientApi.Event dbEvent)
 		{
-			OnRowUpdate?.Invoke(op, (MobileEntityComponent)oldValue,(MobileEntityComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
+			OnRowUpdate?.Invoke(op, (MobileLocationComponent)oldValue,(MobileLocationComponent)newValue,(ReducerEvent)dbEvent?.FunctionCall.CallInfo);
 		}
 	}
 }
