@@ -103,8 +103,8 @@ public class DemoGameManager : MonoBehaviour
         // if the identity of the PlayerComponent matches our user identity then this is the local player
         if (reducerEvent.Status == ClientApi.Event.Types.Status.Committed && reducerEvent.Identity != local_identity)
         {
-            var remotePlayer = FindObjectsOfType<RemotePlayer>().FirstOrDefault(item => item.EntityId == entityId);
-            if (remotePlayer != null)
+            RemotePlayer remotePlayer = null;
+            if (RemotePlayer.RemotePlayers.TryGetValue(entityId, out remotePlayer))
             {
                 remotePlayer.OnJump();
             }
